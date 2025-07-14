@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { 
   Plus, 
   Search, 
-  Filter, 
   MoreVertical, 
   Phone, 
   Mail, 
@@ -386,10 +385,7 @@ const Guests = () => {
               <option value="checked-out">Checked Out</option>
               <option value="reserved">Reserved</option>
             </select>
-            <button className="btn-secondary flex items-center">
-              <Filter className="h-4 w-4 mr-2" />
-              Filter
-            </button>
+
           </div>
         </div>
       </div>

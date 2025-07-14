@@ -160,8 +160,10 @@ const Layout = ({ children }: LayoutProps) => {
         <div className="fixed inset-y-0 left-0 flex w-64 flex-col bg-white">
           <div className="flex h-16 items-center justify-between px-4">
             <div className="flex items-center">
-              <Building2 className="h-8 w-8 text-primary-600" />
-              <span className="ml-2 text-xl font-bold text-gray-900">Hotel Diplomat Residency</span>
+              <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
+                <Building2 className="h-8 w-8 text-primary-600" />
+                <span className="ml-2 text-xl font-bold text-gray-900">Hotel Diplomat Residency</span>
+              </Link>
             </div>
             <button onClick={() => setSidebarOpen(false)} title="Close sidebar">
               <X className="h-6 w-6 text-gray-400" />
@@ -202,8 +204,10 @@ const Layout = ({ children }: LayoutProps) => {
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
         <div className="flex flex-col flex-grow bg-white border-r border-gray-200">
           <div className="flex h-16 items-center px-4">
-            <Building2 className="h-8 w-8 text-primary-600" />
-            <span className="ml-2 text-xl font-bold text-gray-900">Hotel Diplomat Residency</span>
+            <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
+              <Building2 className="h-8 w-8 text-primary-600" />
+              <span className="ml-2 text-xl font-bold text-gray-900">Hotel Diplomat Residency</span>
+            </Link>
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
             {navigation.map((item) => {
