@@ -41,6 +41,11 @@
     @apply outline-none ring-2 ring-primary-500 ring-offset-2;
   }
 
+  /* Remove focus styles for hotel name links */
+  .hotel-name-link:focus {
+    @apply outline-none ring-0 ring-offset-0;
+  }
+
   /* Selection styles */
   ::selection {
     @apply bg-primary-100 text-primary-900;

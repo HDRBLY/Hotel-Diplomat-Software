@@ -160,7 +160,7 @@ const Layout = ({ children }: LayoutProps) => {
         <div className="fixed inset-y-0 left-0 flex w-64 flex-col bg-white">
           <div className="flex h-16 items-center justify-between px-4">
             <div className="flex items-center">
-              <Link to="/" className="flex items-center hover:opacity-80 transition-opacity focus:outline-none">
+              <Link to="/" className="hotel-name-link flex items-center hover:opacity-80 transition-opacity">
                 <Building2 className="h-8 w-8 text-primary-600" />
                 <span className="ml-2 text-xl font-bold text-gray-900">Hotel Diplomat Residency</span>
               </Link>
@@ -204,7 +204,7 @@ const Layout = ({ children }: LayoutProps) => {
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
         <div className="flex flex-col flex-grow bg-white border-r border-gray-200">
           <div className="flex h-16 items-center px-4">
-            <Link to="/" className="flex items-center hover:opacity-80 transition-opacity focus:outline-none">
+            <Link to="/" className="hotel-name-link flex items-center hover:opacity-80 transition-opacity">
               <Building2 className="h-8 w-8 text-primary-600" />
               <span className="ml-2 text-xl font-bold text-gray-900">Hotel Diplomat Residency</span>
             </Link>
