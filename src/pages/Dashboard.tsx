@@ -164,6 +164,28 @@ const Dashboard = () => {
         <p className="text-gray-600">Welcome to Hotel Diplomat Residency (HDR) Front Desk Management</p>
       </div>
 
+      {/* Testing Section - GitHub Changes Verification */}
+      <div className="card bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-bold text-blue-800 mb-2">🧪 Testing Section - GitHub Changes</h3>
+            <p className="text-blue-700 mb-1">
+              <span className="font-semibold">Developer:</span> Rishabh Agarwal
+            </p>
+            <p className="text-blue-700 mb-1">
+              <span className="font-semibold">Last Updated:</span> {new Date().toLocaleString()}
+            </p>
+            <p className="text-blue-600 text-sm">
+              This section is for testing GitHub deployment changes. If you can see this, the changes have been successfully deployed!
+            </p>
+          </div>
+          <div className="text-right">
+            <div className="text-3xl">🚀</div>
+            <p className="text-xs text-blue-600 mt-1">Deployed</p>
+          </div>
+        </div>
+      </div>
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <div className="card">
