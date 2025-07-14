@@ -14,8 +14,7 @@ import {
   User,
   ChevronDown,
   Trash2,
-  Clock,
-  TestTube
+  Clock
 } from 'lucide-react'
 import { useAuth } from './AuthContext'
 import { useNotification } from './Notification'
@@ -107,12 +106,6 @@ const Layout = ({ children }: LayoutProps) => {
       href: '/settings', 
       icon: SettingsIcon,
       permission: 'settings:view'
-    },
-    { 
-      name: 'Testing', 
-      href: '/testing', 
-      icon: TestTube,
-      permission: 'dashboard:view'
     },
   ].filter(item => hasPermission(item.permission))
 

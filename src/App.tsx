@@ -10,7 +10,6 @@ import DeleteRooms from './pages/DeleteRooms'
 import Reservations from './pages/Reservations'
 import Reports from './pages/Reports'
 import Settings from './pages/Settings'
-import Testing from './pages/Testing'
 
 function App() {
   return (
@@ -64,13 +63,6 @@ function App() {
             <ProtectedRoute requiredPermission="settings:view">
               <Layout>
                 <Settings />
-              </Layout>
-            </ProtectedRoute>
-          } />
-          <Route path="/testing" element={
-            <ProtectedRoute>
-              <Layout>
-                <Testing />
               </Layout>
             </ProtectedRoute>
           } />
