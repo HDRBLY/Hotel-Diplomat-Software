@@ -1,66 +1,20 @@
-# Hotel Diplomat Residency (HDR) - Front Desk Management System
+# Hotel Diplomat Software - Frontend
 
-A modern, comprehensive hotel management system built with React, TypeScript, and Tailwind CSS. This application provides a complete solution for managing Hotel Diplomat Residency (HDR) front desk operations including guest management, room bookings, reservations, and detailed analytics.
+A modern React-based hotel management system for Hotel Diplomat Residency.
 
-## 🏨 Features
+## 🚀 Quick Start
 
-### 📊 Dashboard
-- Real-time hotel statistics and metrics
-- Occupancy rate tracking
-- Revenue analytics with interactive charts
-- Recent activity feed
-- Quick access to key functions
+### Prerequisites
+- Node.js (v16 or higher)
+- npm or yarn
+- Git
 
-### 👥 Guest Management
-- Complete guest information management
-- Check-in and check-out processing
-- Guest search and filtering
-- Payment tracking and status management
-- Guest history and preferences
-
-### 🏠 Room Management
-- Room status tracking (Available, Occupied, Maintenance, Reserved)
-- Room type management (Standard, Deluxe, Suite, Presidential)
-- Amenities and pricing configuration
-- Room cleaning status
-- Maintenance tracking
-
-### 📅 Reservation System
-- Booking management and confirmation
-- Reservation status tracking
-- Guest communication
-- Payment processing
-- Cancellation handling
-
-### 📈 Reports & Analytics
-- Revenue trend analysis
-- Occupancy reports
-- Guest source tracking
-- Performance metrics
-- Exportable reports
-
-### ⚙️ Settings & Configuration
-- Hotel information management
-- User access control
-- System preferences
-- Security settings
-- Billing configuration
-
-## 🚀 Technology Stack
-
-- **Frontend**: React 18 with TypeScript
-- **Styling**: Tailwind CSS
-- **Icons**: Lucide React
-- **Charts**: Recharts
-- **Build Tool**: Vite
-- **Routing**: React Router DOM
-
-## 📦 Installation
+### Installation
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
-   cd hotel-diplomat-residency-software
+   git clone https://github.com/HDRBLY/Hotel-Diplomat-Software.git
+   cd Hotel-Diplomat-Software
    ```
 
 2. **Install dependencies**
@@ -68,136 +22,159 @@ A modern, comprehensive hotel management system built with React, TypeScript, an
    npm install
    ```
 
-3. **Start the development server**
+3. **Set up environment variables**
+   ```bash
+   cp env.example .env.local
+   ```
+   Edit `.env.local` and add your configuration:
+   ```env
+   VITE_API_BASE_URL=http://localhost:3001/api
+   VITE_WS_URL=ws://localhost:3001/ws
+   ```
+
+4. **Start development server**
    ```bash
    npm run dev
    ```
 
-4. **Open your browser**
-   Navigate to `http://localhost:3000`
-
-## 🛠️ Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
+5. **Open in browser**
+   Navigate to `http://localhost:5173`
 
 ## 📁 Project Structure
 
 ```
 src/
 ├── components/          # Reusable UI components
-│   └── Layout.tsx      # Main layout with navigation
-├── pages/              # Application pages
-│   ├── Dashboard.tsx   # Main dashboard
-│   ├── Guests.tsx      # Guest management
-│   ├── Rooms.tsx       # Room management
-│   ├── Reservations.tsx # Reservation system
-│   ├── Reports.tsx     # Analytics and reports
-│   └── Settings.tsx    # System configuration
-├── App.tsx             # Main application component
-├── main.tsx           # Application entry point
-└── index.css          # Global styles
+│   ├── AuthContext.tsx  # Authentication context
+│   ├── Layout.tsx       # Main layout component
+│   ├── Notification.tsx # Notification system
+│   └── ProtectedRoute.tsx # Route protection
+├── pages/              # Page components
+│   ├── Dashboard.tsx    # Main dashboard
+│   ├── DeleteRooms.tsx  # Room deletion interface
+│   ├── Guests.tsx       # Guest management
+│   ├── Login.tsx        # Login page
+│   ├── Reports.tsx      # Reports and analytics
+│   ├── Reservations.tsx # Reservation management
+│   ├── Rooms.tsx        # Room management
+│   └── Settings.tsx     # System settings
+├── services/           # API and service layer
+│   └── api.ts          # API service functions
+├── App.tsx             # Main app component
+├── main.tsx            # App entry point
+└── index.css           # Global styles
 ```
 
-## 🎨 Design System
+## 🛠️ Available Scripts
 
-The application uses a consistent design system with:
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
+- `npm run type-check` - Run TypeScript type checking
 
-- **Color Palette**: Professional blue and gray tones
-- **Typography**: Inter font family
-- **Components**: Reusable card, button, and form components
-- **Responsive Design**: Mobile-first approach
-- **Accessibility**: WCAG compliant design
+## 🔧 Development Workflow
 
-## 🔧 Configuration
+### Git Workflow
 
-### Hotel Information
-Update hotel details in the Settings page:
-- Hotel name and contact information
-- Address and website
-- Operating hours
-- Tax rates and policies
+1. **Before starting work**
+   ```bash
+   git pull origin main
+   ```
 
-### Room Types
-Configure room categories and pricing:
-- Standard rooms
-- Deluxe rooms
-- Suites
-- Presidential suites
+2. **Create a feature branch**
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
 
-### User Roles
-Manage staff access with different permission levels:
-- **Admin**: Full system access
-- **Manager**: Operational management
-- **Staff**: Front desk operations
+3. **Make your changes and commit**
+   ```bash
+   git add .
+   git commit -m "Add feature: description of changes"
+   ```
 
-## 📱 Responsive Design
+4. **Push your branch**
+   ```bash
+   git push origin feature/your-feature-name
+   ```
 
-The application is fully responsive and works on:
-- Desktop computers
-- Tablets
-- Mobile phones
-- Touch-screen kiosks
+5. **Create a Pull Request** on GitHub
 
-## 🔒 Security Features
+### Code Standards
 
-- User authentication and authorization
-- Role-based access control
-- Session management
-- Secure data handling
-- Audit logging
+- Use TypeScript for all new code
+- Follow ESLint rules
+- Use meaningful commit messages
+- Test your changes before committing
 
-## 📊 Data Management
+## 🔐 Authentication
 
-Currently using mock data for demonstration. In production, integrate with:
-- Database (PostgreSQL, MySQL)
-- API endpoints
-- Real-time updates
-- Data backup and recovery
+The app uses JWT-based authentication. Users must log in to access protected routes.
+
+## 📱 Features
+
+- **Dashboard**: Overview of hotel operations
+- **Room Management**: Add, edit, delete, and manage room status
+- **Guest Management**: Guest registration and check-in/out
+- **Reservations**: Booking management system
+- **Reports**: Analytics and reporting tools
+- **Settings**: System configuration
+
+## 🌐 API Integration
+
+The frontend communicates with a backend API. See `src/services/api.ts` for all available API endpoints.
 
 ## 🚀 Deployment
 
-### Build for Production
+### Production Build
 ```bash
 npm run build
 ```
 
-### Deploy Options
-- **Netlify**: Drag and drop the `dist` folder
-- **Vercel**: Connect your repository
-- **AWS S3**: Upload static files
-- **Traditional hosting**: Upload to web server
+### Environment Variables for Production
+Set these in your hosting platform:
+- `VITE_API_BASE_URL` - Your production API URL
+- `VITE_WS_URL` - Your production WebSocket URL
 
-## 🤝 Contributing
+## 🤝 Collaboration
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
+### For New Collaborators
+
+1. **Fork the repository** on GitHub
+2. **Clone your fork**
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/Hotel-Diplomat-Software.git
+   ```
+3. **Add upstream remote**
+   ```bash
+   git remote add upstream https://github.com/HDRBLY/Hotel-Diplomat-Software.git
+   ```
+4. **Sync with upstream**
+   ```bash
+   git fetch upstream
+   git checkout main
+   git merge upstream/main
+   ```
+
+### Pull Request Process
+
+1. Create a feature branch from `main`
+2. Make your changes
+3. Test thoroughly
+4. Create a Pull Request
+5. Wait for review and approval
+
+## 📞 Support
+
+For issues and questions:
+- Create an issue on GitHub
+- Contact the development team
 
 ## 📄 License
 
-This project is licensed under the MIT License.
-
-## 🆘 Support
-
-For support and questions:
-- Create an issue in the repository
-- Contact the development team
-- Check the documentation
-
-## 🔮 Future Enhancements
-
-- **Mobile App**: Native iOS and Android applications
-- **API Integration**: Connect with booking platforms
-- **Payment Gateway**: Integrated payment processing
-- **Multi-language**: Internationalization support
-- **Advanced Analytics**: AI-powered insights
-- **Housekeeping Module**: Staff management
-- **Inventory Management**: Supplies and amenities tracking
+This project is proprietary software for Hotel Diplomat Residency.
 
 ---
 
-**Hotel Diplomat Residency (HDR) Management System** - Streamlining hotel operations with modern technology. 
+**Last Updated**: $(date)
+**Version**: 1.0.0 
