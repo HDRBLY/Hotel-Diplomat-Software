@@ -2,6 +2,21 @@
 
 A modern React-based hotel management system for Hotel Diplomat Residency.
 
+## 🏷️ **CURRENT VERSION: 1.0.0-ui (Stage 1 UI Complete)**
+
+**This milestone marks the completion of Stage 1: Frontend UI Development.** The entire frontend application is now complete, tested, and ready for backend integration.
+
+### **🎯 Milestone Achievement**
+- ✅ Complete React-based hotel management frontend
+- ✅ All core modules implemented and functional
+- ✅ Responsive design for all devices
+- ✅ Accessibility compliance (WCAG AA)
+- ✅ Professional UI/UX design
+- ✅ Comprehensive documentation
+- ✅ Ready for backend integration
+
+**📋 See [HDR_STAGE_1_UI_MILESTONE.md](./HDR_STAGE_1_UI_MILESTONE.md) for detailed milestone information.**
+
 ## 🚀 Quick Start
 
 ### Prerequisites

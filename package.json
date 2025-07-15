@@ -1,8 +1,8 @@
 {
   "name": "hotel-diplomat-residency-software",
-  "version": "1.0.0",
+  "version": "1.0.0-ui",
   "type": "module",
-  "description": "Hotel Diplomat Residency (HDR) Front Desk Management System",
+  "description": "Hotel Diplomat Residency (HDR) Front Desk Management System - Stage 1 UI Complete",
   "main": "index.js",
   "scripts": {
     "dev": "vite",
