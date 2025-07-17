@@ -3,9 +3,6 @@ import {
   Plus, 
   Search, 
   MoreVertical, 
-  Phone, 
-  Mail, 
-  MapPin,
   CheckCircle,
   Clock,
   User,
@@ -13,7 +10,6 @@ import {
 } from 'lucide-react'
 import { useNotification } from '../components/Notification'
 import { useAuth } from '../components/AuthContext'
-import Notification from '../components/Notification'
 
 // Define GuestCategory type for type safety
 export type GuestCategory = 'couple' | 'corporate' | 'solo' | 'family'
@@ -51,7 +47,7 @@ const Guests = () => {
     paymentMethod: 'CASH',
     notes: ''
   })
-  const { notification, showNotification, hideNotification } = useNotification()
+  const { showNotification } = useNotification()
   const [newGuest, setNewGuest] = useState<{
     name: string
     email: string
@@ -943,13 +939,7 @@ const Guests = () => {
         </div>
       )}
       
-      <Notification
-        type={notification.type}
-        message={notification.message}
-        isVisible={notification.isVisible}
-        onClose={hideNotification}
-        duration={notification.duration}
-      />
+      {/* Notification is now handled by NotificationProvider */}
     </div>
   )
 }

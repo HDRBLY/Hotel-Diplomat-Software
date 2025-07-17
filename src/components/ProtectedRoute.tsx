@@ -1,4 +1,5 @@
-import React, { ReactNode } from 'react'
+import * as React from 'react'
+import { ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 
@@ -12,7 +13,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children, 
   requiredPermission,
   fallback 
-}) => {
+}): React.ReactElement | null => {
   const { isAuthenticated, hasPermission } = useAuth()
 
   // If not authenticated, redirect to login page
@@ -22,7 +23,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // If permission is required and user doesn't have it
   if (requiredPermission && !hasPermission(requiredPermission)) {
-    return fallback || (
+    return fallback ? <>{fallback}</> : (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="mx-auto h-16 w-16 bg-red-100 rounded-full flex items-center justify-center mb-4">

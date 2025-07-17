@@ -1,14 +1,18 @@
 {
   "name": "hotel-diplomat-residency-software",
-  "version": "1.0.0-ui",
+  "version": "1.1.0-enhanced",
   "type": "module",
-  "description": "Hotel Diplomat Residency (HDR) Front Desk Management System - Stage 1 UI Complete",
+  "description": "Hotel Diplomat Residency (HDR) Front Desk Management System - Enhanced Professional Edition",
   "main": "index.js",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "tsc && vite build",
     "preview": "vite preview",
-    "start": "vite --host"
+    "start": "vite --host",
+    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "lint:fix": "eslint src --ext ts,tsx --fix",
+    "type-check": "tsc --noEmit",
+    "type-check:watch": "tsc --noEmit --watch"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",
@@ -43,7 +47,10 @@
     "management",
     "front-desk",
     "reservation",
-    "booking"
+    "booking",
+    "react",
+    "typescript",
+    "vite"
   ],
   "author": "Hotel Diplomat Residency (HDR)",
   "license": "MIT"

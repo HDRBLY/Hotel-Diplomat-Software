@@ -1,33 +1,15 @@
 import { useState, useEffect } from 'react'
 import { 
   Settings as SettingsIcon, 
-  User, 
-  Building2, 
-  Bell, 
+  Users, 
   Shield, 
-  CreditCard,
+  Database, 
+  Bell, 
   Save,
-  Edit,
-  Plus,
   Trash2
 } from 'lucide-react'
 import { useNotification } from '../components/Notification'
 import { useAuth } from '../components/AuthContext'
-import Notification from '../components/Notification'
-
-interface HotelSettings {
-  name: string
-  address: string
-  phone: string
-  email: string
-  website: string
-  timezone: string
-  currency: string
-  checkInTime: string
-  checkOutTime: string
-  taxRate: number
-  depositPercentage: number
-}
 
 interface User {
   id: string
@@ -41,7 +23,7 @@ interface User {
 const Settings = () => {
   const { hasPermission } = useAuth()
   const [activeTab, setActiveTab] = useState('general')
-  const { notification, showNotification, hideNotification } = useNotification()
+  const { showNotification } = useNotification()
   const [settings, setSettings] = useState({
     hotelName: 'Hotel Diplomat Residency (HDR)',
     address: '123 MG Road, Bangalore, Karnataka 560001',
@@ -121,31 +103,19 @@ const Settings = () => {
       status: 'active',
       lastLogin: '2024-01-14 16:45'
     }
-  ])
+    ])
 
-  const [showAddUser, setShowAddUser] = useState(false)
-  const [editingUser, setEditingUser] = useState<User | null>(null)
+
 
   const tabs = [
-    { id: 'general', name: 'General', icon: Building2 },
-    { id: 'users', name: 'Users', icon: User },
+    { id: 'general', name: 'General', icon: SettingsIcon },
+    { id: 'users', name: 'Users', icon: Users },
     { id: 'notifications', name: 'Notifications', icon: Bell },
     { id: 'security', name: 'Security', icon: Shield },
-    { id: 'billing', name: 'Billing', icon: CreditCard }
+    { id: 'billing', name: 'Billing', icon: Database }
   ]
 
-  const handleAddUser = (userData: Partial<User>) => {
-    const newUser: User = {
-      id: Date.now().toString(),
-      name: userData.name || '',
-      email: userData.email || '',
-      role: userData.role || 'staff',
-      status: 'active',
-      lastLogin: new Date().toISOString().slice(0, 16).replace('T', ' ')
-    }
-    setUsers([...users, newUser])
-    setShowAddUser(false)
-  }
+
 
   const handleDeleteUser = (userId: string) => {
     setUsers(users.filter(user => user.id !== userId))
@@ -371,13 +341,6 @@ const Settings = () => {
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-medium text-gray-900">User Management</h3>
-              <button 
-                onClick={() => setShowAddUser(true)}
-                className="btn-primary flex items-center"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add User
-              </button>
             </div>
 
             <div className="card">
@@ -426,12 +389,7 @@ const Settings = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center space-x-2">
-                            <button 
-                              onClick={() => setEditingUser(user)}
-                              className="text-primary-600 hover:text-primary-900"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </button>
+
                             <button 
                               onClick={() => handleDeleteUser(user.id)}
                               className="text-red-600 hover:text-red-900"
@@ -567,13 +525,7 @@ const Settings = () => {
         )}
       </div>
       
-      <Notification
-        type={notification.type}
-        message={notification.message}
-        isVisible={notification.isVisible}
-        onClose={hideNotification}
-        duration={notification.duration}
-      />
+      {/* Notification is now handled by NotificationProvider */}
     </div>
   )
 }

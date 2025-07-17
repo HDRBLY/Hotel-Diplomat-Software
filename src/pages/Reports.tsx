@@ -4,7 +4,6 @@ import {
   TrendingUp, 
   Users, 
   Bed, 
-  Calendar,
   Download,
   Filter
 } from 'lucide-react'
@@ -42,11 +41,11 @@ const Reports = () => {
     totalBookings: 0,
     cancellationRate: 0
   })
-  const [selectedReport, setSelectedReport] = useState('overview')
-  const [dateRange, setDateRange] = useState('month')
+  const [dateRange, setDateRange] = useState('7days')
+  const [selectedReport] = useState('overview')
+
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
-  const [showCustomDateRange, setShowCustomDateRange] = useState(false)
   const [modalOpen, setModalOpen] = useState<null | 'revenue' | 'roomType' | 'occupancy' | 'guestSource'>(null)
   const [detailedReport, setDetailedReport] = useState<'revenue' | 'occupancy' | 'guest'>('revenue')
 
@@ -110,7 +109,6 @@ const Reports = () => {
 
   const handleDateRangeChange = (range: string) => {
     setDateRange(range)
-    setShowCustomDateRange(false)
     
     // Set default date ranges
     const today = new Date()
@@ -131,7 +129,6 @@ const Reports = () => {
         start.setFullYear(today.getFullYear() - 1)
         break
       case 'custom':
-        setShowCustomDateRange(true)
         return
     }
     
@@ -151,7 +148,6 @@ const Reports = () => {
     }
     
     setDateRange('custom')
-    setShowCustomDateRange(false)
   }
 
   const getFilteredData = () => {
@@ -192,7 +188,7 @@ const Reports = () => {
         break
       case 'occupancy':
         data = occupancyData.map(item => ({
-          Date: item.date,
+          Date: item.day,
           'Occupancy Rate': `${item.rate}%`,
           'Available Rooms': item.availableRooms,
           'Total Rooms': item.totalRooms
@@ -249,21 +245,6 @@ const Reports = () => {
       cancellationRate: cancellationRate
     })
   }, [dateRange, startDate, endDate])
-
-  const monthlyRevenueData = [
-    { month: 'Jan', revenue: 850000, bookings: 280 },
-    { month: 'Feb', revenue: 920000, bookings: 310 },
-    { month: 'Mar', revenue: 880000, bookings: 295 },
-    { month: 'Apr', revenue: 950000, bookings: 320 },
-    { month: 'May', revenue: 1020000, bookings: 340 },
-    { month: 'Jun', revenue: 980000, bookings: 330 },
-    { month: 'Jul', revenue: 1100000, bookings: 365 },
-    { month: 'Aug', revenue: 1150000, bookings: 380 },
-    { month: 'Sep', revenue: 1080000, bookings: 360 },
-    { month: 'Oct', revenue: 1120000, bookings: 375 },
-    { month: 'Nov', revenue: 1050000, bookings: 350 },
-    { month: 'Dec', revenue: 1250000, bookings: 420 }
-  ]
 
   const roomTypeData = [
     { name: 'Standard', value: 14, color: '#3b82f6' },
@@ -786,7 +767,7 @@ const Reports = () => {
       </div>
 
       <Dialog open={modalOpen !== null} onClose={() => setModalOpen(null)} className="fixed inset-0 z-50 flex items-center justify-center">
-        <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
+        <div className="fixed inset-0 bg-black opacity-30" />
         <Dialog.Panel className="bg-white p-6 rounded-lg shadow-xl max-w-2xl w-full max-h-full">
           {renderModalContent()}
         </Dialog.Panel>

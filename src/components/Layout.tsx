@@ -13,11 +13,9 @@ import {
   LogOut,
   User,
   ChevronDown,
-  Trash2,
-  Clock
+  Trash2
 } from 'lucide-react'
 import { useAuth } from './AuthContext'
-import { useNotification } from './Notification'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -56,7 +54,7 @@ const Layout = ({ children }: LayoutProps) => {
   const location = useLocation()
   const navigate = useNavigate()
   const { user, logout, hasPermission } = useAuth()
-  const { showNotification } = useNotification()
+  // Removed unused showNotification
 
   const handleLogout = () => {
     logout()

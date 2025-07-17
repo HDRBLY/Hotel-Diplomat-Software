@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { 
   Plus, 
   Search, 
-  Filter, 
   MoreVertical, 
   Bed, 
   Wifi, 
@@ -20,9 +19,8 @@ import {
 } from 'lucide-react'
 import { useNotification } from '../components/Notification'
 import { useAuth } from '../components/AuthContext'
-import Notification from '../components/Notification'
 import { useRef } from 'react'
-import { useCallback } from 'react'
+// Removed unused useCallback import
 
 interface Room {
   id: string
@@ -86,23 +84,21 @@ const Rooms = () => {
   const [showStatusChangeModal, setShowStatusChangeModal] = useState(false)
   const [statusChangeRoom, setStatusChangeRoom] = useState<Room | null>(null)
   const [newStatus, setNewStatus] = useState<Room['status']>('available')
-  const { notification, showNotification, hideNotification } = useNotification()
+  const { showNotification } = useNotification()
   const [newRoom, setNewRoom] = useState({
     number: '',
     type: 'standard' as Room['type'],
+    category: 'couple' as Room['category'],
     floor: 1,
     price: 1500,
     amenities: [] as string[],
     status: 'available' as Room['status'],
-    notes: '',
-    category: 'couple' as Room['category']
+    notes: ''
   })
   const [showCheckoutReminder, setShowCheckoutReminder] = useState(false)
   const [checkoutReminderRooms, setCheckoutReminderRooms] = useState<Room[]>([])
   const reminderTimeoutRef = useRef<number | null>(null)
   const [shiftEvents, setShiftEvents] = useState<ShiftEvent[]>([])
-  const [shiftFilter, setShiftFilter] = useState<'today' | '7days' | 'custom'>('today')
-  const [customRange, setCustomRange] = useState<{from: string, to: string}>({from: '', to: ''})
   const [showShiftedRoomsModal, setShowShiftedRoomsModal] = useState(false)
   const [shiftSearch, setShiftSearch] = useState('')
   const [shiftDate, setShiftDate] = useState('')
@@ -663,35 +659,7 @@ const Rooms = () => {
     }
   }
 
-  const handleStatusChange = (roomId: string, newStatus: Room['status']) => {
-    if (!hasPermission('rooms:edit')) {
-      showNotification('error', 'You do not have permission to change room status.')
-      return
-    }
 
-    const room = rooms.find(r => r.id === roomId)
-    if (!room) return
-
-    // Prevent changing status of occupied rooms
-    if (room.status === 'occupied') {
-      showNotification('error', 'Cannot change status of occupied room. Please check out the guest first.')
-      return
-    }
-
-    // Prevent setting status to occupied without a guest
-    if (newStatus === 'occupied' && !room.currentGuest) {
-      showNotification('error', 'Cannot set room status to occupied without a guest. Please assign a guest first.')
-      return
-    }
-
-    setRooms(rooms.map(room => 
-      room.id === roomId 
-        ? { ...room, status: newStatus }
-        : room
-    ))
-    
-    showNotification('success', `Room ${room.number} status updated to ${newStatus}`)
-  }
 
   const handleAddRoom = () => {
     if (!hasPermission('rooms:create')) {
@@ -727,7 +695,7 @@ const Rooms = () => {
       amenities: newRoom.amenities,
       lastCleaned: new Date().toISOString().split('T')[0],
       notes: newRoom.notes,
-      category: newRoom.category as Room['category']
+      category: newRoom.category
     }
 
     setRooms([...rooms, room])
@@ -857,9 +825,6 @@ const Rooms = () => {
         ? { 
             ...room, 
             status: 'cleaning' as const,
-            currentGuest: undefined,
-            checkInDate: undefined,
-            checkOutDate: undefined,
             notes: `Checked out on ${checkoutDetails.actualCheckOutDate}. ${checkoutDetails.notes}`
           }
         : room
@@ -957,9 +922,6 @@ const Rooms = () => {
         return {
           ...room,
           status: 'cleaning' as const,
-          currentGuest: undefined,
-          checkInDate: undefined,
-          checkOutDate: undefined,
           notes: `Guest shifted to Room ${shiftDetails.toRoomNumber} on ${shiftDetails.shiftDate} at ${shiftDetails.shiftTime}. Reason: ${shiftDetails.reason}. Authorized by: ${shiftDetails.authorizedBy}. ${shiftDetails.notes}`
         }
       } else if (room.id === destinationRoom.id) {
@@ -967,9 +929,6 @@ const Rooms = () => {
         return {
           ...room,
           status: 'occupied' as const,
-          currentGuest: shiftFromRoom.currentGuest,
-          checkInDate: shiftFromRoom.checkInDate,
-          checkOutDate: shiftFromRoom.checkOutDate,
           notes: `Guest shifted from Room ${shiftFromRoom.number} on ${shiftDetails.shiftDate} at ${shiftDetails.shiftTime}. Reason: ${shiftDetails.reason}. Authorized by: ${shiftDetails.authorizedBy}. ${shiftDetails.notes}`
         }
       }
@@ -2178,13 +2137,7 @@ const Rooms = () => {
           </div>
         </div>
       )}
-      <Notification
-        type={notification.type}
-        message={notification.message}
-        isVisible={notification.isVisible}
-        onClose={hideNotification}
-        duration={notification.duration}
-      />
+      {/* Notification is now handled by NotificationProvider */}
       {/* Shifted Rooms Modal */}
       {showShiftedRoomsModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center" onClick={() => setShowShiftedRoomsModal(false)}>

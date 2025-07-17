@@ -136,7 +136,7 @@ export const usersAPI = {
     })
   },
 
-  getAllUsers: async (params?: { page?: number; limit?: number; search?: string }): Promise<PaginatedResponse<any>> => {
+  getAllUsers: async (params?: { page?: number; limit?: number; search?: string }): Promise<ApiResponse<any[]>> => {
     const searchParams = new URLSearchParams()
     if (params?.page) searchParams.append('page', params.page.toString())
     if (params?.limit) searchParams.append('limit', params.limit.toString())
@@ -175,7 +175,7 @@ export const roomsAPI = {
     status?: string; 
     type?: string; 
     category?: string 
-  }): Promise<PaginatedResponse<any>> => {
+  }): Promise<ApiResponse<any[]>> => {
     const searchParams = new URLSearchParams()
     if (params?.page) searchParams.append('page', params.page.toString())
     if (params?.limit) searchParams.append('limit', params.limit.toString())
@@ -237,7 +237,7 @@ export const roomsAPI = {
     limit?: number; 
     fromDate?: string; 
     toDate?: string 
-  }): Promise<PaginatedResponse<any>> => {
+  }): Promise<ApiResponse<any[]>> => {
     const searchParams = new URLSearchParams()
     if (params?.page) searchParams.append('page', params.page.toString())
     if (params?.limit) searchParams.append('limit', params.limit.toString())
@@ -255,7 +255,7 @@ export const guestsAPI = {
     limit?: number; 
     search?: string; 
     status?: string 
-  }): Promise<PaginatedResponse<any>> => {
+  }): Promise<ApiResponse<any[]>> => {
     const searchParams = new URLSearchParams()
     if (params?.page) searchParams.append('page', params.page.toString())
     if (params?.limit) searchParams.append('limit', params.limit.toString())
@@ -312,7 +312,7 @@ export const reservationsAPI = {
     search?: string; 
     status?: string; 
     dateFilter?: string 
-  }): Promise<PaginatedResponse<any>> => {
+  }): Promise<ApiResponse<any[]>> => {
     const searchParams = new URLSearchParams()
     if (params?.page) searchParams.append('page', params.page.toString())
     if (params?.limit) searchParams.append('limit', params.limit.toString())

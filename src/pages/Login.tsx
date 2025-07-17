@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Building2, User, Lock, AlertCircle, CheckCircle } from 'lucide-react'
 import { useAuth } from '../components/AuthContext'
 import { useNotification } from '../components/Notification'
-import Notification from '../components/Notification'
 
 const Login = () => {
   const [username, setUsername] = useState('')
@@ -15,7 +14,7 @@ const Login = () => {
   const [isLocked, setIsLocked] = useState(false)
   const [lockoutTime, setLockoutTime] = useState<Date | null>(null)
   const { login, isAuthenticated } = useAuth()
-  const { notification, showNotification, hideNotification } = useNotification()
+  const { showNotification } = useNotification()
   const navigate = useNavigate()
 
   // Check for saved credentials on mount
@@ -370,13 +369,7 @@ const Login = () => {
         </div>
       </div>
 
-      <Notification
-        type={notification.type}
-        message={notification.message}
-        isVisible={notification.isVisible}
-        onClose={hideNotification}
-        duration={notification.duration}
-      />
+      {/* Notification is now handled by NotificationProvider */}
     </div>
   )
 }

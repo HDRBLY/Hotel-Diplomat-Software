@@ -3,12 +3,8 @@ import {
   Plus, 
   Search, 
   Filter, 
-  MoreVertical, 
   Calendar, 
   User, 
-  Phone,
-  Mail,
-  MapPin,
   CheckCircle,
   Clock,
   XCircle,
@@ -16,7 +12,6 @@ import {
   Trash2
 } from 'lucide-react'
 import { useNotification } from '../components/Notification'
-import Notification from '../components/Notification'
 
 interface Reservation {
   id: string
@@ -43,7 +38,7 @@ const Reservations = () => {
   const [dateFilter, setDateFilter] = useState('all')
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null)
   const [showAddReservation, setShowAddReservation] = useState(false)
-  const { notification, showNotification, hideNotification } = useNotification()
+  const { showNotification } = useNotification()
   const [newReservation, setNewReservation] = useState({
     guestName: '',
     email: '',
@@ -692,13 +687,7 @@ const Reservations = () => {
         </div>
       )}
       
-      <Notification
-        type={notification.type}
-        message={notification.message}
-        isVisible={notification.isVisible}
-        onClose={hideNotification}
-        duration={notification.duration}
-      />
+      {/* Notification is now handled by NotificationProvider */}
     </div>
   )
 }
