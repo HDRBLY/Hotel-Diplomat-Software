@@ -1,0 +1,66 @@
+[
+  {
+    "id": "1753278328710",
+    "type": "guest_checked_in",
+    "guestName": "user",
+    "roomNumber": "104",
+    "time": "Just now",
+    "status": "completed"
+  },
+  {
+    "id": "1753276993494",
+    "type": "guest_checked_out",
+    "guestName": "test",
+    "roomNumber": "219",
+    "time": "Just now",
+    "status": "completed"
+  },
+  {
+    "id": "1753276967798",
+    "type": "guest_checked_out",
+    "guestName": "AMAN",
+    "roomNumber": "101",
+    "time": "Just now",
+    "status": "completed"
+  },
+  {
+    "id": "1753276950203",
+    "type": "guest_checked_out",
+    "guestName": "Vinod",
+    "roomNumber": "211",
+    "time": "Just now",
+    "status": "completed"
+  },
+  {
+    "id": "1753275767624",
+    "type": "guest_checked_in",
+    "guestName": "test",
+    "roomNumber": "219",
+    "time": "Just now",
+    "status": "completed"
+  },
+  {
+    "id": "1753273866129",
+    "type": "guest_checked_in",
+    "guestName": "Vinod",
+    "roomNumber": "211",
+    "time": "Just now",
+    "status": "completed"
+  },
+  {
+    "id": "1753271995662",
+    "type": "guest_checked_in",
+    "guestName": "AMAN",
+    "roomNumber": "101",
+    "time": "Just now",
+    "status": "completed"
+  },
+  {
+    "id": "1",
+    "type": "guest_checked_in",
+    "guestName": "Aron Sir",
+    "roomNumber": "216",
+    "time": "2 hours ago",
+    "status": "completed"
+  }
+]

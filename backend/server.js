@@ -1,0 +1,1405 @@
+const express = require('express');
+const cors = require('cors');
+const http = require('http');
+const socketIo = require('socket.io');
+const path = require('path');
+const fs = require('fs');
+require('dotenv').config({ path: './config.env' });
+
+const app = express();
+const server = http.createServer(app);
+const io = socketIo(server, {
+  cors: {
+    origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+    methods: ["GET", "POST"]
+  }
+});
+
+// Middleware
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+  credentials: true
+}));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Data storage (simple JSON files for now)
+const dataDir = path.join(__dirname, 'data');
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir);
+}
+
+// Initialize data files if they don't exist
+const dataFiles = ['users.json', 'rooms.json', 'guests.json', 'reservations.json', 'activities.json'];
+dataFiles.forEach(file => {
+  const filePath = path.join(dataDir, file);
+  if (!fs.existsSync(filePath)) {
+    fs.writeFileSync(filePath, JSON.stringify([]));
+  }
+});
+
+// Helper functions for data management
+const readData = (filename) => {
+  try {
+    const data = fs.readFileSync(path.join(dataDir, filename), 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.error(`Error reading ${filename}:`, error);
+    return [];
+  }
+};
+
+const writeData = (filename, data) => {
+  try {
+    fs.writeFileSync(path.join(dataDir, filename), JSON.stringify(data, null, 2));
+    return true;
+  } catch (error) {
+    console.error(`Error writing ${filename}:`, error);
+    return false;
+  }
+};
+
+// Initialize default data if empty
+const initializeDefaultData = () => {
+  // Initialize users if empty
+  let users = readData('users.json');
+  if (users.length === 0) {
+    users = [
+      {
+        id: '1',
+        username: 'admin',
+        password: '$2a$10$rQZ8K9mN2pL1vX3yJ6hG8eF4sD7aB2cE5fH9iK3lM6nO7pQ8rS1tU4vW7xY0z',
+        name: 'System Administrator',
+        role: 'admin',
+        email: 'admin@hoteldiplomat.com',
+        isActive: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '2',
+        username: 'manager',
+        password: '$2a$10$rQZ8K9mN2pL1vX3yJ6hG8eF4sD7aB2cE5fH9iK3lM6nO7pQ8rS1tU4vW7xY0z',
+        name: 'Hotel Manager',
+        role: 'manager',
+        email: 'manager@hoteldiplomat.com',
+        isActive: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '3',
+        username: 'staff',
+        password: '$2a$10$rQZ8K9mN2pL1vX3yJ6hG8eF4sD7aB2cE5fH9iK3lM6nO7pQ8rS1tU4vW7xY0z',
+        name: 'Front Desk Staff',
+        role: 'staff',
+        email: 'staff@hoteldiplomat.com',
+        isActive: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '4',
+        username: 'accounts',
+        password: '$2a$10$rQZ8K9mN2pL1vX3yJ6hG8eF4sD7aB2cE5fH9iK3lM6nO7pQ8rS1tU4vW7xY0z',
+        name: 'Accounts User',
+        role: 'accounts',
+        email: 'accounts@hoteldiplomat.com',
+        isActive: true,
+        createdAt: new Date().toISOString()
+      }
+    ];
+    writeData('users.json', users);
+  }
+
+  // Initialize rooms if empty
+  let rooms = readData('rooms.json');
+  if (rooms.length === 0) {
+    rooms = [
+      {
+        id: '1',
+        number: '101',
+        type: 'STANDARD',
+        status: 'AVAILABLE',
+        floor: 1,
+        price: 1500,
+        amenities: ['AC', 'TV', 'WiFi'],
+        category: 'COUPLE',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '2',
+        number: '102',
+        type: 'STANDARD',
+        status: 'AVAILABLE',
+        floor: 1,
+        price: 1500,
+        amenities: ['AC', 'TV', 'WiFi'],
+        category: 'SOLO',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '3',
+        number: '103',
+        type: 'STANDARD',
+        status: 'AVAILABLE',
+        floor: 1,
+        price: 1500,
+        amenities: ['AC', 'TV', 'WiFi'],
+        category: 'CORPORATE',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '4',
+        number: '104',
+        type: 'STANDARD',
+        status: 'AVAILABLE',
+        floor: 1,
+        price: 1500,
+        amenities: ['AC', 'TV', 'WiFi'],
+        category: 'FAMILY',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '5',
+        number: '201',
+        type: 'DELUXE',
+        status: 'AVAILABLE',
+        floor: 2,
+        price: 2500,
+        amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony'],
+        category: 'COUPLE',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '6',
+        number: '202',
+        type: 'SUITE',
+        status: 'AVAILABLE',
+        floor: 2,
+        price: 4000,
+        amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony', 'Jacuzzi'],
+        category: 'COUPLE',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '7',
+        number: '203',
+        type: 'DELUXE',
+        status: 'AVAILABLE',
+        floor: 2,
+        price: 2500,
+        amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony'],
+        category: 'SOLO',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '8',
+        number: '204',
+        type: 'DELUXE',
+        status: 'AVAILABLE',
+        floor: 2,
+        price: 2500,
+        amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony'],
+        category: 'SOLO',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '9',
+        number: '206',
+        type: 'DELUXE',
+        status: 'AVAILABLE',
+        floor: 2,
+        price: 2500,
+        amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony'],
+        category: 'CORPORATE',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '10',
+        number: '208',
+        type: 'DELUXE',
+        status: 'AVAILABLE',
+        floor: 2,
+        price: 2500,
+        amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony'],
+        category: 'CORPORATE',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '11',
+        number: '210',
+        type: 'DELUXE',
+        status: 'AVAILABLE',
+        floor: 2,
+        price: 2500,
+        amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony'],
+        category: 'SOLO',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '12',
+        number: '212',
+        type: 'DELUXE',
+        status: 'AVAILABLE',
+        floor: 2,
+        price: 2500,
+        amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony'],
+        category: 'SOLO',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '13',
+        number: '214',
+        type: 'DELUXE',
+        status: 'AVAILABLE',
+        floor: 2,
+        price: 2500,
+        amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony'],
+        category: 'SOLO',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '14',
+        number: '216',
+        type: 'SUITE',
+        status: 'OCCUPIED',
+        floor: 2,
+        price: 4000,
+        amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony', 'Jacuzzi'],
+        category: 'SOLO',
+        currentGuest: 'Aron Sir',
+        checkInDate: '2025-07-22',
+        checkOutDate: '2025-07-25',
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '15',
+        number: '218',
+        type: 'SUITE',
+        status: 'AVAILABLE',
+        floor: 2,
+        price: 4000,
+        amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony', 'Jacuzzi'],
+        category: 'COUPLE',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '16',
+        number: '219',
+        type: 'DELUXE',
+        status: 'AVAILABLE',
+        floor: 2,
+        price: 2500,
+        amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony'],
+        category: 'SOLO',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '17',
+        number: '220',
+        type: 'DELUXE',
+        status: 'AVAILABLE',
+        floor: 2,
+        price: 2500,
+        amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony'],
+        category: 'CORPORATE',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '18',
+        number: '221',
+        type: 'DELUXE',
+        status: 'AVAILABLE',
+        floor: 2,
+        price: 2500,
+        amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony'],
+        category: 'CORPORATE',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '19',
+        number: '222',
+        type: 'DELUXE',
+        status: 'AVAILABLE',
+        floor: 2,
+        price: 2500,
+        amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony'],
+        category: 'SOLO',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '20',
+        number: '223',
+        type: 'DELUXE',
+        status: 'AVAILABLE',
+        floor: 2,
+        price: 2500,
+        amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony'],
+        category: 'SOLO',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '21',
+        number: '224',
+        type: 'DELUXE',
+        status: 'AVAILABLE',
+        floor: 2,
+        price: 2500,
+        amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony'],
+        category: 'SOLO',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '22',
+        number: '225',
+        type: 'DELUXE',
+        status: 'AVAILABLE',
+        floor: 2,
+        price: 2500,
+        amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony'],
+        category: 'SOLO',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '23',
+        number: '226',
+        type: 'DELUXE',
+        status: 'AVAILABLE',
+        floor: 2,
+        price: 2500,
+        amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony'],
+        category: 'SOLO',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '24',
+        number: '301',
+        type: 'STANDARD',
+        status: 'AVAILABLE',
+        floor: 3,
+        price: 1500,
+        amenities: ['AC', 'TV', 'WiFi'],
+        category: 'SOLO',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '25',
+        number: '303',
+        type: 'STANDARD',
+        status: 'AVAILABLE',
+        floor: 3,
+        price: 1500,
+        amenities: ['AC', 'TV', 'WiFi'],
+        category: 'SOLO',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '26',
+        number: '304',
+        type: 'STANDARD',
+        status: 'AVAILABLE',
+        floor: 3,
+        price: 1500,
+        amenities: ['AC', 'TV', 'WiFi'],
+        category: 'SOLO',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '27',
+        number: '305',
+        type: 'STANDARD',
+        status: 'AVAILABLE',
+        floor: 3,
+        price: 1500,
+        amenities: ['AC', 'TV', 'WiFi'],
+        category: 'SOLO',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '28',
+        number: '306',
+        type: 'STANDARD',
+        status: 'AVAILABLE',
+        floor: 3,
+        price: 1500,
+        amenities: ['AC', 'TV', 'WiFi'],
+        category: 'SOLO',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '29',
+        number: '307',
+        type: 'STANDARD',
+        status: 'AVAILABLE',
+        floor: 3,
+        price: 1500,
+        amenities: ['AC', 'TV', 'WiFi'],
+        category: 'SOLO',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '30',
+        number: '308',
+        type: 'STANDARD',
+        status: 'AVAILABLE',
+        floor: 3,
+        price: 1500,
+        amenities: ['AC', 'TV', 'WiFi'],
+        category: 'SOLO',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '31',
+        number: '309',
+        type: 'STANDARD',
+        status: 'AVAILABLE',
+        floor: 3,
+        price: 1500,
+        amenities: ['AC', 'TV', 'WiFi'],
+        category: 'SOLO',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '32',
+        number: '310',
+        type: 'STANDARD',
+        status: 'AVAILABLE',
+        floor: 3,
+        price: 1500,
+        amenities: ['AC', 'TV', 'WiFi'],
+        category: 'SOLO',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '33',
+        number: '311',
+        type: 'STANDARD',
+        status: 'AVAILABLE',
+        floor: 3,
+        price: 1500,
+        amenities: ['AC', 'TV', 'WiFi'],
+        category: 'SOLO',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '34',
+        number: '312',
+        type: 'STANDARD',
+        status: 'AVAILABLE',
+        floor: 3,
+        price: 1500,
+        amenities: ['AC', 'TV', 'WiFi'],
+        category: 'SOLO',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '35',
+        number: '401',
+        type: 'PRESIDENTIAL',
+        status: 'AVAILABLE',
+        floor: 4,
+        price: 8000,
+        amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony', 'Jacuzzi', 'Butler'],
+        category: 'CORPORATE',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '36',
+        number: '402',
+        type: 'PRESIDENTIAL',
+        status: 'AVAILABLE',
+        floor: 4,
+        price: 8000,
+        amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony', 'Jacuzzi', 'Butler'],
+        category: 'CORPORATE',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '37',
+        number: '403',
+        type: 'PRESIDENTIAL',
+        status: 'AVAILABLE',
+        floor: 4,
+        price: 8000,
+        amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony', 'Jacuzzi', 'Butler'],
+        category: 'CORPORATE',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '38',
+        number: '404',
+        type: 'PRESIDENTIAL',
+        status: 'AVAILABLE',
+        floor: 4,
+        price: 8000,
+        amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony', 'Jacuzzi', 'Butler'],
+        category: 'CORPORATE',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '39',
+        number: '405',
+        type: 'PRESIDENTIAL',
+        status: 'AVAILABLE',
+        floor: 4,
+        price: 8000,
+        amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony', 'Jacuzzi', 'Butler'],
+        category: 'CORPORATE',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '40',
+        number: '406',
+        type: 'PRESIDENTIAL',
+        status: 'AVAILABLE',
+        floor: 4,
+        price: 8000,
+        amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony', 'Jacuzzi', 'Butler'],
+        category: 'CORPORATE',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '41',
+        number: '407',
+        type: 'PRESIDENTIAL',
+        status: 'AVAILABLE',
+        floor: 4,
+        price: 8000,
+        amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony', 'Jacuzzi', 'Butler'],
+        category: 'CORPORATE',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '42',
+        number: '408',
+        type: 'PRESIDENTIAL',
+        status: 'AVAILABLE',
+        floor: 4,
+        price: 8000,
+        amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony', 'Jacuzzi', 'Butler'],
+        category: 'CORPORATE',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '43',
+        number: '409',
+        type: 'PRESIDENTIAL',
+        status: 'AVAILABLE',
+        floor: 4,
+        price: 8000,
+        amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony', 'Jacuzzi', 'Butler'],
+        category: 'CORPORATE',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '44',
+        number: '410',
+        type: 'PRESIDENTIAL',
+        status: 'AVAILABLE',
+        floor: 4,
+        price: 8000,
+        amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony', 'Jacuzzi', 'Butler'],
+        category: 'CORPORATE',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '45',
+        number: '411',
+        type: 'PRESIDENTIAL',
+        status: 'AVAILABLE',
+        floor: 4,
+        price: 8000,
+        amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony', 'Jacuzzi', 'Butler'],
+        category: 'CORPORATE',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      }
+    ];
+    writeData('rooms.json', rooms);
+  }
+
+  // Initialize guests if empty
+  let guests = readData('guests.json');
+  if (guests.length === 0) {
+    guests = [
+      {
+        id: '1',
+        name: 'Aron Sir',
+        email: 'aron@example.com',
+        phone: '9876543210',
+        roomNumber: '216',
+        checkInDate: '2025-07-22',
+        checkOutDate: '2025-07-25',
+        status: 'checked-in',
+        totalAmount: 12000,
+        paidAmount: 12000,
+        address: 'Mumbai, Maharashtra',
+        idProof: 'AADHAR-123456789012',
+        category: 'solo',
+        complimentary: false,
+        createdAt: '2025-07-22T10:00:00.000Z'
+      }
+    ];
+    writeData('guests.json', guests);
+  }
+
+  // Initialize activities if empty
+  let activities = readData('activities.json');
+  if (activities.length === 0) {
+    activities = [
+      {
+        id: '1',
+        type: 'guest_checked_in',
+        guestName: 'Aron Sir',
+        roomNumber: '216',
+        time: '2 hours ago',
+        status: 'completed'
+      }
+    ];
+    writeData('activities.json', activities);
+  }
+};
+
+// Initialize default data
+initializeDefaultData();
+
+// Socket.io connection handling
+io.on('connection', (socket) => {
+  console.log('Client connected:', socket.id);
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+  });
+});
+
+// Broadcast function for real-time updates
+const broadcastUpdate = (event, data) => {
+  io.emit(event, data);
+};
+
+// Routes
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', message: 'Hotel Diplomat Backend is running' });
+});
+
+// Authentication routes
+app.post('/api/auth/login', (req, res) => {
+  const { username, password } = req.body;
+  
+  if (!username || !password) {
+    return res.status(400).json({ success: false, message: 'Username and password are required' });
+  }
+
+  const users = readData('users.json');
+  const user = users.find(u => u.username === username);
+
+  if (!user) {
+    return res.status(401).json({ success: false, message: 'Invalid credentials' });
+  }
+
+  // For demo purposes, accept any password (in production, use bcrypt.compare)
+  const bcrypt = require('bcryptjs');
+  const isValidPassword = bcrypt.compareSync(password, user.password) || password === 'admin123' || password === 'manager123' || password === 'staff123' || password === 'accounts123';
+
+  if (!isValidPassword) {
+    return res.status(401).json({ success: false, message: 'Invalid credentials' });
+  }
+
+  const jwt = require('jsonwebtoken');
+  const token = jwt.sign(
+    { userId: user.id, username: user.username, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: '24h' }
+  );
+
+  // Update last login
+  user.lastLogin = new Date().toISOString();
+  writeData('users.json', users);
+
+  res.json({
+    success: true,
+    data: {
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        role: user.role,
+        email: user.email
+      }
+    }
+  });
+});
+
+// Dashboard stats
+app.get('/api/reports/dashboard', (req, res) => {
+  const rooms = readData('rooms.json');
+  const guests = readData('guests.json');
+  const reservations = readData('reservations.json');
+
+  const occupiedRooms = rooms.filter(room => room.status === 'OCCUPIED').length;
+  const availableRooms = rooms.filter(room => room.status === 'AVAILABLE').length;
+  const totalRooms = rooms.length;
+  const totalGuests = guests.filter(guest => guest.status === 'ACTIVE').length;
+  const occupancyRate = totalRooms > 0 ? ((occupiedRooms / totalRooms) * 100).toFixed(1) : 0;
+
+  // Calculate today's revenue (mock data for now)
+  const todayRevenue = 45000;
+
+  res.json({
+    success: true,
+    data: {
+      occupiedRooms,
+      availableRooms,
+      totalRooms,
+      todayCheckins: 8,
+      todayCheckouts: 5,
+      todayRevenue,
+      pendingReservations: 12,
+      maintenanceRooms: 1,
+      cleaningRooms: 1,
+      reservedRooms: 2,
+      totalGuests,
+      occupancyRate: parseFloat(occupancyRate),
+      revenue: todayRevenue
+    }
+  });
+});
+
+// Rooms API
+app.get('/api/rooms', (req, res) => {
+  const rooms = readData('rooms.json');
+  
+  // Convert backend format to frontend format
+  const formattedRooms = rooms.map(room => ({
+    ...room,
+    type: room.type.toLowerCase(),
+    status: room.status.toLowerCase(),
+    category: room.category.toLowerCase(),
+    amenities: room.amenities.map(amenity => amenity.toLowerCase())
+  }));
+  
+  res.json({ success: true, data: formattedRooms });
+});
+
+app.post('/api/rooms', (req, res) => {
+  const roomData = req.body;
+  const rooms = readData('rooms.json');
+  
+  const newRoom = {
+    id: Date.now().toString(),
+    ...roomData,
+    status: 'AVAILABLE',
+    currentGuest: null,
+    checkInDate: null,
+    checkOutDate: null,
+    lastCleaned: new Date().toISOString(),
+    createdAt: new Date().toISOString()
+  };
+
+  rooms.push(newRoom);
+  writeData('rooms.json', rooms);
+
+  // Broadcast room update
+  broadcastUpdate('room_updated', newRoom);
+
+  res.json({ success: true, data: newRoom });
+});
+
+app.put('/api/rooms/:id', (req, res) => {
+  const { id } = req.params;
+  const updateData = req.body;
+  const rooms = readData('rooms.json');
+  
+  const roomIndex = rooms.findIndex(room => room.id === id);
+  if (roomIndex === -1) {
+    return res.status(404).json({ success: false, message: 'Room not found' });
+  }
+
+  rooms[roomIndex] = { ...rooms[roomIndex], ...updateData, updatedAt: new Date().toISOString() };
+  writeData('rooms.json', rooms);
+
+  // Broadcast room update
+  broadcastUpdate('room_updated', rooms[roomIndex]);
+
+  res.json({ success: true, data: rooms[roomIndex] });
+});
+
+app.delete('/api/rooms/:id', (req, res) => {
+  const { id } = req.params;
+  const rooms = readData('rooms.json');
+  
+  const roomIndex = rooms.findIndex(room => room.id === id);
+  if (roomIndex === -1) {
+    return res.status(404).json({ success: false, message: 'Room not found' });
+  }
+
+  const deletedRoom = rooms.splice(roomIndex, 1)[0];
+  writeData('rooms.json', rooms);
+
+  // Broadcast room deletion
+  broadcastUpdate('room_deleted', { id });
+
+  res.json({ success: true, message: 'Room deleted successfully' });
+});
+
+// Guests API
+app.get('/api/guests', (req, res) => {
+  const guests = readData('guests.json');
+  res.json({ success: true, data: guests });
+});
+
+app.post('/api/guests', (req, res) => {
+  const guestData = req.body;
+  const guests = readData('guests.json');
+  
+  const newGuest = {
+    id: Date.now().toString(),
+    name: guestData.name,
+    email: guestData.email || '',
+    phone: guestData.phone,
+    roomNumber: guestData.roomNumber || '',
+    checkInDate: guestData.checkInDate || new Date().toISOString().split('T')[0],
+    checkOutDate: guestData.checkOutDate || '',
+    status: guestData.status || 'checked-in',
+    totalAmount: guestData.totalAmount || 0,
+    paidAmount: guestData.paidAmount || 0,
+    address: guestData.address || '',
+    idProof: guestData.idProof || '',
+    category: guestData.category || 'couple',
+    complimentary: guestData.complimentary || false,
+    createdAt: new Date().toISOString()
+  };
+
+  guests.push(newGuest);
+  writeData('guests.json', guests);
+
+  // Update room status if roomNumber is provided
+  if (guestData.roomNumber) {
+    const rooms = readData('rooms.json');
+    const roomIndex = rooms.findIndex(room => room.number === guestData.roomNumber);
+    
+    if (roomIndex !== -1) {
+      rooms[roomIndex].status = 'OCCUPIED';
+      rooms[roomIndex].currentGuest = guestData.name;
+      rooms[roomIndex].checkInDate = guestData.checkInDate || new Date().toISOString();
+      rooms[roomIndex].checkOutDate = guestData.checkOutDate;
+      // Update room category to match guest category
+      rooms[roomIndex].category = guestData.category?.toUpperCase() || 'COUPLE';
+      writeData('rooms.json', rooms);
+      
+      // Broadcast room update with correct format
+      const updatedRoom = {
+        ...rooms[roomIndex],
+        type: rooms[roomIndex].type.toLowerCase(),
+        status: rooms[roomIndex].status.toLowerCase(),
+        category: rooms[roomIndex].category.toLowerCase(),
+        amenities: rooms[roomIndex].amenities.map(amenity => amenity.toLowerCase())
+      };
+      broadcastUpdate('room_updated', updatedRoom);
+    }
+  }
+
+  // Add to activities
+  const activities = readData('activities.json');
+  activities.unshift({
+    id: Date.now().toString(),
+    type: 'guest_checked_in',
+    guestName: guestData.name,
+    roomNumber: guestData.roomNumber || 'N/A',
+    time: 'Just now',
+    status: 'completed'
+  });
+  writeData('activities.json', activities);
+
+  // Broadcast guest update
+  broadcastUpdate('guest_checked_in', newGuest);
+  broadcastUpdate('activity_updated', activities[0]);
+
+  res.json({ success: true, data: newGuest });
+});
+
+app.put('/api/guests/:id', (req, res) => {
+  const { id } = req.params;
+  const updateData = req.body;
+  const guests = readData('guests.json');
+  
+  const guestIndex = guests.findIndex(guest => guest.id === id);
+  if (guestIndex === -1) {
+    return res.status(404).json({ success: false, message: 'Guest not found' });
+  }
+
+  // Store old status for comparison
+  const oldStatus = guests[guestIndex].status;
+  
+  guests[guestIndex] = { ...guests[guestIndex], ...updateData, updatedAt: new Date().toISOString() };
+  writeData('guests.json', guests);
+
+  // If guest is being checked out, update room status
+  if (updateData.status === 'checked-out' && guests[guestIndex].roomNumber) {
+    const rooms = readData('rooms.json');
+    const roomIndex = rooms.findIndex(room => room.number === guests[guestIndex].roomNumber);
+    
+    if (roomIndex !== -1) {
+      rooms[roomIndex].status = 'AVAILABLE';
+      rooms[roomIndex].currentGuest = null;
+      rooms[roomIndex].checkInDate = null;
+      rooms[roomIndex].checkOutDate = null;
+      // Reset room category to default based on room type
+      if (rooms[roomIndex].type === 'STANDARD') {
+        rooms[roomIndex].category = 'COUPLE';
+      } else if (rooms[roomIndex].type === 'DELUXE') {
+        rooms[roomIndex].category = 'SOLO';
+      } else if (rooms[roomIndex].type === 'SUITE') {
+        rooms[roomIndex].category = 'COUPLE';
+      } else if (rooms[roomIndex].type === 'PRESIDENTIAL') {
+        rooms[roomIndex].category = 'CORPORATE';
+      }
+      writeData('rooms.json', rooms);
+      
+      // Broadcast room update with correct format
+      const updatedRoom = {
+        ...rooms[roomIndex],
+        type: rooms[roomIndex].type.toLowerCase(),
+        status: rooms[roomIndex].status.toLowerCase(),
+        category: rooms[roomIndex].category.toLowerCase(),
+        amenities: rooms[roomIndex].amenities.map(amenity => amenity.toLowerCase())
+      };
+      broadcastUpdate('room_updated', updatedRoom);
+    }
+  }
+
+  // Add to activities for checkout
+  if (updateData.status === 'checked-out' && oldStatus !== 'checked-out') {
+    const activities = readData('activities.json');
+    activities.unshift({
+      id: Date.now().toString(),
+      type: 'guest_checked_out',
+      guestName: guests[guestIndex].name || 'Unknown',
+      roomNumber: guests[guestIndex].roomNumber || 'N/A',
+      time: 'Just now',
+      status: 'completed'
+    });
+    writeData('activities.json', activities);
+    
+    // Broadcast activity update
+    broadcastUpdate('activity_updated', activities[0]);
+  }
+
+  // Broadcast guest update
+  broadcastUpdate('guest_updated', guests[guestIndex]);
+
+  res.json({ success: true, data: guests[guestIndex] });
+});
+
+app.delete('/api/guests/:id', (req, res) => {
+  const { id } = req.params;
+  const guests = readData('guests.json');
+  
+  const guestIndex = guests.findIndex(guest => guest.id === id);
+  if (guestIndex === -1) {
+    return res.status(404).json({ success: false, message: 'Guest not found' });
+  }
+
+  const deletedGuest = guests.splice(guestIndex, 1)[0];
+  writeData('guests.json', guests);
+
+  // Broadcast guest deletion
+  broadcastUpdate('guest_deleted', { id });
+
+  res.json({ success: true, message: 'Guest deleted successfully' });
+});
+
+// Reservations API
+app.get('/api/reservations', (req, res) => {
+  const reservations = readData('reservations.json');
+  res.json({ success: true, data: reservations });
+});
+
+app.post('/api/reservations', (req, res) => {
+  const reservationData = req.body;
+  const reservations = readData('reservations.json');
+  
+  const newReservation = {
+    id: Date.now().toString(),
+    ...reservationData,
+    status: 'PENDING',
+    bookingDate: new Date().toISOString(),
+    createdAt: new Date().toISOString()
+  };
+
+  reservations.push(newReservation);
+  writeData('reservations.json', reservations);
+
+  // Add to activities
+  const activities = readData('activities.json');
+  activities.unshift({
+    id: Date.now().toString(),
+    type: 'reservation',
+    guestName: reservationData.guestName || 'Unknown',
+    roomNumber: reservationData.roomNumber || 'N/A',
+    time: 'Just now',
+    status: 'pending'
+  });
+  writeData('activities.json', activities);
+
+  // Broadcast reservation update
+  broadcastUpdate('reservation_created', newReservation);
+  broadcastUpdate('activity_updated', activities[0]);
+
+  res.json({ success: true, data: newReservation });
+});
+
+// Activities API
+app.get('/api/activities', (req, res) => {
+  const activities = readData('activities.json');
+  res.json({ success: true, data: activities });
+});
+
+// Reports API
+app.get('/api/reports/revenue', (req, res) => {
+  const { startDate, endDate } = req.query;
+  const guests = readData('guests.json');
+  
+  // Generate revenue data based on actual guest check-ins
+  const revenueData = [];
+  const today = new Date();
+  
+  // Generate last 7 days of data (more realistic for current data)
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const dateStr = date.toISOString().split('T')[0];
+    
+    // Find guests who checked in on this date
+    const dayGuests = guests.filter(guest => 
+      guest.checkInDate === dateStr && guest.status === 'checked-in'
+    );
+    
+    const dayRevenue = dayGuests.reduce((sum, guest) => sum + (guest.totalAmount || 0), 0);
+    const bookings = dayGuests.length;
+    const averageRate = bookings > 0 ? Math.round(dayRevenue / bookings) : 0;
+    
+    revenueData.push({
+      date: dateStr,
+      revenue: dayRevenue,
+      bookings: bookings,
+      averageRate: averageRate
+    });
+  }
+  
+  // Filter by date range if provided
+  let filteredData = revenueData;
+  if (startDate && endDate) {
+    filteredData = revenueData.filter(item => {
+      const itemDate = new Date(item.date);
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      return itemDate >= start && itemDate <= end;
+    });
+  }
+  
+  res.json({ success: true, data: filteredData });
+});
+
+app.get('/api/reports/occupancy', (req, res) => {
+  const rooms = readData('rooms.json');
+  const guests = readData('guests.json');
+  const today = new Date();
+  const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  
+  const occupancyData = daysOfWeek.map((day, index) => {
+    // Calculate current occupancy based on actual room status
+    const occupiedRooms = rooms.filter(room => room.status === 'OCCUPIED').length;
+    const totalRooms = rooms.length;
+    const rate = totalRooms > 0 ? Math.round((occupiedRooms / totalRooms) * 100 * 10) / 10 : 0;
+    
+    return {
+      day: day,
+      rate: rate,
+      availableRooms: totalRooms - occupiedRooms,
+      totalRooms: totalRooms,
+      occupiedRooms: occupiedRooms
+    };
+  });
+  
+  res.json({ success: true, data: occupancyData });
+});
+
+app.get('/api/reports/guests', (req, res) => {
+  const guests = readData('guests.json');
+  
+  const guestData = guests.map(guest => ({
+    name: guest.name,
+    roomNumber: guest.roomNumber || 'N/A',
+    checkInDate: guest.checkInDate || 'N/A',
+    checkOutDate: guest.checkOutDate || 'N/A',
+    status: guest.status === 'checked-in' ? 'Checked-in' : 
+            guest.status === 'checked-out' ? 'Checked-out' : 'Reserved',
+    amount: guest.totalAmount || 0
+  }));
+  
+  res.json({ success: true, data: guestData });
+});
+
+app.get('/api/reports/rooms', (req, res) => {
+  const rooms = readData('rooms.json');
+  const guests = readData('guests.json');
+  
+  const roomData = rooms.map(room => {
+    // Calculate revenue for this room
+    const roomGuests = guests.filter(guest => 
+      guest.roomNumber === room.number && guest.status === 'checked-in'
+    );
+    const revenue = roomGuests.reduce((sum, guest) => sum + (guest.totalAmount || 0), 0);
+    
+    return {
+      number: room.number,
+      type: room.type?.toLowerCase() || 'standard',
+      status: room.status === 'OCCUPIED' ? 'Occupied' : 
+              room.status === 'AVAILABLE' ? 'Available' : 
+              room.status === 'MAINTENANCE' ? 'Maintenance' : 'Available',
+      lastCleaned: room.lastCleaned ? new Date(room.lastCleaned).toISOString().split('T')[0] : 'N/A',
+      revenue: revenue
+    };
+  });
+  
+  res.json({ success: true, data: roomData });
+});
+
+app.get('/api/reports/overview', (req, res) => {
+  const rooms = readData('rooms.json');
+  const guests = readData('guests.json');
+  const activities = readData('activities.json');
+  
+  const occupiedRooms = rooms.filter(room => room.status === 'OCCUPIED').length;
+  const totalRooms = rooms.length;
+  const occupancyRate = totalRooms > 0 ? Math.round((occupiedRooms / totalRooms) * 100 * 10) / 10 : 0;
+  
+  const totalRevenue = guests
+    .filter(guest => guest.status === 'checked-in')
+    .reduce((sum, guest) => sum + (guest.totalAmount || 0), 0);
+  
+  const totalGuests = guests.filter(guest => guest.status === 'checked-in').length;
+  const totalBookings = guests.length;
+  
+  const averageRoomRate = totalGuests > 0 ? Math.round(totalRevenue / totalGuests) : 0;
+  
+  // Calculate cancellation rate (mock for now)
+  const cancellationRate = 12.5;
+  
+  res.json({
+    success: true,
+    data: {
+      occupancyRate,
+      totalRevenue,
+      averageRoomRate,
+      totalGuests,
+      totalBookings,
+      cancellationRate
+    }
+  });
+});
+
+// Clear all data endpoint
+app.post('/api/reports/clear-data', (req, res) => {
+  try {
+    // Clear all data files
+    writeData('guests.json', []);
+    writeData('rooms.json', []);
+    writeData('reservations.json', []);
+    writeData('activities.json', []);
+    
+    // Reinitialize with default data
+    initializeDefaultData();
+    
+    // Broadcast data cleared event
+    broadcastUpdate('data_cleared', { message: 'All data has been cleared' });
+    
+    res.json({ success: true, message: 'All data cleared successfully' });
+  } catch (error) {
+    console.error('Error clearing data:', error);
+    res.status(500).json({ success: false, message: 'Failed to clear data' });
+  }
+});
+
+const PORT = process.env.PORT || 3001;
+server.listen(PORT, () => {
+  console.log(`🚀 Hotel Diplomat Backend running on port ${PORT}`);
+  console.log(`📡 WebSocket server ready for real-time updates`);
+  console.log(`🌐 API available at http://localhost:${PORT}/api`);
+}); 
