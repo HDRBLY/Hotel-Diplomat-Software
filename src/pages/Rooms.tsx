@@ -111,22 +111,32 @@ const Rooms = () => {
   const [shiftDate, setShiftDate] = useState('')
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   // Manual refresh function
   const handleManualRefresh = async () => {
     setIsRefreshing(true)
+    setError(null)
     try {
       console.log('Manual refresh triggered...')
       const response = await fetch('http://localhost:3001/api/rooms')
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
       const data = await response.json()
       if (data.success) {
         console.log('Manual refresh successful:', data.data)
         setRooms(data.data)
         showNotification('success', 'Rooms data refreshed successfully!')
+      } else {
+        throw new Error('API returned success: false')
       }
     } catch (error) {
       console.error('Manual refresh failed:', error)
-      showNotification('error', 'Failed to refresh rooms data')
+      const errorMessage = error instanceof Error ? error.message : 'Failed to refresh rooms data'
+      setError(errorMessage)
+      showNotification('error', errorMessage)
     } finally {
       setIsRefreshing(false)
     }
@@ -146,6 +156,8 @@ const Rooms = () => {
   // Fetch rooms from backend and setup WebSocket
   useEffect(() => {
     const fetchRooms = async () => {
+      setIsLoading(true)
+      setError(null)
       try {
         console.log('Fetching rooms from API...')
         const response = await fetch('http://localhost:3001/api/rooms')
@@ -167,6 +179,8 @@ const Rooms = () => {
         }
       } catch (error) {
         console.error('Error fetching rooms:', error)
+        const errorMessage = error instanceof Error ? error.message : 'Failed to fetch rooms'
+        setError(errorMessage)
         // Fallback to mock data if API fails
         setRooms([
       {
@@ -566,6 +580,9 @@ const Rooms = () => {
         category: 'family'
       }
         ])
+        showNotification('error', `Failed to fetch rooms: ${errorMessage}`)
+      } finally {
+        setIsLoading(false)
       }
     }
 
@@ -606,7 +623,10 @@ const Rooms = () => {
     })
 
     return () => {
-      newSocket.disconnect()
+      if (newSocket) {
+        newSocket.disconnect()
+        newSocket.removeAllListeners()
+      }
     }
   }, [])
 
@@ -1367,106 +1387,146 @@ const Rooms = () => {
 
       {/* Room Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredRooms.map((room) => (
-          <div key={room.id} className="card hover:shadow-lg transition-shadow">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Room {room.number}</h3>
-                <p className="text-sm text-gray-500">Floor {room.floor}</p>
-                {room.status === 'occupied' && (
-                  <div className={`inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-xs font-semibold ${getCategoryColor(room.category)}`}>
-                    {getCategoryIcon(room.category)}
-                    <span className="ml-1 capitalize">{room.category} Room</span>
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center space-x-2">
-                {getStatusIcon(room.status)}
-                <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(room.status)}`}>
-                  {room.status}
-                </span>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Type:</span>
-                <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(room.type)}`}>
-                  {room.type}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Price:</span>
-                <span className="text-sm font-medium text-gray-900">₹{room.price}/night</span>
-              </div>
-
-              {room.currentGuest && (
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Guest:</span>
-                  <span className="text-sm font-medium text-gray-900">{room.currentGuest}</span>
-                </div>
-              )}
-
-              <div className="flex flex-wrap gap-1">
-                {room.amenities.map((amenity) => (
-                  <div key={amenity} className="flex items-center text-xs text-gray-500">
-                    {getAmenityIcon(amenity)}
-                    <span className="ml-1 capitalize">{amenity}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="pt-3 border-t border-gray-200">
-                <div className="flex justify-between items-center">
-                  <button
-                    onClick={() => setSelectedRoom(room)}
-                    className="text-primary-600 hover:text-primary-900 text-sm font-medium"
-                    title="View room details"
-                  >
-                    View Details
-                  </button>
-                  <div className="flex items-center space-x-1">
-                    {room.status === 'occupied' && hasPermission('rooms:edit') && (
-                      <>
-                        <button 
-                          onClick={() => handleCheckoutRoom(room)}
-                          className="text-green-600 hover:text-green-900"
-                          title="Check out guest"
-                        >
-                          Check Out
-                        </button>
-                        <button 
-                          onClick={() => handleRoomShift(room)}
-                          className="text-orange-600 hover:text-orange-900"
-                          title="Shift guest to another room"
-                        >
-                          Shift Room
-                        </button>
-                      </>
-                    )}
-                    {hasPermission('rooms:edit') && (
-                      <button 
-                        onClick={() => handleEditRoom(room)}
-                        className={`${room.status === 'occupied' ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:text-blue-900'}`}
-                        title={room.status === 'occupied' ? 'Cannot edit occupied room. Check out guest first.' : 'Edit room'}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </button>
-                    )}
-                    <button 
-                      onClick={() => setSelectedRoom(room)}
-                      className="text-gray-400 hover:text-gray-600"
-                      title="More options"
-                    >
-                      <MoreVertical className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
+        {isLoading ? (
+          <div className="col-span-full flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading rooms...</p>
             </div>
           </div>
-        ))}
+        ) : error ? (
+          <div className="col-span-full flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="text-red-500 mb-4">
+                <svg className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <p className="text-gray-900 font-medium mb-2">Failed to load rooms</p>
+              <p className="text-gray-600 mb-4">{error}</p>
+              <button
+                onClick={handleManualRefresh}
+                className="btn-primary"
+                disabled={isRefreshing}
+              >
+                {isRefreshing ? 'Retrying...' : 'Try Again'}
+              </button>
+            </div>
+          </div>
+        ) : filteredRooms.length === 0 ? (
+          <div className="col-span-full flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="text-gray-400 mb-4">
+                <svg className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+              </div>
+              <p className="text-gray-900 font-medium mb-2">No rooms found</p>
+              <p className="text-gray-600">Try adjusting your search or filters</p>
+            </div>
+          </div>
+        ) : (
+          filteredRooms.map((room) => (
+            <div key={room.id} className="card hover:shadow-lg transition-shadow">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Room {room.number}</h3>
+                  <p className="text-sm text-gray-500">Floor {room.floor}</p>
+                  {room.status === 'occupied' && (
+                    <div className={`inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-xs font-semibold ${getCategoryColor(room.category)}`}>
+                      {getCategoryIcon(room.category)}
+                      <span className="ml-1 capitalize">{room.category} Room</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center space-x-2">
+                  {getStatusIcon(room.status)}
+                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(room.status)}`}>
+                    {room.status}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Type:</span>
+                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(room.type)}`}>
+                    {room.type}
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Price:</span>
+                  <span className="text-sm font-medium text-gray-900">₹{room.price}/night</span>
+                </div>
+
+                {room.currentGuest && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Guest:</span>
+                    <span className="text-sm font-medium text-gray-900">{room.currentGuest}</span>
+                  </div>
+                )}
+
+                <div className="flex flex-wrap gap-1">
+                  {room.amenities.map((amenity) => (
+                    <div key={amenity} className="flex items-center text-xs text-gray-500">
+                      {getAmenityIcon(amenity)}
+                      <span className="ml-1 capitalize">{amenity}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pt-3 border-t border-gray-200">
+                  <div className="flex justify-between items-center">
+                    <button
+                      onClick={() => setSelectedRoom(room)}
+                      className="text-primary-600 hover:text-primary-900 text-sm font-medium"
+                      title="View room details"
+                    >
+                      View Details
+                    </button>
+                    <div className="flex items-center space-x-1">
+                      {room.status === 'occupied' && hasPermission('rooms:edit') && (
+                        <>
+                          <button 
+                            onClick={() => handleCheckoutRoom(room)}
+                            className="text-green-600 hover:text-green-900"
+                            title="Check out guest"
+                          >
+                            Check Out
+                          </button>
+                          <button 
+                            onClick={() => handleRoomShift(room)}
+                            className="text-orange-600 hover:text-orange-900"
+                            title="Shift guest to another room"
+                          >
+                            Shift Room
+                          </button>
+                        </>
+                      )}
+                      {hasPermission('rooms:edit') && (
+                        <button 
+                          onClick={() => handleEditRoom(room)}
+                          className={`${room.status === 'occupied' ? 'text-gray-400 cursor-not-allowed' : 'text-blue-600 hover:text-blue-900'}`}
+                          title={room.status === 'occupied' ? 'Cannot edit occupied room. Check out guest first.' : 'Edit room'}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                      )}
+                      <button 
+                        onClick={() => setSelectedRoom(room)}
+                        className="text-gray-400 hover:text-gray-600"
+                        title="More options"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Room Details Modal */}

@@ -49,6 +49,35 @@ const readData = (filename) => {
   }
 };
 
+// Authentication middleware
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ success: false, message: 'Access token required' });
+  }
+
+  const token = authHeader.substring(7);
+  
+  try {
+    const jwt = require('jsonwebtoken');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Check if user still exists and is active
+    const users = readData('users.json');
+    const user = users.find(u => u.id === decoded.userId);
+    
+    if (!user || !user.isActive) {
+      return res.status(401).json({ success: false, message: 'User not found or inactive' });
+    }
+    
+    req.user = user;
+    next();
+  } catch (error) {
+    return res.status(403).json({ success: false, message: 'Invalid or expired token' });
+  }
+};
+
 const writeData = (filename, data) => {
   try {
     fs.writeFileSync(path.join(dataDir, filename), JSON.stringify(data, null, 2));
@@ -64,11 +93,17 @@ const initializeDefaultData = () => {
   // Initialize users if empty
   let users = readData('users.json');
   if (users.length === 0) {
+    const bcrypt = require('bcryptjs');
+    const adminPassword = bcrypt.hashSync('admin123', 10);
+    const managerPassword = bcrypt.hashSync('manager123', 10);
+    const staffPassword = bcrypt.hashSync('staff123', 10);
+    const accountsPassword = bcrypt.hashSync('accounts123', 10);
+    
     users = [
       {
         id: '1',
         username: 'admin',
-        password: '$2a$10$rQZ8K9mN2pL1vX3yJ6hG8eF4sD7aB2cE5fH9iK3lM6nO7pQ8rS1tU4vW7xY0z',
+        password: adminPassword,
         name: 'System Administrator',
         role: 'admin',
         email: 'admin@hoteldiplomat.com',
@@ -78,7 +113,7 @@ const initializeDefaultData = () => {
       {
         id: '2',
         username: 'manager',
-        password: '$2a$10$rQZ8K9mN2pL1vX3yJ6hG8eF4sD7aB2cE5fH9iK3lM6nO7pQ8rS1tU4vW7xY0z',
+        password: managerPassword,
         name: 'Hotel Manager',
         role: 'manager',
         email: 'manager@hoteldiplomat.com',
@@ -88,7 +123,7 @@ const initializeDefaultData = () => {
       {
         id: '3',
         username: 'staff',
-        password: '$2a$10$rQZ8K9mN2pL1vX3yJ6hG8eF4sD7aB2cE5fH9iK3lM6nO7pQ8rS1tU4vW7xY0z',
+        password: staffPassword,
         name: 'Front Desk Staff',
         role: 'staff',
         email: 'staff@hoteldiplomat.com',
@@ -98,7 +133,7 @@ const initializeDefaultData = () => {
       {
         id: '4',
         username: 'accounts',
-        password: '$2a$10$rQZ8K9mN2pL1vX3yJ6hG8eF4sD7aB2cE5fH9iK3lM6nO7pQ8rS1tU4vW7xY0z',
+        password: accountsPassword,
         name: 'Accounts User',
         role: 'accounts',
         email: 'accounts@hoteldiplomat.com',
@@ -873,7 +908,7 @@ app.post('/api/auth/login', (req, res) => {
 
   // For demo purposes, accept any password (in production, use bcrypt.compare)
   const bcrypt = require('bcryptjs');
-  const isValidPassword = bcrypt.compareSync(password, user.password) || password === 'admin123' || password === 'manager123' || password === 'staff123' || password === 'accounts123';
+  const isValidPassword = bcrypt.compareSync(password, user.password);
 
   if (!isValidPassword) {
     return res.status(401).json({ success: false, message: 'Invalid credentials' });
@@ -903,6 +938,34 @@ app.post('/api/auth/login', (req, res) => {
       }
     }
   });
+});
+
+// Token validation endpoint
+app.post('/api/auth/validate', (req, res) => {
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ success: false, message: 'No token provided' });
+  }
+
+  const token = authHeader.substring(7);
+  
+  try {
+    const jwt = require('jsonwebtoken');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Check if user still exists
+    const users = readData('users.json');
+    const user = users.find(u => u.id === decoded.userId);
+    
+    if (!user || !user.isActive) {
+      return res.status(401).json({ success: false, message: 'User not found or inactive' });
+    }
+    
+    res.json({ success: true, message: 'Token is valid' });
+  } catch (error) {
+    res.status(401).json({ success: false, message: 'Invalid token' });
+  }
 });
 
 // Dashboard stats
@@ -1042,6 +1105,8 @@ app.post('/api/guests', (req, res) => {
     idProof: guestData.idProof || '',
     category: guestData.category || 'couple',
     complimentary: guestData.complimentary || false,
+    secondaryGuest: guestData.secondaryGuest || undefined,
+    extraBeds: guestData.extraBeds || undefined,
     createdAt: new Date().toISOString()
   };
 

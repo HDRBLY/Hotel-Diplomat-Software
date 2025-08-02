@@ -19,48 +19,48 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// Mock user database
-const users: Array<{
-  id: string
-  username: string
-  password: string
-  name: string
-  role: 'admin' | 'manager' | 'staff' | 'accounts'
-  email: string
-}> = [
-  {
-    id: '1',
-    username: 'admin',
-    password: 'admin123',
-    name: 'System Administrator',
-    role: 'admin' as const,
-    email: 'admin@hoteldiplomat.com'
-  },
-  {
-    id: '2',
-    username: 'manager',
-    password: 'manager123',
-    name: 'Hotel Manager',
-    role: 'manager' as const,
-    email: 'manager@hoteldiplomat.com'
-  },
-  {
-    id: '3',
-    username: 'staff',
-    password: 'staff123',
-    name: 'Front Desk Staff',
-    role: 'staff' as const,
-    email: 'staff@hoteldiplomat.com'
-  },
-  {
-    id: '4',
-    username: 'accounts',
-    password: 'accounts123',
-    name: 'Accounts User',
-    role: 'accounts' as const,
-    email: 'accounts@hoteldiplomat.com'
-  }
-]
+// Mock user database - REMOVED: Using backend authentication instead
+// const users: Array<{
+//   id: string
+//   username: string
+//   password: string
+//   name: string
+//   role: 'admin' | 'manager' | 'staff' | 'accounts'
+//   email: string
+// }> = [
+//   {
+//     id: '1',
+//     username: 'admin',
+//     password: 'admin123',
+//     name: 'System Administrator',
+//     role: 'admin' as const,
+//     email: 'admin@hoteldiplomat.com'
+//   },
+//   {
+//     id: '2',
+//     username: 'manager',
+//     password: 'manager123',
+//     name: 'Hotel Manager',
+//     role: 'manager' as const,
+//     email: 'manager@hoteldiplomat.com'
+//   },
+//   {
+//     id: '3',
+//     username: 'staff',
+//     password: 'staff123',
+//     name: 'Front Desk Staff',
+//     role: 'staff' as const,
+//     email: 'staff@hoteldiplomat.com'
+//   },
+//   {
+//     id: '4',
+//     username: 'accounts',
+//     password: 'accounts123',
+//     name: 'Accounts User',
+//     role: 'accounts' as const,
+//     email: 'accounts@hoteldiplomat.com'
+//   }
+// ]
 
 // Permission definitions
 const permissions = {
@@ -115,13 +115,66 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }: { 
   const [user, setUser] = useState<User | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
+  // Clear any stale authentication data on app start
+  useEffect(() => {
+    // Clear any old authentication data that might be corrupted
+    const clearStaleAuthData = () => {
+      try {
+        const savedUser = localStorage.getItem('hdr_user')
+        if (savedUser) {
+          const userData = JSON.parse(savedUser)
+          // If user data is missing required fields, clear it
+          if (!userData || !userData.id || !userData.username || !userData.role) {
+            localStorage.removeItem('hdr_user')
+            localStorage.removeItem('hdr_auth_token')
+          }
+        }
+      } catch (error) {
+        // If there's any error parsing the data, clear it
+        localStorage.removeItem('hdr_user')
+        localStorage.removeItem('hdr_auth_token')
+      }
+    }
+    
+    clearStaleAuthData()
+  }, [])
+
   useEffect(() => {
     // Check if user is logged in from localStorage
     const savedUser = localStorage.getItem('hdr_user')
-    if (savedUser) {
-      const userData = JSON.parse(savedUser)
-      setUser(userData)
-      setIsAuthenticated(true)
+    const authToken = localStorage.getItem('hdr_auth_token')
+    
+    if (savedUser && authToken) {
+      try {
+        const userData = JSON.parse(savedUser)
+        // Basic validation of user data
+        if (userData && userData.id && userData.username && userData.role) {
+          // Validate token with backend
+          validateToken(authToken).then(isValid => {
+            if (isValid) {
+              setUser(userData)
+              setIsAuthenticated(true)
+            } else {
+              // Token is invalid, clear authentication data
+              localStorage.removeItem('hdr_user')
+              localStorage.removeItem('hdr_auth_token')
+            }
+          }).catch(() => {
+            // Network error or validation failed, clear authentication data
+            localStorage.removeItem('hdr_user')
+            localStorage.removeItem('hdr_auth_token')
+          })
+        } else {
+          // Invalid user data, clear it
+          localStorage.removeItem('hdr_user')
+          localStorage.removeItem('hdr_auth_token')
+        }
+      } catch (error) {
+        console.error('Error parsing saved user data:', error)
+        // Clear invalid data
+        localStorage.removeItem('hdr_user')
+        localStorage.removeItem('hdr_auth_token')
+      }
     }
   }, [])
 
@@ -137,18 +190,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }: { 
 
       const data = await response.json()
     
-      if (data.success && data.data) {
+      if (response.ok && data.success && data.data) {
         const userData: User = data.data.user
         const token = data.data.token
       
-      setUser(userData)
-      setIsAuthenticated(true)
-      localStorage.setItem('hdr_user', JSON.stringify(userData))
+        setUser(userData)
+        setIsAuthenticated(true)
+        localStorage.setItem('hdr_user', JSON.stringify(userData))
         localStorage.setItem('hdr_auth_token', token)
-      return true
-    }
-    
-    return false
+        return true
+      } else {
+        console.error('Login failed:', data.message || 'Unknown error')
+        return false
+      }
     } catch (error) {
       console.error('Login error:', error)
       return false
@@ -159,6 +213,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }: { 
     setUser(null)
     setIsAuthenticated(false)
     localStorage.removeItem('hdr_user')
+    localStorage.removeItem('hdr_auth_token')
+    localStorage.removeItem('hdr_remember_me')
+    localStorage.removeItem('hdr_lockout')
+  }
+
+  const validateToken = async (token: string): Promise<boolean> => {
+    try {
+      const response = await fetch('http://localhost:3001/api/auth/validate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      return response.ok
+    } catch (error) {
+      console.error('Token validation error:', error)
+      return false
+    }
   }
 
   const hasPermission = (permission: string): boolean => {
