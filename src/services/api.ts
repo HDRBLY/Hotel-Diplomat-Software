@@ -244,7 +244,7 @@ export const roomsAPI = {
     if (params?.fromDate) searchParams.append('fromDate', params.fromDate)
     if (params?.toDate) searchParams.append('toDate', params.toDate)
     
-    return apiRequest(`/rooms/shifts?${searchParams.toString()}`)
+    return apiRequest(`/room-shifts?${searchParams.toString()}`)
   },
 }
 

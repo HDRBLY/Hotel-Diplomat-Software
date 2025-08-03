@@ -347,14 +347,14 @@ const initializeDefaultData = () => {
         id: '14',
         number: '216',
         type: 'SUITE',
-        status: 'OCCUPIED',
+        status: 'AVAILABLE',
         floor: 2,
         price: 4000,
         amenities: ['AC', 'TV', 'WiFi', 'Coffee', 'Balcony', 'Jacuzzi'],
         category: 'SOLO',
-        currentGuest: 'Aron Sir',
-        checkInDate: '2025-07-22',
-        checkOutDate: '2025-07-25',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
         lastCleaned: new Date().toISOString(),
         createdAt: new Date().toISOString()
       },
@@ -830,41 +830,14 @@ const initializeDefaultData = () => {
   // Initialize guests if empty
   let guests = readData('guests.json');
   if (guests.length === 0) {
-    guests = [
-      {
-        id: '1',
-        name: 'Aron Sir',
-        email: 'aron@example.com',
-        phone: '9876543210',
-        roomNumber: '216',
-        checkInDate: '2025-07-22',
-        checkOutDate: '2025-07-25',
-        status: 'checked-in',
-        totalAmount: 12000,
-        paidAmount: 12000,
-        address: 'Mumbai, Maharashtra',
-        idProof: 'AADHAR-123456789012',
-        category: 'solo',
-        complimentary: false,
-        createdAt: '2025-07-22T10:00:00.000Z'
-      }
-    ];
+    guests = [];
     writeData('guests.json', guests);
   }
 
   // Initialize activities if empty
   let activities = readData('activities.json');
   if (activities.length === 0) {
-    activities = [
-      {
-        id: '1',
-        type: 'guest_checked_in',
-        guestName: 'Aron Sir',
-        roomNumber: '216',
-        time: '2 hours ago',
-        status: 'completed'
-      }
-    ];
+    activities = [];
     writeData('activities.json', activities);
   }
 };
@@ -977,11 +950,41 @@ app.get('/api/reports/dashboard', (req, res) => {
   const occupiedRooms = rooms.filter(room => room.status === 'OCCUPIED').length;
   const availableRooms = rooms.filter(room => room.status === 'AVAILABLE').length;
   const totalRooms = rooms.length;
-  const totalGuests = guests.filter(guest => guest.status === 'ACTIVE').length;
+  
+  // Calculate total guests including secondary guests and extra bed guests
+  let totalGuests = 0;
+  let todayRevenue = 0;
+  
+  console.log('Dashboard calculation - Total guests found:', guests.length);
+  
+  guests.forEach(guest => {
+    console.log(`Guest: ${guest.name}, Status: ${guest.status}, Room: ${guest.roomNumber}`);
+    
+    // Count primary guest
+    totalGuests += 1;
+    
+    // Count secondary guest if exists
+    if (guest.secondaryGuest) {
+      totalGuests += 1;
+      console.log(`  + Secondary guest: ${guest.secondaryGuest.name}`);
+    }
+    
+    // Count extra bed guests if exists
+    if (guest.extraBeds && guest.extraBeds.length > 0) {
+      totalGuests += guest.extraBeds.length;
+      console.log(`  + Extra bed guests: ${guest.extraBeds.length}`);
+    }
+    
+    // Calculate revenue from checked-in guests
+    if (guest.status === 'checked-in' && !guest.complimentary) {
+      todayRevenue += guest.totalAmount;
+      console.log(`  + Revenue: ${guest.totalAmount}`);
+    }
+  });
+  
+  console.log(`Final calculation - Total guests: ${totalGuests}, Revenue: ${todayRevenue}, Occupied rooms: ${occupiedRooms}`);
+  
   const occupancyRate = totalRooms > 0 ? ((occupiedRooms / totalRooms) * 100).toFixed(1) : 0;
-
-  // Calculate today's revenue (mock data for now)
-  const todayRevenue = 45000;
 
   res.json({
     success: true,
@@ -1078,6 +1081,121 @@ app.delete('/api/rooms/:id', (req, res) => {
   broadcastUpdate('room_deleted', { id });
 
   res.json({ success: true, message: 'Room deleted successfully' });
+});
+
+// Room shift endpoint
+app.post('/api/rooms/:id/shift', (req, res) => {
+  const { id } = req.params;
+  const shiftData = req.body;
+  const rooms = readData('rooms.json');
+  const guests = readData('guests.json');
+  
+  // Find source room
+  const sourceRoomIndex = rooms.findIndex(room => room.id === id);
+  if (sourceRoomIndex === -1) {
+    return res.status(404).json({ success: false, message: 'Source room not found' });
+  }
+  
+  const sourceRoom = rooms[sourceRoomIndex];
+  
+  // Find destination room
+  const destinationRoomIndex = rooms.findIndex(room => room.number === shiftData.toRoomNumber);
+  if (destinationRoomIndex === -1) {
+    return res.status(404).json({ success: false, message: 'Destination room not found' });
+  }
+  
+  const destinationRoom = rooms[destinationRoomIndex];
+  
+  // Validate shift
+  if (sourceRoom.status !== 'OCCUPIED') {
+    return res.status(400).json({ success: false, message: 'Source room is not occupied' });
+  }
+  
+  if (destinationRoom.status !== 'AVAILABLE') {
+    return res.status(400).json({ success: false, message: 'Destination room is not available' });
+  }
+  
+  if (sourceRoom.number === destinationRoom.number) {
+    return res.status(400).json({ success: false, message: 'Cannot shift to the same room' });
+  }
+  
+  // Find guest in source room
+  const guestIndex = guests.findIndex(guest => 
+    guest.roomNumber === sourceRoom.number && guest.status === 'checked-in'
+  );
+  
+  if (guestIndex === -1) {
+    return res.status(404).json({ success: false, message: 'No active guest found in source room' });
+  }
+  
+  const guest = guests[guestIndex];
+  
+  // Update guest room number
+  guests[guestIndex].roomNumber = destinationRoom.number;
+  guests[guestIndex].updatedAt = new Date().toISOString();
+  
+  // Update source room (clear guest info)
+  rooms[sourceRoomIndex] = {
+    ...sourceRoom,
+    status: 'CLEANING',
+    currentGuest: null,
+    checkInDate: null,
+    checkOutDate: null,
+    notes: `Guest shifted to Room ${destinationRoom.number} on ${shiftData.shiftDate} at ${shiftData.shiftTime}. Reason: ${shiftData.reason}. Authorized by: ${shiftData.authorizedBy}. ${shiftData.notes || ''}`
+  };
+  
+  // Update destination room (add guest info)
+  rooms[destinationRoomIndex] = {
+    ...destinationRoom,
+    status: 'OCCUPIED',
+    currentGuest: guest.name,
+    checkInDate: guest.checkInDate,
+    checkOutDate: guest.checkOutDate,
+    category: guest.category.toUpperCase(), // Update room category to match guest category
+    notes: `Guest shifted from Room ${sourceRoom.number} on ${shiftData.shiftDate} at ${shiftData.shiftTime}. Reason: ${shiftData.reason}. Authorized by: ${shiftData.authorizedBy}. ${shiftData.notes || ''}`
+  };
+  
+  // Save changes
+  writeData('rooms.json', rooms);
+  writeData('guests.json', guests);
+  
+  // Add to activities with detailed information
+  const activities = readData('activities.json');
+  activities.unshift({
+    id: Date.now().toString(),
+    type: 'room_shift',
+    guestName: guest.name,
+    roomNumber: `${sourceRoom.number} → ${destinationRoom.number}`,
+    time: 'Just now',
+    status: 'completed',
+    shiftDate: shiftData.shiftDate,
+    shiftTime: shiftData.shiftTime,
+    reason: shiftData.reason,
+    authorizedBy: shiftData.authorizedBy,
+    notes: shiftData.notes || ''
+  });
+  writeData('activities.json', activities);
+  
+  // Broadcast updates
+  broadcastUpdate('room_shifted', {
+    fromRoom: sourceRoom.number,
+    toRoom: destinationRoom.number,
+    guest: guest.name
+  });
+  broadcastUpdate('guest_updated', guests[guestIndex]);
+  broadcastUpdate('room_updated', rooms[sourceRoomIndex]);
+  broadcastUpdate('room_updated', rooms[destinationRoomIndex]);
+  broadcastUpdate('activity_updated', activities[0]);
+  
+  res.json({ 
+    success: true, 
+    message: `Guest shifted from Room ${sourceRoom.number} to Room ${destinationRoom.number} successfully!`,
+    data: {
+      fromRoom: rooms[sourceRoomIndex],
+      toRoom: rooms[destinationRoomIndex],
+      guest: guests[guestIndex]
+    }
+  });
 });
 
 // Guests API
@@ -1177,24 +1295,17 @@ app.put('/api/guests/:id', (req, res) => {
   // If guest is being checked out, update room status
   if (updateData.status === 'checked-out' && guests[guestIndex].roomNumber) {
     const rooms = readData('rooms.json');
-    const roomIndex = rooms.findIndex(room => room.number === guests[guestIndex].roomNumber);
     
+    // Update current room to CLEANING (not AVAILABLE)
+    const roomIndex = rooms.findIndex(room => room.number === guests[guestIndex].roomNumber);
     if (roomIndex !== -1) {
-      rooms[roomIndex].status = 'AVAILABLE';
+      rooms[roomIndex].status = 'CLEANING';
       rooms[roomIndex].currentGuest = null;
       rooms[roomIndex].checkInDate = null;
       rooms[roomIndex].checkOutDate = null;
-      // Reset room category to default based on room type
-      if (rooms[roomIndex].type === 'STANDARD') {
-        rooms[roomIndex].category = 'COUPLE';
-      } else if (rooms[roomIndex].type === 'DELUXE') {
-        rooms[roomIndex].category = 'SOLO';
-      } else if (rooms[roomIndex].type === 'SUITE') {
-        rooms[roomIndex].category = 'COUPLE';
-      } else if (rooms[roomIndex].type === 'PRESIDENTIAL') {
-        rooms[roomIndex].category = 'CORPORATE';
-      }
-      writeData('rooms.json', rooms);
+      rooms[roomIndex].notes = `Guest checked out on ${new Date().toLocaleDateString()}. Room needs cleaning.`;
+      // Keep the room category as is - it will be updated when a new guest checks in
+      // The category should be determined by the guest, not by room type
       
       // Broadcast room update with correct format
       const updatedRoom = {
@@ -1206,6 +1317,34 @@ app.put('/api/guests/:id', (req, res) => {
       };
       broadcastUpdate('room_updated', updatedRoom);
     }
+    
+    // Also check for any rooms in CLEANING status that might have been left from room shifts
+    // This handles the case where a guest was shifted from one room to another
+    const cleaningRooms = rooms.filter(room => 
+      room.status === 'CLEANING' && 
+      room.notes && 
+      room.notes.includes(`Guest shifted to Room ${guests[guestIndex].roomNumber}`)
+    );
+    
+    cleaningRooms.forEach(room => {
+      const roomIndex = rooms.findIndex(r => r.id === room.id);
+      if (roomIndex !== -1) {
+        // Keep the room in CLEANING status, just update the notes
+        rooms[roomIndex].notes = `Guest was shifted from this room and later checked out on ${new Date().toLocaleDateString()}. Room needs cleaning.`;
+        
+        // Broadcast room update for the cleaned room
+        const updatedRoom = {
+          ...rooms[roomIndex],
+          type: rooms[roomIndex].type.toLowerCase(),
+          status: rooms[roomIndex].status.toLowerCase(),
+          category: rooms[roomIndex].category.toLowerCase(),
+          amenities: rooms[roomIndex].amenities.map(amenity => amenity.toLowerCase())
+        };
+        broadcastUpdate('room_updated', updatedRoom);
+      }
+    });
+    
+    writeData('rooms.json', rooms);
   }
 
   // Add to activities for checkout
@@ -1293,6 +1432,63 @@ app.post('/api/reservations', (req, res) => {
 app.get('/api/activities', (req, res) => {
   const activities = readData('activities.json');
   res.json({ success: true, data: activities });
+});
+
+// Room Shifts API
+app.get('/api/room-shifts', (req, res) => {
+  const activities = readData('activities.json');
+  const { fromDate, toDate, limit = 50 } = req.query;
+  
+  // Filter only room_shift activities
+  let roomShifts = activities.filter(activity => activity.type === 'room_shift');
+  
+  // Filter by date range if provided
+  if (fromDate || toDate) {
+    const now = new Date();
+    roomShifts = roomShifts.filter(shift => {
+      const shiftTime = shift.time === 'Just now' ? now : new Date(shift.id);
+      
+      if (fromDate) {
+        const fromDateObj = new Date(fromDate);
+        if (shiftTime < fromDateObj) return false;
+      }
+      
+      if (toDate) {
+        const toDateObj = new Date(toDate);
+        toDateObj.setHours(23, 59, 59, 999); // End of day
+        if (shiftTime > toDateObj) return false;
+      }
+      
+      return true;
+    });
+  }
+  
+  // Limit results
+  roomShifts = roomShifts.slice(0, parseInt(limit));
+  
+  // Format the data for frontend
+  const formattedShifts = roomShifts.map(shift => {
+    const shiftTime = shift.time === 'Just now' ? new Date() : new Date(parseInt(shift.id));
+    const [fromRoom, toRoom] = shift.roomNumber.split(' → ');
+    
+    return {
+      id: shift.id,
+      date: shift.shiftDate || shiftTime.toISOString().split('T')[0],
+      time: shift.shiftTime || shiftTime.toLocaleTimeString('en-US', { 
+        hour12: false, 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      }),
+      guest: shift.guestName,
+      fromRoom: fromRoom,
+      toRoom: toRoom,
+      reason: shift.reason || 'Room Shift',
+      authorizedBy: shift.authorizedBy || 'System',
+      notes: shift.notes || ''
+    };
+  });
+  
+  res.json({ success: true, data: formattedShifts });
 });
 
 // Reports API

@@ -65,15 +65,18 @@ const Dashboard = () => {
     const fetchDashboardData = async () => {
       setIsLoading(true)
       setError(null)
+      console.log('Fetching dashboard data...')
       try {
         // Fetch dashboard stats
         const statsResponse = await fetch('http://localhost:3001/api/reports/dashboard')
+        console.log('Dashboard API response status:', statsResponse.status)
         if (!statsResponse.ok) {
           throw new Error(`Failed to fetch dashboard stats: ${statsResponse.status}`)
         }
         const statsData = await statsResponse.json()
         
         if (statsData.success) {
+          console.log('Dashboard API response:', statsData.data)
           setStats(statsData.data)
         } else {
           throw new Error('Failed to fetch dashboard stats')
@@ -95,6 +98,7 @@ const Dashboard = () => {
         console.error('Error fetching dashboard data:', error)
         const errorMessage = error instanceof Error ? error.message : 'Failed to fetch dashboard data'
         setError(errorMessage)
+        console.log('API failed, using fallback data')
         // Fallback to mock data if API fails
         setStats({
           occupiedRooms: 4,
@@ -130,7 +134,7 @@ const Dashboard = () => {
       setRecentActivity(prev => [activity, ...prev.slice(0, 3)])
     })
 
-    newSocket.on('guest_created', () => {
+    newSocket.on('guest_checked_in', () => {
       // Refresh dashboard stats when new guest is added
       fetchDashboardData()
     })
@@ -139,6 +143,23 @@ const Dashboard = () => {
       // Refresh dashboard stats when room status changes
       fetchDashboardData()
     })
+
+    newSocket.on('room_shifted', (shiftData) => {
+      console.log('Received room_shifted event in Dashboard:', shiftData)
+      // Refresh dashboard stats when a room shift happens
+      fetchDashboardData()
+    })
+
+    // Refresh dashboard every 30 seconds to ensure data is current
+    const refreshInterval = setInterval(fetchDashboardData, 30000)
+
+    return () => {
+      clearInterval(refreshInterval)
+      if (newSocket) {
+        newSocket.disconnect()
+        newSocket.removeAllListeners()
+      }
+    }
 
     return () => {
       if (newSocket) {
@@ -221,10 +242,21 @@ const Dashboard = () => {
     }
   }
 
+  const handleRefresh = () => {
+    window.location.reload()
+  }
+
   return (
     <div className="space-y-6">
-      <div>
+      <div className="flex justify-between items-center">
         <p className="text-gray-600">Welcome to Hotel Diplomat Residency (HDR) Front Desk Management</p>
+        <button
+          onClick={handleRefresh}
+          className="btn-secondary text-sm"
+          title="Refresh dashboard data"
+        >
+          Refresh
+        </button>
       </div>
 
       {isLoading ? (

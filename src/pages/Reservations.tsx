@@ -62,28 +62,9 @@ const Reservations = () => {
   const roomTypes = ['Standard', 'Deluxe', 'Suite', 'Presidential']
   const paymentMethods = ['UPI', 'Bank Transfer', 'Credit Card', 'Cash', 'Pending']
 
-  // Mock data - Only 2 reserved rooms for management
+  // Mock data - Empty reservations
   useEffect(() => {
-    setReservations([
-      {
-        id: '1',
-        guestName: 'Mr. Aron Sir',
-        email: 'aron.sir@hoteldiplomat.com',
-        phone: '+91 98765 43210',
-        roomNumber: '216',
-        roomType: 'Suite',
-        checkInDate: '2024-01-01',
-        checkOutDate: '2024-12-31',
-        numberOfGuests: 1,
-        status: 'confirmed',
-        totalAmount: 0,
-        depositAmount: 0,
-        specialRequests: 'Permanently reserved for Upper Management - Mr. Aron Sir',
-        bookingDate: '2024-01-01',
-        paymentMethod: 'Management'
-      },
-      
-    ])
+    setReservations([])
   }, [])
 
   const filteredReservations = reservations.filter(reservation => {

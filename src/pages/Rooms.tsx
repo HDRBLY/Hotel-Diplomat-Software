@@ -109,7 +109,6 @@ const Rooms = () => {
   const [showShiftedRoomsModal, setShowShiftedRoomsModal] = useState(false)
   const [shiftSearch, setShiftSearch] = useState('')
   const [shiftDate, setShiftDate] = useState('')
-  const [showDatePicker, setShowDatePicker] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -318,7 +317,7 @@ const Rooms = () => {
         price: 4000,
         amenities: ['wifi', 'tv', 'ac', 'coffee', 'balcony', 'jacuzzi'],
         lastCleaned: '2024-01-15',
-        notes: 'Permanently reserved for Mr. Aron Sir - Upper Management',
+        notes: '',
         category: 'corporate'
       },
       {
@@ -619,6 +618,12 @@ const Rooms = () => {
 
     newSocket.on('guest_checked_out', () => {
       // Refresh rooms when a guest is checked out
+      fetchRooms()
+    })
+
+    newSocket.on('room_shifted', (shiftData) => {
+      console.log('Received room_shifted event:', shiftData)
+      // Refresh rooms data when a room shift happens
       fetchRooms()
     })
 
@@ -923,7 +928,7 @@ const Rooms = () => {
     })
   }
 
-  const handleCheckoutRoom = (room: Room) => {
+  const handleCheckoutRoom = async (room: Room) => {
     if (!hasPermission('rooms:edit')) {
       showNotification('error', 'You do not have permission to check out rooms.')
       return
@@ -934,16 +939,41 @@ const Rooms = () => {
       return
     }
     
-    setCheckoutRoom(room)
-    setCheckoutDetails({
-      guestName: room.currentGuest || '',
-      actualCheckOutDate: new Date().toISOString().split('T')[0],
-      finalAmount: room.price * 1, // Default to 1 day
-      additionalCharges: 0,
-      paymentMethod: 'CASH',
-      notes: ''
-    })
-    setShowCheckoutModal(true)
+    try {
+      // Fetch guest data to get the actual total amount (including extra bed charges)
+      const response = await fetch(`http://localhost:3001/api/guests`)
+      const guestsData = await response.json()
+      
+      if (!guestsData.success) {
+        throw new Error('Failed to fetch guests')
+      }
+
+      const guest = guestsData.data.find((g: any) => 
+        g.roomNumber === room.number && g.status === 'checked-in'
+      )
+
+      if (!guest) {
+        showNotification('error', 'No active guest found for this room')
+        return
+      }
+
+      // Use guest's total amount as base (includes room rent + extra bed charges)
+      const baseAmount = guest.totalAmount || room.price
+      
+      setCheckoutRoom(room)
+      setCheckoutDetails({
+        guestName: room.currentGuest || '',
+        actualCheckOutDate: new Date().toISOString().split('T')[0],
+        finalAmount: baseAmount, // Use guest's total amount as base
+        additionalCharges: 0,
+        paymentMethod: 'CASH',
+        notes: ''
+      })
+      setShowCheckoutModal(true)
+    } catch (error) {
+      console.error('Error fetching guest data:', error)
+      showNotification('error', 'Failed to load guest information. Please try again.')
+    }
   }
 
   const handleCheckoutSubmit = async () => {
@@ -1043,7 +1073,7 @@ const Rooms = () => {
     setShowRoomShiftModal(true)
   }
 
-  const handleRoomShiftSubmit = () => {
+  const handleRoomShiftSubmit = async () => {
     if (!shiftFromRoom) return
 
     // Validation
@@ -1090,59 +1120,66 @@ const Rooms = () => {
       return
     }
 
-    // Update rooms - move guest from source to destination
-    setRooms(rooms.map(room => {
-      if (room.id === shiftFromRoom.id) {
-        // Clear source room
-        return {
-          ...room,
-          status: 'cleaning' as const,
-          currentGuest: undefined,
-          checkInDate: undefined,
-          checkOutDate: undefined,
-          notes: `Guest shifted to Room ${shiftDetails.toRoomNumber} on ${shiftDetails.shiftDate} at ${shiftDetails.shiftTime}. Reason: ${shiftDetails.reason}. Authorized by: ${shiftDetails.authorizedBy}. ${shiftDetails.notes}`
-        }
-      } else if (room.id === destinationRoom.id) {
-        // Move guest to destination room
-        return {
-          ...room,
-          status: 'occupied' as const,
-          currentGuest: shiftFromRoom.currentGuest,
-          checkInDate: shiftFromRoom.checkInDate,
-          checkOutDate: shiftFromRoom.checkOutDate,
-          notes: `Guest shifted from Room ${shiftFromRoom.number} on ${shiftDetails.shiftDate} at ${shiftDetails.shiftTime}. Reason: ${shiftDetails.reason}. Authorized by: ${shiftDetails.authorizedBy}. ${shiftDetails.notes}`
+    try {
+      // Call the API to shift the room
+      const response = await fetch(`http://localhost:3001/api/rooms/${shiftFromRoom.id}/shift`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(shiftDetails)
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to shift room')
+      }
+
+      const result = await response.json()
+
+      // Close modal and show success
+      setShowRoomShiftModal(false)
+      setShiftFromRoom(null)
+      setShiftDetails({
+        toRoomNumber: '',
+        shiftDate: '',
+        shiftTime: '',
+        reason: '',
+        authorizedBy: '',
+        notes: ''
+      })
+      
+      showNotification('success', result.message)
+      
+      // Record the shift event
+      setShiftEvents(prev => [
+        {
+          fromRoom: shiftFromRoom.number,
+          toRoom: shiftDetails.toRoomNumber,
+          guest: shiftFromRoom.currentGuest || '',
+          date: shiftDetails.shiftDate,
+          time: shiftDetails.shiftTime,
+          reason: shiftDetails.reason,
+          authorizedBy: shiftDetails.authorizedBy,
+          notes: shiftDetails.notes
+        },
+        ...prev
+      ])
+      
+      // Refresh rooms data to get updated state (but don't show notification)
+      const refreshResponse = await fetch('http://localhost:3001/api/rooms')
+      if (refreshResponse.ok) {
+        const refreshData = await refreshResponse.json()
+        if (refreshData.success) {
+          setRooms(refreshData.data)
         }
       }
-      return room
-    }))
-
-    // Close modal and show success
-    setShowRoomShiftModal(false)
-    setShiftFromRoom(null)
-    setShiftDetails({
-      toRoomNumber: '',
-      shiftDate: '',
-      shiftTime: '',
-      reason: '',
-      authorizedBy: '',
-      notes: ''
-    })
-    
-    showNotification('success', `Guest shifted from Room ${shiftFromRoom.number} to Room ${shiftDetails.toRoomNumber} successfully!`)
-    // In handleRoomShiftSubmit, record the shift event
-    setShiftEvents(prev => [
-      {
-        fromRoom: shiftFromRoom.number,
-        toRoom: shiftDetails.toRoomNumber,
-        guest: shiftFromRoom.currentGuest || '',
-        date: shiftDetails.shiftDate,
-        time: shiftDetails.shiftTime,
-        reason: shiftDetails.reason,
-        authorizedBy: shiftDetails.authorizedBy,
-        notes: shiftDetails.notes
-      },
-      ...prev
-    ])
+      
+    } catch (error) {
+      console.error('Room shift error:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Failed to shift room. Please try again.'
+      showNotification('error', errorMessage)
+    }
   }
 
   const handleStatusChangeClick = (room: Room) => {
@@ -1191,69 +1228,50 @@ const Rooms = () => {
     showNotification('success', `Room ${statusChangeRoom.number} status updated to ${newStatus}`)
   }
 
-  // Add a few demo shift events on mount (for demo/testing, will disappear after 7 days)
+  // Fetch room shifts data
   useEffect(() => {
-    setShiftEvents(prev => {
-      if (prev.length > 0) return prev // don't overwrite if already present
-      const now = new Date()
-      const format = (d: Date) => d.toISOString().split('T')[0]
-      return [
-        {
-          fromRoom: '101',
-          toRoom: '301',
-          guest: 'Rahul Sharma',
-          date: format(new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000)), // 1 day ago
-          time: '14:03',
-          reason: 'Maintenance Required',
-          authorizedBy: 'test',
-          notes: ''
-        },
-        {
-          fromRoom: '208',
-          toRoom: '305',
-          guest: 'Priya Patel',
-          date: format(new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)), // 3 days ago
-          time: '10:30',
-          reason: 'Guest Request',
-          authorizedBy: 'Amit',
-          notes: 'VIP guest'
-        },
-        {
-          fromRoom: '104',
-          toRoom: '204',
-          guest: 'Amit Kumar',
-          date: format(new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000)), // 8 days ago (should not show)
-          time: '09:00',
-          reason: 'Room Upgrade',
-          authorizedBy: 'Manager',
-          notes: 'Test old event'
+    const fetchRoomShifts = async () => {
+      try {
+        const response = await fetch('http://localhost:3001/api/room-shifts?limit=100')
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success) {
+            setShiftEvents(data.data)
+          }
         }
-      ]
-    })
+      } catch (error) {
+        console.error('Failed to fetch room shifts:', error)
+      }
+    }
+
+    fetchRoomShifts()
   }, [])
 
-  // Auto-delete events older than 7 days
+  // Real-time updates for room shifts
   useEffect(() => {
-    const now = new Date()
-    setShiftEvents(prev => prev.filter(ev => {
-      const evDate = new Date(ev.date)
-      const diff = (now.getTime() - evDate.getTime()) / (1000 * 60 * 60 * 24)
-      return diff <= 7 && diff >= 0
-    }))
-  }, [shiftEvents.length])
+    if (socket) {
+      socket.on('room_shifted', () => {
+        // Refresh room shifts data when a new shift happens
+        const fetchRoomShifts = async () => {
+          try {
+            const response = await fetch('http://localhost:3001/api/room-shifts?limit=100')
+            if (response.ok) {
+              const data = await response.json()
+              if (data.success) {
+                setShiftEvents(data.data)
+              }
+            }
+          } catch (error) {
+            console.error('Failed to fetch room shifts:', error)
+          }
+        }
+        fetchRoomShifts()
+      })
+    }
+  }, [socket])
 
-  // Filtered and searched shift events (last 7 days, search by guest, room, authorizedBy, and date)
-  const now = new Date()
-  const minDate = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000) // 7 days window
-  const minDateStr = minDate.toISOString().split('T')[0]
-  const maxDateStr = now.toISOString().split('T')[0]
-
+  // Filtered and searched shift events (search by guest, room, authorizedBy, and date)
   const filteredShiftEvents = shiftEvents
-    .filter(ev => {
-      const evDate = new Date(ev.date)
-      const diff = (now.getTime() - evDate.getTime()) / (1000 * 60 * 60 * 24)
-      return diff <= 7 && diff >= 0
-    })
     .filter(ev => {
       if (shiftDate) return ev.date === shiftDate
       return true
@@ -1265,7 +1283,8 @@ const Rooms = () => {
         ev.guest.toLowerCase().includes(q) ||
         ev.fromRoom.toLowerCase().includes(q) ||
         ev.toRoom.toLowerCase().includes(q) ||
-        ev.authorizedBy.toLowerCase().includes(q)
+        ev.authorizedBy.toLowerCase().includes(q) ||
+        ev.reason.toLowerCase().includes(q)
       )
     })
 
@@ -2163,6 +2182,24 @@ const Rooms = () => {
                   </div>
                 </div>
 
+                <div className="bg-blue-50 p-3 rounded-lg">
+                  <h4 className="font-medium text-gray-900 mb-2">Bill Breakdown</h4>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <div className="flex justify-between">
+                      <span>Room Rent (including extra bed):</span>
+                      <span>₹{checkoutDetails.finalAmount - (checkoutDetails.additionalCharges || 0)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Fooding Charges:</span>
+                      <span>₹{checkoutDetails.additionalCharges || 0}</span>
+                    </div>
+                    <div className="border-t pt-1 flex justify-between font-medium">
+                      <span>Total Amount:</span>
+                      <span>₹{checkoutDetails.finalAmount}</span>
+                    </div>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
                     Check-out Date <span className="text-red-500">*</span>
@@ -2186,10 +2223,12 @@ const Rooms = () => {
                     value={checkoutDetails.additionalCharges || ''}
                     onChange={(e) => {
                       const additional = e.target.value ? parseInt(e.target.value) : 0
+                      // Get the base amount (room rent + extra bed charges) from the current final amount
+                      const baseAmount = checkoutDetails.finalAmount - (checkoutDetails.additionalCharges || 0)
                       setCheckoutDetails({
                         ...checkoutDetails, 
                         additionalCharges: additional,
-                        finalAmount: checkoutRoom.price + additional
+                        finalAmount: baseAmount + additional
                       })
                     }}
                     className="input-field mt-1"
@@ -2379,7 +2418,7 @@ const Rooms = () => {
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center" onClick={() => setShowShiftedRoomsModal(false)}>
           <div className="relative mx-auto p-5 border w-full max-w-3xl shadow-lg rounded-md bg-white" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-800">Shifted Rooms (Last 7 Days)</h2>
+              <h2 className="text-xl font-bold text-gray-800">Shifted Rooms</h2>
               <button
                 onClick={() => setShowShiftedRoomsModal(false)}
                 className="text-gray-400 hover:text-gray-600"
@@ -2394,37 +2433,24 @@ const Rooms = () => {
                 value={shiftSearch}
                 onChange={e => setShiftSearch(e.target.value)}
                 className="input-field w-48"
-                placeholder="Search..."
+                placeholder="Search by guest, room, reason..."
                 title="Search shifted rooms"
               />
-              <button
-                className="btn-secondary flex items-center"
-                onClick={() => setShowDatePicker(v => !v)}
-                title="Search by date"
-              >
-                Search by Date
-              </button>
-              {showDatePicker && (
-                <>
-                  <input
-                    type="date"
-                    className="input-field"
-                    min={minDateStr}
-                    max={maxDateStr}
-                    value={shiftDate}
-                    onChange={e => setShiftDate(e.target.value)}
-                    title="Pick a date (last 7 days)"
-                  />
-                  {shiftDate && (
-                    <button
-                      className="btn-secondary ml-1"
-                      onClick={() => setShiftDate('')}
-                      title="Clear date filter"
-                    >
-                      Clear
-                    </button>
-                  )}
-                </>
+              <input
+                type="date"
+                className="input-field"
+                value={shiftDate}
+                onChange={e => setShiftDate(e.target.value)}
+                title="Filter by date"
+              />
+              {shiftDate && (
+                <button
+                  className="btn-secondary ml-1"
+                  onClick={() => setShiftDate('')}
+                  title="Clear date filter"
+                >
+                  Clear
+                </button>
               )}
             </div>
             <div className="overflow-x-auto">
@@ -2443,7 +2469,7 @@ const Rooms = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredShiftEvents.length === 0 ? (
-                    <tr><td colSpan={8} className="text-center text-gray-400 py-4">No shifted rooms found in the last 7 days.</td></tr>
+                    <tr><td colSpan={8} className="text-center text-gray-400 py-4">No shifted rooms found.</td></tr>
                   ) : filteredShiftEvents.map((ev, idx) => (
                     <tr key={idx}>
                       <td className="px-4 py-2 whitespace-nowrap">{ev.date}</td>

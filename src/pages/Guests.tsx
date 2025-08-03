@@ -72,7 +72,13 @@ const Guests = () => {
   const [showCheckOutCalendar, setShowCheckOutCalendar] = useState(false)
   const [showCheckoutModalCalendar, setShowCheckoutModalCalendar] = useState(false)
   const [showSecondaryGuest, setShowSecondaryGuest] = useState(false)
-  const [showExtraBed, setShowExtraBed] = useState(false)
+  const [extraBeds, setExtraBeds] = useState<Array<{
+    name: string
+    phone?: string
+    idProof?: string
+    idProofType: string
+    charge: number
+  }>>([])
   const { notification, showNotification, hideNotification } = useNotification()
   const [newGuest, setNewGuest] = useState<{
     name: string
@@ -101,23 +107,24 @@ const Guests = () => {
       idProofType: string
       charge: number
     }>
-  }>({
-    name: '',
-    email: '',
-    phone: '',
-    roomNumber: '',
-    checkInDate: '',
-    checkOutDate: '',
-    totalAmount: 0,
-    paidAmount: 0,
-    address: '',
-    idProof: '',
-    idProofType: 'AADHAR',
-    category: 'couple',
-    complimentary: false,
-    secondaryGuest: undefined,
-    extraBeds: []
-  })
+  }>(
+    {
+      name: '',
+      email: '',
+      phone: '',
+      roomNumber: '',
+      checkInDate: '',
+      checkOutDate: '',
+      totalAmount: 0,
+      paidAmount: 0,
+      address: '',
+      idProof: '',
+      idProofType: 'AADHAR',
+      category: 'couple',
+      complimentary: false,
+      secondaryGuest: undefined
+    }
+  )
 
   // Fetch guests and rooms from backend and setup WebSocket
   useEffect(() => {
@@ -246,6 +253,12 @@ const Guests = () => {
       fetchData()
     })
 
+    newSocket.on('room_shifted', (shiftData) => {
+      console.log('Received room_shifted event in Guests:', shiftData)
+      // Refresh guests list when a room shift happens
+      fetchData()
+    })
+
     return () => {
       if (newSocket) {
         newSocket.disconnect()
@@ -257,7 +270,7 @@ const Guests = () => {
   const filteredGuests = guests.filter(guest => {
     const matchesSearch = guest.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          guest.secondaryGuest?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         guest.extraBeds?.some(bed => bed.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                         (guest.extraBeds && guest.extraBeds.some(bed => bed.name.toLowerCase().includes(searchTerm.toLowerCase()))) ||
                          guest.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          guest.roomNumber.includes(searchTerm)
     const matchesStatus = statusFilter === 'all' || guest.status === statusFilter
@@ -660,10 +673,10 @@ const Guests = () => {
       }
     }
 
-    // Validate extra beds if shown
-    if (showExtraBed && newGuest.extraBeds && newGuest.extraBeds.length > 0) {
-      for (let i = 0; i < newGuest.extraBeds.length; i++) {
-        const extraBed = newGuest.extraBeds[i];
+    // Validate extra beds
+    if (extraBeds.length > 0) {
+      for (let i = 0; i < extraBeds.length; i++) {
+        const extraBed = extraBeds[i]
         if (!extraBed.name || !extraBed.charge || extraBed.charge <= 0) {
           showNotification('error', `Please fill all mandatory fields for extra bed ${i + 1} (Name and Charge are required)`)
           return
@@ -708,7 +721,8 @@ const Guests = () => {
     }
 
     // Validate minimum amount for non-complimentary bookings (including extra bed charges)
-    const totalWithExtraBeds = newGuest.totalAmount + (showExtraBed && newGuest.extraBeds ? newGuest.extraBeds.reduce((sum, bed) => sum + bed.charge, 0) : 0)
+    const totalExtraBedCharges = extraBeds.reduce((sum, bed) => sum + bed.charge, 0)
+    const totalWithExtraBeds = newGuest.totalAmount + totalExtraBedCharges
     if (!newGuest.complimentary && totalWithExtraBeds < 1800) {
       showNotification('error', 'Total amount (including extra bed charges) must be at least ₹1800 for non-complimentary bookings.')
       return
@@ -717,31 +731,31 @@ const Guests = () => {
     try {
       // Send guest data to backend
       const guestData = {
-        name: newGuest.name,
-        email: newGuest.email,
-        phone: newGuest.phone,
-        roomNumber: newGuest.roomNumber,
+      name: newGuest.name,
+      email: newGuest.email,
+      phone: newGuest.phone,
+      roomNumber: newGuest.roomNumber,
         checkInDate: convertDateToBackendFormat(newGuest.checkInDate),
         checkOutDate: newGuest.checkOutDate ? convertDateToBackendFormat(newGuest.checkOutDate) : '',
-        totalAmount: newGuest.complimentary ? 0 : (newGuest.totalAmount + (showExtraBed && newGuest.extraBeds ? newGuest.extraBeds.reduce((sum, bed) => sum + bed.charge, 0) : 0)),
-        paidAmount: newGuest.complimentary ? 0 : newGuest.paidAmount,
-        address: newGuest.address,
-        idProof: `${newGuest.idProofType}-${newGuest.idProof}`,
-        category: newGuest.category,
+      totalAmount: newGuest.complimentary ? 0 : (newGuest.totalAmount + totalExtraBedCharges),
+      paidAmount: newGuest.complimentary ? 0 : newGuest.paidAmount,
+      address: newGuest.address,
+      idProof: `${newGuest.idProofType}-${newGuest.idProof}`,
+      category: newGuest.category,
         status: 'checked-in',
-        complimentary: !!newGuest.complimentary,
-        secondaryGuest: showSecondaryGuest && newGuest.secondaryGuest ? {
-          name: newGuest.secondaryGuest.name,
-          phone: newGuest.secondaryGuest.phone || '',
-          idProof: newGuest.secondaryGuest.idProof ? `${newGuest.secondaryGuest.idProofType}-${newGuest.secondaryGuest.idProof}` : ''
-        } : undefined,
-        extraBeds: showExtraBed && newGuest.extraBeds ? newGuest.extraBeds.map(bed => ({
-          name: bed.name,
-          phone: bed.phone || '',
-          idProof: bed.idProof ? `${bed.idProofType}-${bed.idProof}` : '',
-          charge: bed.charge
-        })) : undefined
-      }
+      complimentary: !!newGuest.complimentary,
+      secondaryGuest: showSecondaryGuest && newGuest.secondaryGuest ? {
+        name: newGuest.secondaryGuest.name,
+        phone: newGuest.secondaryGuest.phone || '',
+        idProof: newGuest.secondaryGuest.idProof ? `${newGuest.secondaryGuest.idProofType}-${newGuest.secondaryGuest.idProof}` : ''
+      } : undefined,
+      extraBeds: extraBeds.length > 0 ? extraBeds.map(bed => ({
+        name: bed.name,
+        phone: bed.phone || '',
+        idProof: bed.idProof ? `${bed.idProofType}-${bed.idProof}` : '',
+        charge: bed.charge
+      })) : undefined
+    }
 
       const response = await fetch('http://localhost:3001/api/guests', {
         method: 'POST',
@@ -801,12 +815,11 @@ const Guests = () => {
       category: 'couple',
       complimentary: false,
       secondaryGuest: undefined,
-      extraBeds: []
     })
     
     setShowAddGuest(false)
     setShowSecondaryGuest(false)
-    setShowExtraBed(false)
+    setExtraBeds([])
     
     // Show success message
         const message = guestData.complimentary 
@@ -829,39 +842,6 @@ const Guests = () => {
     { value: 'solo', label: 'Solo' },
     { value: 'family', label: 'Family' }
   ] as const
-
-  // Add functions to manage extra beds
-  const addExtraBed = () => {
-    setNewGuest({
-      ...newGuest,
-      extraBeds: [...(newGuest.extraBeds || []), {
-        name: '',
-        phone: '',
-        idProof: '',
-        idProofType: 'AADHAR',
-        charge: 0
-      }]
-    })
-  }
-
-  const removeExtraBed = (index: number) => {
-    const updatedExtraBeds = newGuest.extraBeds ? newGuest.extraBeds.filter((_, i) => i !== index) : []
-    setNewGuest({
-      ...newGuest,
-      extraBeds: updatedExtraBeds
-    })
-  }
-
-  const updateExtraBed = (index: number, field: string, value: any) => {
-    const updatedExtraBeds = newGuest.extraBeds ? [...newGuest.extraBeds] : []
-    if (updatedExtraBeds[index]) {
-      updatedExtraBeds[index] = { ...updatedExtraBeds[index], [field]: value }
-      setNewGuest({
-        ...newGuest,
-        extraBeds: updatedExtraBeds
-      })
-    }
-  }
 
   return (
     <div className="space-y-6">
@@ -977,25 +957,17 @@ const Guests = () => {
                         </div>
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900 flex items-center">
+                        <div className="text-sm font-medium text-gray-900">
                           {guest.name}
-                          {guest.secondaryGuest && (
-                            <span className="ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full">
-                              +1 Guest
-                            </span>
-                          )}
-                          {guest.extraBeds && guest.extraBeds.length > 0 && (
-                            <span className="ml-2 px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">
-                              +{guest.extraBeds.length} Extra Bed{guest.extraBeds.length > 1 ? 's' : ''}
-                            </span>
-                          )}
                         </div>
-                        {guest.secondaryGuest && (
-                          <div className="text-sm text-blue-600 font-medium">+ {guest.secondaryGuest.name}</div>
-                        )}
-                        {guest.extraBeds && guest.extraBeds.map((bed, index) => (
-                          <div key={index} className="text-sm text-green-600 font-medium">+ {bed.name} (₹{bed.charge})</div>
-                        ))}
+                        <div className="text-sm text-gray-600">
+                          {guest.secondaryGuest && (
+                            <div className="text-blue-600">+ {guest.secondaryGuest.name}</div>
+                          )}
+                          {guest.extraBeds && guest.extraBeds.map((bed, index) => (
+                            <div key={index} className="text-green-600">+ {bed.name}</div>
+                          ))}
+                        </div>
                         <div className="text-sm text-gray-500">{guest.email}</div>
                         <div className="text-sm text-gray-500">{guest.phone}</div>
                         {guest.secondaryGuest?.phone && (
@@ -1088,7 +1060,7 @@ const Guests = () => {
       {/* Guest Details Modal */}
       {selectedGuest && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" onClick={() => setSelectedGuest(null)}>
-          <div className="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white" onClick={e => e.stopPropagation()}>
+          <div className="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white" onClick={e => e.stopPropagation()}>
             <div className="mt-3">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-medium text-gray-900">Guest Details</h3>
@@ -1102,17 +1074,12 @@ const Guests = () => {
               </div>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Name</label>
-                  <p className="mt-1 text-sm text-gray-900">{selectedGuest.name}</p>
+                  <label className="block text-sm font-medium text-gray-700">Primary Guest</label>
+                  <p className="mt-1 text-sm text-gray-900 font-medium">{selectedGuest.name}</p>
+                  <p className="mt-1 text-sm text-gray-600">{selectedGuest.email}</p>
+                  <p className="mt-1 text-sm text-gray-600">{selectedGuest.phone}</p>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Email</label>
-                  <p className="mt-1 text-sm text-gray-900">{selectedGuest.email}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Phone</label>
-                  <p className="mt-1 text-sm text-gray-900">{selectedGuest.phone}</p>
-                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Address</label>
                   <p className="mt-1 text-sm text-gray-900">{selectedGuest.address}</p>
@@ -1125,53 +1092,44 @@ const Guests = () => {
                   <>
                     <div className="border-t border-gray-200 pt-4">
                       <h4 className="text-sm font-medium text-gray-900 mb-3">Secondary Guest</h4>
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">Name</label>
-                          <p className="mt-1 text-sm text-gray-900">{selectedGuest.secondaryGuest.name}</p>
-                        </div>
+                      <div className="p-3 bg-blue-50 rounded-lg">
+                        <p className="text-sm text-gray-900 font-medium">{selectedGuest.secondaryGuest.name}</p>
                         {selectedGuest.secondaryGuest.phone && (
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700">Phone</label>
-                            <p className="mt-1 text-sm text-gray-900">{selectedGuest.secondaryGuest.phone}</p>
-                          </div>
+                          <p className="text-sm text-gray-600">{selectedGuest.secondaryGuest.phone}</p>
                         )}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">ID Proof</label>
-                          <p className="mt-1 text-sm text-gray-900">{selectedGuest.secondaryGuest.idProof}</p>
-                        </div>
+                        {selectedGuest.secondaryGuest.idProof && (
+                          <p className="text-sm text-gray-600">ID: {selectedGuest.secondaryGuest.idProof}</p>
+                        )}
                       </div>
                     </div>
                   </>
                 )}
-                {selectedGuest.extraBeds && (
+                {selectedGuest.extraBeds && selectedGuest.extraBeds.length > 0 && (
                   <>
                     <div className="border-t border-gray-200 pt-4">
                       <h4 className="text-sm font-medium text-gray-900 mb-3">Extra Beds ({selectedGuest.extraBeds.length})</h4>
                       {selectedGuest.extraBeds.map((bed, index) => (
-                        <div key={index} className="mb-4 p-3 bg-green-50 rounded-lg border border-green-200">
-                          <h5 className="text-sm font-medium text-gray-800 mb-2">Extra Bed {index + 1}</h5>
-                          <div className="space-y-2">
+                        <div key={index} className="space-y-3 mb-4 p-3 bg-green-50 rounded-lg">
+                          <div className="text-sm font-medium text-green-800">Extra Bed {index + 1}</div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Name</label>
+                            <p className="mt-1 text-sm text-gray-900">{bed.name}</p>
+                          </div>
+                          {bed.phone && (
                             <div>
-                              <label className="block text-xs font-medium text-gray-700">Name</label>
-                              <p className="text-sm text-gray-900">{bed.name}</p>
+                              <label className="block text-sm font-medium text-gray-700">Phone</label>
+                              <p className="mt-1 text-sm text-gray-900">{bed.phone}</p>
                             </div>
-                            {bed.phone && (
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700">Phone</label>
-                                <p className="text-sm text-gray-900">{bed.phone}</p>
-                              </div>
-                            )}
-                            {bed.idProof && (
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700">ID Proof</label>
-                                <p className="text-sm text-gray-900">{bed.idProof}</p>
-                              </div>
-                            )}
+                          )}
+                          {bed.idProof && (
                             <div>
-                              <label className="block text-xs font-medium text-gray-700">Charge</label>
-                              <p className="text-sm text-gray-900">₹{bed.charge}</p>
+                              <label className="block text-sm font-medium text-gray-700">ID Proof</label>
+                              <p className="mt-1 text-sm text-gray-900">{bed.idProof}</p>
                             </div>
+                          )}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700">Charge</label>
+                            <p className="mt-1 text-sm text-gray-900">₹{bed.charge}</p>
                           </div>
                         </div>
                       ))}
@@ -1551,127 +1509,140 @@ const Guests = () => {
                 {!newGuest.complimentary && (
                 <div className="border-t border-gray-200 pt-4">
                   <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-sm font-medium text-gray-900">Extra Beds</h4>
-                    <div className="flex space-x-2">
-                      <button
-                        type="button"
-                        onClick={addExtraBed}
-                        className="text-sm text-green-600 hover:text-green-700 font-medium"
-                      >
-                        + Add Extra Bed
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowExtraBed(false)
-                          setNewGuest({ ...newGuest, extraBeds: [] })
-                        }}
-                        className="text-sm text-red-600 hover:text-red-700 font-medium"
-                      >
-                        Remove All
-                      </button>
-                    </div>
+                    <h4 className="text-sm font-medium text-gray-900">Extra Beds ({extraBeds.length})</h4>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setExtraBeds([...extraBeds, {
+                          name: '',
+                          phone: '',
+                          idProof: '',
+                          idProofType: 'AADHAR',
+                          charge: 0
+                        }])
+                      }}
+                      className="text-sm text-green-600 hover:text-green-700 font-medium"
+                    >
+                      Add Extra Bed
+                    </button>
                   </div>
 
-                  {newGuest.extraBeds && newGuest.extraBeds.map((bed, index) => (
-                    <div key={index} className="mb-4 space-y-4 bg-green-50 p-4 rounded-lg border border-green-200">
-                      <div className="flex items-center justify-between">
-                        <h5 className="text-sm font-medium text-gray-800">Extra Bed {index + 1}</h5>
-                        <button
-                          type="button"
-                          onClick={() => removeExtraBed(index)}
-                          className="text-sm text-red-600 hover:text-red-700 font-medium"
-                        >
-                          Remove
-                        </button>
-                      </div>
+                  {extraBeds.length > 0 && (
+                    <div className="space-y-4">
+                      {extraBeds.map((bed, index) => (
+                        <div key={index} className="bg-green-50 p-4 rounded-lg border border-green-200">
+                          <div className="flex items-center justify-between mb-3">
+                            <h5 className="text-sm font-medium text-green-800">Extra Bed {index + 1}</h5>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newExtraBeds = extraBeds.filter((_, i) => i !== index)
+                                setExtraBeds(newExtraBeds)
+                              }}
+                              className="text-sm text-red-600 hover:text-red-700 font-medium"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                          
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">
+                                Guest Name <span className="text-red-500">*</span>
+                              </label>
+                              <input
+                                type="text"
+                                value={bed.name}
+                                onChange={(e) => {
+                                  const newExtraBeds = [...extraBeds]
+                                  newExtraBeds[index].name = e.target.value
+                                  setExtraBeds(newExtraBeds)
+                                }}
+                                className="input-field mt-1"
+                                placeholder="Enter extra bed guest name"
+                                required
+                              />
+                            </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                          Extra Bed Guest Name <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={bed.name}
-                          onChange={(e) => updateExtraBed(index, 'name', e.target.value)}
-                          className="input-field mt-1"
-                          placeholder="Enter extra bed guest name"
-                          required
-                        />
-                      </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">
+                                Mobile Number (Optional)
+                              </label>
+                              <input
+                                type="tel"
+                                value={bed.phone || ''}
+                                onChange={(e) => {
+                                  const newExtraBeds = [...extraBeds]
+                                  newExtraBeds[index].phone = e.target.value
+                                  setExtraBeds(newExtraBeds)
+                                }}
+                                className="input-field mt-1"
+                                placeholder="+91 98765 43210"
+                              />
+                            </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                          Extra Bed Guest Mobile Number (Optional)
-                        </label>
-                        <input
-                          type="tel"
-                          value={bed.phone}
-                          onChange={(e) => updateExtraBed(index, 'phone', e.target.value)}
-                          className="input-field mt-1"
-                          placeholder="+91 98765 43210"
-                        />
-                      </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700">
+                                  ID Proof Type (Optional)
+                                </label>
+                                <select
+                                  value={bed.idProofType}
+                                  onChange={(e) => {
+                                    const newExtraBeds = [...extraBeds]
+                                    newExtraBeds[index].idProofType = e.target.value
+                                    setExtraBeds(newExtraBeds)
+                                  }}
+                                  className="input-field mt-1"
+                                >
+                                  <option value="AADHAR">Aadhaar Card</option>
+                                  <option value="DL">Driving License</option>
+                                  <option value="VOTER-ID">Voter ID</option>
+                                  <option value="PAN">PAN Card</option>
+                                  <option value="PASSPORT">Passport</option>
+                                </select>
+                              </div>
 
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">
-                            Extra Bed Guest ID Proof Type (Optional)
-                          </label>
-                          <select
-                            value={bed.idProofType}
-                            onChange={(e) => updateExtraBed(index, 'idProofType', e.target.value)}
-                            className="input-field mt-1"
-                          >
-                            <option value="AADHAR">Aadhaar Card</option>
-                            <option value="DL">Driving License</option>
-                            <option value="VOTER-ID">Voter ID</option>
-                            <option value="PAN">PAN Card</option>
-                            <option value="PASSPORT">Passport</option>
-                          </select>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700">
+                                  ID Proof Number (Optional)
+                                </label>
+                                <input
+                                  type="text"
+                                  value={bed.idProof || ''}
+                                  onChange={(e) => {
+                                    const newExtraBeds = [...extraBeds]
+                                    newExtraBeds[index].idProof = e.target.value
+                                    setExtraBeds(newExtraBeds)
+                                  }}
+                                  className="input-field mt-1"
+                                  placeholder="Enter ID proof number (optional)"
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700">
+                                Charge (₹) <span className="text-red-500">*</span>
+                              </label>
+                              <input
+                                type="number"
+                                value={bed.charge || ''}
+                                onChange={(e) => {
+                                  const newExtraBeds = [...extraBeds]
+                                  newExtraBeds[index].charge = e.target.value ? parseInt(e.target.value) : 0
+                                  setExtraBeds(newExtraBeds)
+                                }}
+                                className="input-field mt-1"
+                                placeholder="Enter extra bed charge"
+                                min="1"
+                                required
+                              />
+                              <p className="text-xs text-gray-500 mt-1">This amount will be added to the total bill</p>
+                            </div>
+                          </div>
                         </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700">
-                            Extra Bed Guest ID Proof Number (Optional)
-                          </label>
-                          <input
-                            type="text"
-                            value={bed.idProof}
-                            onChange={(e) => updateExtraBed(index, 'idProof', e.target.value)}
-                            className="input-field mt-1"
-                            placeholder="Enter ID proof number (optional)"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                          Extra Bed Charge (₹) <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="number"
-                          value={bed.charge}
-                          onChange={(e) => updateExtraBed(index, 'charge', e.target.value ? parseInt(e.target.value) : 0)}
-                          className="input-field mt-1"
-                          placeholder="Enter extra bed charge"
-                          min="1"
-                          required
-                        />
-                        <p className="text-xs text-gray-500 mt-1">This amount will be added to the total bill</p>
-                      </div>
-                    </div>
-                  ))}
-
-                  {newGuest.extraBeds && newGuest.extraBeds.length > 0 && (
-                    <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm">
-                      <div className="text-gray-600">Base Amount: ₹{newGuest.totalAmount}</div>
-                      <div className="text-green-600 font-medium">
-                        Extra Bed Charges: ₹{newGuest.extraBeds.reduce((sum, bed) => sum + bed.charge, 0)}
-                      </div>
-                      <div className="text-gray-800 font-semibold border-t border-blue-200 pt-1 mt-1">
-                        Total: ₹{newGuest.totalAmount + newGuest.extraBeds.reduce((sum, bed) => sum + bed.charge, 0)}
-                      </div>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -1680,7 +1651,7 @@ const Guests = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700">
-                      Total Amount (₹) <span className="text-red-500">*</span>
+                      Room Rent Amount (₹) <span className="text-red-500">*</span>
                       {!newGuest.complimentary && <span className="text-xs text-gray-500 block">Min: ₹1800</span>}
                     </label>
                     <input
@@ -1693,18 +1664,18 @@ const Guests = () => {
                       title={newGuest.complimentary ? "Complimentary booking - no charge" : "Total amount (minimum ₹1800)"}
                       disabled={newGuest.complimentary}
                     />
-                    {!newGuest.complimentary && newGuest.totalAmount > 0 && newGuest.totalAmount < 1800 && !showExtraBed && (
+                    {!newGuest.complimentary && newGuest.totalAmount > 0 && newGuest.totalAmount < 1800 && extraBeds.length === 0 && (
                       <p className="text-red-500 text-xs mt-1">Minimum amount required is ₹1800</p>
                     )}
-                    {!newGuest.complimentary && showExtraBed && newGuest.extraBeds && (newGuest.totalAmount + newGuest.extraBeds.reduce((sum, bed) => sum + bed.charge, 0)) > 0 && (newGuest.totalAmount + newGuest.extraBeds.reduce((sum, bed) => sum + bed.charge, 0)) < 1800 && (
-                      <p className="text-red-500 text-xs mt-1">Total amount (including extra bed) must be at least ₹1800</p>
+                    {!newGuest.complimentary && extraBeds.length > 0 && (newGuest.totalAmount + extraBeds.reduce((sum, bed) => sum + bed.charge, 0)) > 0 && (newGuest.totalAmount + extraBeds.reduce((sum, bed) => sum + bed.charge, 0)) < 1800 && (
+                      <p className="text-red-500 text-xs mt-1">Total amount (including extra bed charges) must be at least ₹1800</p>
                     )}
-                    {showExtraBed && newGuest.extraBeds && newGuest.extraBeds.reduce((sum, bed) => sum + bed.charge, 0) > 0 && (
+                    {extraBeds.length > 0 && extraBeds.reduce((sum, bed) => sum + bed.charge, 0) > 0 && (
                       <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-xs">
                         <div className="text-gray-600">Base Amount: ₹{newGuest.totalAmount}</div>
-                        <div className="text-green-600 font-medium">Extra Bed Charge: ₹{newGuest.extraBeds.reduce((sum, bed) => sum + bed.charge, 0)}</div>
+                        <div className="text-green-600 font-medium">Extra Bed Charges: ₹{extraBeds.reduce((sum, bed) => sum + bed.charge, 0)}</div>
                         <div className="text-gray-800 font-semibold border-t border-green-200 pt-1 mt-1">
-                          Total: ₹{newGuest.totalAmount + newGuest.extraBeds.reduce((sum, bed) => sum + bed.charge, 0)}
+                          Total: ₹{newGuest.totalAmount + extraBeds.reduce((sum, bed) => sum + bed.charge, 0)}
                         </div>
                       </div>
                     )}
@@ -1731,7 +1702,12 @@ const Guests = () => {
                     type="checkbox"
                     id="complimentary"
                     checked={!!newGuest.complimentary}
-                    onChange={e => setNewGuest({...newGuest, complimentary: e.target.checked, totalAmount: 0, paidAmount: 0, extraBeds: e.target.checked ? undefined : newGuest.extraBeds})}
+                    onChange={e => {
+                      setNewGuest({...newGuest, complimentary: e.target.checked, totalAmount: 0, paidAmount: 0})
+                      if (e.target.checked) {
+                        setExtraBeds([])
+                      }
+                    }}
                     className="mr-2 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                     title="Mark as complimentary booking"
                   />
@@ -1792,7 +1768,12 @@ const Guests = () => {
                       <p><strong>Secondary Guest:</strong> {checkoutGuest.secondaryGuest.name}</p>
                     )}
                     {checkoutGuest.extraBeds && checkoutGuest.extraBeds.length > 0 && (
-                      <p><strong>Extra Beds:</strong> {checkoutGuest.extraBeds.map(bed => bed.name).join(', ')}</p>
+                      <div>
+                        <p><strong>Extra Beds:</strong></p>
+                        {checkoutGuest.extraBeds.map((bed, index) => (
+                          <p key={index} className="ml-4">• {bed.name} (₹{bed.charge})</p>
+                        ))}
+                      </div>
                     )}
                     <p><strong>Room:</strong> {checkoutGuest.roomNumber}</p>
                     <p><strong>Check-in:</strong> {checkoutGuest.checkInDate}</p>
