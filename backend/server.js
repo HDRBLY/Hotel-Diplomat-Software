@@ -4,20 +4,30 @@ const path = require('path');
 const fs = require('fs');
 const { Server } = require('socket.io');
 const http = require('http');
+require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
+
+// Environment variables
+const PORT = process.env.PORT || 3001;
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
+const JWT_SECRET = process.env.JWT_SECRET || 'default-secret-key';
+
 const io = new Server(server, {
   cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
+    origin: CORS_ORIGIN,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
   }
 });
 
-const PORT = process.env.PORT || 3001;
-
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: CORS_ORIGIN,
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../dist')));
 

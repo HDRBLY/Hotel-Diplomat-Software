@@ -24,11 +24,18 @@ In your Railway project dashboard:
 2. Add these environment variables:
 
 ```env
+# Frontend Configuration
 VITE_API_BASE_URL=https://your-app.railway.app/api
 VITE_SOCKET_URL=https://your-app.railway.app
-NODE_ENV=production
+
+# Backend Configuration
 PORT=3001
+NODE_ENV=production
+CORS_ORIGIN=https://your-app.railway.app
+JWT_SECRET=hotel-diplomat-super-secret-key-2024
 ```
+
+**Important**: Replace `your-app.railway.app` with your actual Railway domain!
 
 ### 3. Configure Build Settings
 
@@ -57,7 +64,8 @@ PORT=3001
 {
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
-    "builder": "NIXPACKS"
+    "builder": "NIXPACKS",
+    "buildCommand": "chmod +x build.sh && ./build.sh"
   },
   "deploy": {
     "startCommand": "npm start",
@@ -73,7 +81,7 @@ PORT=3001
 nixPkgs = ["nodejs", "npm"]
 
 [phases.install]
-cmds = ["npm install"]
+cmds = ["npm install --production=false"]
 
 [phases.build]
 cmds = ["npm run build"]
@@ -90,7 +98,7 @@ NODE_ENV = "production"
 FROM node:18-alpine
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm install
 COPY . .
 RUN npm run build
 EXPOSE 3001
@@ -111,12 +119,17 @@ CMD ["npm", "start"]
    - ✅ **FIXED**: Using Vite's built-in TypeScript handling
    - ✅ **FIXED**: Added Dockerfile as alternative
 
-3. **Build Failures**
+3. **CORS Errors**
+   - ✅ **FIXED**: Added proper CORS configuration
+   - ✅ **FIXED**: Environment variable for CORS_ORIGIN
+   - ✅ **FIXED**: Credentials support enabled
+
+4. **Build Failures**
    - Check Railway logs for specific error messages
    - Ensure all dependencies are in package.json
    - Verify Node.js version compatibility
 
-4. **Runtime Errors**
+5. **Runtime Errors**
    - Check environment variables are set correctly
    - Verify API endpoints are accessible
    - Check file permissions for data files
@@ -157,8 +170,10 @@ CMD ["npm", "start"]
 |----------|-------------|---------|
 | `VITE_API_BASE_URL` | Frontend API base URL | `https://your-app.railway.app/api` |
 | `VITE_SOCKET_URL` | WebSocket connection URL | `https://your-app.railway.app` |
-| `NODE_ENV` | Node.js environment | `production` |
 | `PORT` | Server port | `3001` |
+| `NODE_ENV` | Node.js environment | `production` |
+| `CORS_ORIGIN` | CORS allowed origin | `https://your-app.railway.app` |
+| `JWT_SECRET` | JWT secret key | `hotel-diplomat-super-secret-key-2024` |
 
 ## Security Considerations
 
@@ -166,6 +181,7 @@ CMD ["npm", "start"]
 2. **CORS**: Configure CORS properly for production
 3. **HTTPS**: Railway provides SSL certificates automatically
 4. **Rate Limiting**: Consider implementing rate limiting for production
+5. **JWT Secret**: Use a strong, unique JWT secret
 
 ## Scaling
 
@@ -190,4 +206,6 @@ CMD ["npm", "start"]
 ✅ **Vite now handles TypeScript compilation internally**
 ✅ **Added proper esbuild configuration**
 ✅ **Simplified build process for Railway**
-✅ **Added Dockerfile as alternative deployment method** 
+✅ **Added Dockerfile as alternative deployment method**
+✅ **Added proper environment variables configuration**
+✅ **Fixed CORS configuration for production** 
