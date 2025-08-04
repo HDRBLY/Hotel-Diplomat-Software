@@ -1047,9 +1047,16 @@ const Rooms = () => {
       const baseAmount = guest.totalAmount || room.price
       
       setCheckoutRoom(room)
+      // Format today's date in dd-mm-yyyy format
+      const today = new Date()
+      const day = today.getDate().toString().padStart(2, '0')
+      const month = (today.getMonth() + 1).toString().padStart(2, '0')
+      const year = today.getFullYear().toString()
+      const formattedToday = `${day}-${month}-${year}`
+      
       setCheckoutDetails({
         guestName: room.currentGuest || '',
-        actualCheckOutDate: new Date().toISOString().split('T')[0],
+        actualCheckOutDate: formattedToday,
         finalAmount: baseAmount, // Use guest's total amount as base
         additionalCharges: 0,
         paymentMethod: 'CASH',

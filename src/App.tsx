@@ -6,10 +6,10 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Guests from './pages/Guests'
 import Rooms from './pages/Rooms'
-import DeleteRooms from './pages/DeleteRooms'
+// import DeleteRooms from './pages/DeleteRooms'
 import Reservations from './pages/Reservations'
 import Reports from './pages/Reports'
-import Settings from './pages/Settings'
+// import Settings from './pages/Settings'
 import { Component, ReactNode } from 'react'
 
 // Error Boundary Component
@@ -87,13 +87,13 @@ function App() {
                 </Layout>
               </ProtectedRoute>
             } />
-            <Route path="/delete-rooms" element={
+            {/* <Route path="/delete-rooms" element={
               <ProtectedRoute requiredPermission="rooms:delete">
                 <Layout>
                   <DeleteRooms />
                 </Layout>
               </ProtectedRoute>
-            } />
+            } /> */}
             <Route path="/reservations" element={
               <ProtectedRoute requiredPermission="reservations:view">
                 <Layout>
@@ -108,13 +108,13 @@ function App() {
                 </Layout>
               </ProtectedRoute>
             } />
-            <Route path="/settings" element={
+            {/* <Route path="/settings" element={
               <ProtectedRoute requiredPermission="settings:view">
                 <Layout>
                   <Settings />
                 </Layout>
               </ProtectedRoute>
-            } />
+            } /> */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Router>

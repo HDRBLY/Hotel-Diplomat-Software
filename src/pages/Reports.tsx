@@ -80,8 +80,12 @@ const Reports = () => {
   }
 
   const exportToPDF = (data: any[], filename: string) => {
-    // Simple PDF export using window.print() for now
-    // In a real app, you'd use a library like jsPDF
+    const today = new Date().toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    })
+    
     const printWindow = window.open('', '_blank')
     if (printWindow) {
       printWindow.document.write(`
@@ -89,29 +93,206 @@ const Reports = () => {
           <head>
             <title>${filename}</title>
             <style>
-              body { font-family: Arial, sans-serif; margin: 20px; }
-              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-              th { background-color: #f2f2f2; }
-              h1 { color: #333; }
+              @media print {
+                body { margin: 0; padding: 20px; }
+                .page-break { page-break-before: always; }
+              }
+              
+              body { 
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                margin: 0; 
+                padding: 20px; 
+                background: white;
+                color: #333;
+              }
+              
+              .header {
+                text-align: center;
+                border-bottom: 3px solid #2563eb;
+                padding-bottom: 20px;
+                margin-bottom: 30px;
+              }
+              
+              .hotel-name {
+                font-size: 28px;
+                font-weight: bold;
+                color: #1e40af;
+                margin: 0;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+              }
+              
+              .report-title {
+                font-size: 20px;
+                color: #374151;
+                margin: 10px 0 0 0;
+                font-weight: 600;
+              }
+              
+              .report-date {
+                font-size: 14px;
+                color: #6b7280;
+                margin: 5px 0 0 0;
+              }
+              
+              .summary-section {
+                background: #f8fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                padding: 20px;
+                margin-bottom: 30px;
+              }
+              
+              .summary-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 20px;
+                margin-top: 15px;
+              }
+              
+              .metric-card {
+                background: white;
+                border: 1px solid #d1d5db;
+                border-radius: 6px;
+                padding: 15px;
+                text-align: center;
+              }
+              
+              .metric-value {
+                font-size: 24px;
+                font-weight: bold;
+                color: #1e40af;
+                margin-bottom: 5px;
+              }
+              
+              .metric-label {
+                font-size: 12px;
+                color: #6b7280;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+              }
+              
+              .data-section {
+                margin-top: 30px;
+              }
+              
+              .section-title {
+                font-size: 18px;
+                font-weight: 600;
+                color: #374151;
+                margin-bottom: 15px;
+                padding-bottom: 8px;
+                border-bottom: 2px solid #e5e7eb;
+              }
+              
+              table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 15px;
+                background: white;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+              }
+              
+              th {
+                background: #f3f4f6;
+                color: #374151;
+                font-weight: 600;
+                padding: 12px 8px;
+                text-align: left;
+                border-bottom: 2px solid #d1d5db;
+                font-size: 13px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+              }
+              
+              td {
+                padding: 12px 8px;
+                border-bottom: 1px solid #e5e7eb;
+                font-size: 14px;
+              }
+              
+              tr:hover {
+                background: #f9fafb;
+              }
+              
+              .footer {
+                margin-top: 40px;
+                padding-top: 20px;
+                border-top: 1px solid #e5e7eb;
+                text-align: center;
+                color: #6b7280;
+                font-size: 12px;
+              }
+              
+              .generated-by {
+                font-style: italic;
+                margin-top: 10px;
+              }
             </style>
           </head>
           <body>
-            <h1>${filename}</h1>
-            <table>
-              <thead>
-                <tr>
-                  ${Object.keys(data[0]).map(key => `<th>${key}</th>`).join('')}
-                </tr>
-              </thead>
-              <tbody>
-                ${data.map(row => `
+            <div class="header">
+              <h1 class="hotel-name">Hotel Diplomat</h1>
+              <h2 class="report-title">${filename}</h2>
+              <p class="report-date">Generated on: ${today}</p>
+              ${dateRange === 'custom' && startDate && endDate ? 
+                `<p class="report-date">Period: ${new Date(startDate).toLocaleDateString()} - ${new Date(endDate).toLocaleDateString()}</p>` : 
+                ''
+              }
+            </div>
+            
+            <div class="summary-section">
+              <h3 class="section-title">Executive Summary</h3>
+              <div class="summary-grid">
+                <div class="metric-card">
+                  <div class="metric-value">${reportData.occupancyRate}%</div>
+                  <div class="metric-label">Occupancy Rate</div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-value">₹${reportData.totalRevenue.toLocaleString()}</div>
+                  <div class="metric-label">Total Revenue</div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-value">₹${reportData.averageRoomRate}</div>
+                  <div class="metric-label">Average Room Rate</div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-value">${reportData.totalGuests}</div>
+                  <div class="metric-label">Total Guests</div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-value">${reportData.totalBookings}</div>
+                  <div class="metric-label">Total Bookings</div>
+                </div>
+                <div class="metric-card">
+                  <div class="metric-value">${reportData.cancellationRate}%</div>
+                  <div class="metric-label">Cancellation Rate</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="data-section">
+              <h3 class="section-title">Detailed Report</h3>
+              <table>
+                <thead>
                   <tr>
-                    ${Object.values(row).map(value => `<td>${value}</td>`).join('')}
+                    ${Object.keys(data[0]).map(key => `<th>${key}</th>`).join('')}
                   </tr>
-                `).join('')}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  ${data.map(row => `
+                    <tr>
+                      ${Object.values(row).map(value => `<td>${value}</td>`).join('')}
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+            
+            <div class="footer">
+              <p>This report was generated automatically by Hotel Diplomat Management System</p>
+              <p class="generated-by">Generated by: ${localStorage.getItem('userName') || 'System Administrator'}</p>
+            </div>
           </body>
         </html>
       `)
@@ -191,45 +372,47 @@ const Reports = () => {
           'Total Bookings': reportData.totalBookings,
           'Cancellation Rate': `${reportData.cancellationRate}%`
         }]
-        filename = 'Hotel Overview'
+        filename = 'Hotel Performance Overview'
         break
       case 'revenue':
         data = monthlyRevenueData.map(item => ({
           Month: item.month,
           Revenue: `₹${item.revenue.toLocaleString()}`,
-          Bookings: item.bookings
+          Bookings: item.bookings,
+          'Average Revenue per Booking': `₹${item.bookings > 0 ? Math.round(item.revenue / item.bookings) : 0}`
         }))
-        filename = `Revenue Report ${startDate ? `(${startDate} to ${endDate})` : ''}`
+        filename = `Revenue Analysis Report ${startDate ? `(${new Date(startDate).toLocaleDateString()} - ${new Date(endDate).toLocaleDateString()})` : ''}`
         break
       case 'occupancy':
         data = occupancyData.map(item => ({
-          Date: item.date,
+          Day: item.day,
           'Occupancy Rate': `${item.rate}%`,
           'Available Rooms': item.availableRooms,
-          'Total Rooms': item.totalRooms
+          'Total Rooms': item.totalRooms,
+          'Occupied Rooms': item.totalRooms - item.availableRooms
         }))
-        filename = 'Occupancy Report'
+        filename = 'Weekly Occupancy Report'
         break
       case 'guests':
         data = guestData.map(item => ({
-          Name: item.name,
+          'Guest Name': item.name,
           'Room Number': item.roomNumber,
           'Check-in Date': item.checkInDate,
           'Check-out Date': item.checkOutDate,
           Status: item.status,
-          Amount: `₹${item.amount.toLocaleString()}`
+          'Amount Paid': `₹${item.amount.toLocaleString()}`
         }))
-        filename = 'Guest Report'
+        filename = 'Guest Management Report'
         break
       case 'rooms':
         data = roomData.map(item => ({
           'Room Number': item.number,
-          Type: item.type,
+          'Room Type': item.type.charAt(0).toUpperCase() + item.type.slice(1),
           Status: item.status,
           'Last Cleaned': item.lastCleaned,
           'Revenue Generated': `₹${item.revenue.toLocaleString()}`
         }))
-        filename = 'Room Report'
+        filename = 'Room Status Report'
         break
     }
 

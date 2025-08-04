@@ -6,14 +6,14 @@ import {
   Bed, 
   Calendar, 
   BarChart3, 
-  Settings as SettingsIcon,
+  // Settings as SettingsIcon,
   Menu,
   X,
   Building2,
   LogOut,
   User,
   ChevronDown,
-  Trash2
+  // Trash2
 } from 'lucide-react'
 import { useAuth } from './AuthContext'
 import { useNotification } from './Notification'
@@ -82,12 +82,12 @@ const Layout = ({ children }: LayoutProps) => {
       icon: Bed,
       permission: 'rooms:view'
     },
-    { 
-      name: 'Delete Rooms', 
-      href: '/delete-rooms', 
-      icon: Trash2,
-      permission: 'rooms:delete'
-    },
+    // { 
+    //   name: 'Delete Rooms', 
+    //   href: '/delete-rooms', 
+    //   icon: Trash2,
+    //   permission: 'rooms:delete'
+    // },
     { 
       name: 'Reservations', 
       href: '/reservations', 
@@ -100,12 +100,12 @@ const Layout = ({ children }: LayoutProps) => {
       icon: BarChart3,
       permission: 'reports:view'
     },
-    { 
-      name: 'Settings', 
-      href: '/settings', 
-      icon: SettingsIcon,
-      permission: 'settings:view'
-    },
+    // { 
+    //   name: 'Settings', 
+    //   href: '/settings', 
+    //   icon: SettingsIcon,
+    //   permission: 'settings:view'
+    // },
   ].filter(item => hasPermission(item.permission))
 
   const getRoleColor = (role: string) => {
