@@ -164,7 +164,7 @@
     "id": "9",
     "number": "206",
     "type": "DELUXE",
-    "status": "AVAILABLE",
+    "status": "CLEANING",
     "floor": 2,
     "price": 2500,
     "amenities": [
@@ -179,7 +179,9 @@
     "checkInDate": null,
     "checkOutDate": null,
     "lastCleaned": "2025-08-04T11:17:30.191Z",
-    "createdAt": "2025-08-04T11:17:30.191Z"
+    "createdAt": "2025-08-04T11:17:30.191Z",
+    "updatedAt": "2025-08-04T13:22:38.015Z",
+    "notes": "Guest checked out on 4/8/2025. Room needs cleaning."
   },
   {
     "id": "10",
@@ -248,7 +250,7 @@
     "id": "13",
     "number": "214",
     "type": "DELUXE",
-    "status": "AVAILABLE",
+    "status": "OCCUPIED",
     "floor": 2,
     "price": 2500,
     "amenities": [
@@ -258,12 +260,13 @@
       "Coffee",
       "Balcony"
     ],
-    "category": "SOLO",
-    "currentGuest": null,
-    "checkInDate": null,
-    "checkOutDate": null,
+    "category": "COUPLE",
+    "currentGuest": "Adnan",
+    "checkInDate": "2025-08-04",
+    "checkOutDate": "2025-08-04",
     "lastCleaned": "2025-08-04T11:17:30.191Z",
-    "createdAt": "2025-08-04T11:17:30.191Z"
+    "createdAt": "2025-08-04T11:17:30.191Z",
+    "updatedAt": "2025-08-04T13:31:06.834Z"
   },
   {
     "id": "14",

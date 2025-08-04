@@ -1857,6 +1857,149 @@ app.get('/api/reports/overview', (req, res) => {
   });
 });
 
+// Chart data endpoints
+app.get('/api/reports/charts/monthly-revenue', (req, res) => {
+  const { startDate, endDate } = req.query;
+  const guests = readData('guests.json');
+  const activities = readData('activities.json');
+  
+  // Generate monthly revenue data based on actual guest payments
+  const monthlyData = [];
+  const today = new Date();
+  
+  // Generate last 12 months of data
+  for (let i = 11; i >= 0; i--) {
+    const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    const monthStr = date.toISOString().slice(0, 7); // YYYY-MM format
+    const monthName = date.toLocaleDateString('en-US', { month: 'short' });
+    
+    // Calculate revenue from guests who checked in this month (using paid amount)
+    const monthCheckins = guests.filter(guest => 
+      guest.checkInDate && guest.checkInDate.startsWith(monthStr) && guest.status === 'checked-in'
+    );
+    const checkinRevenue = monthCheckins.reduce((sum, guest) => sum + (guest.paidAmount || 0), 0);
+    
+    // Calculate revenue from checkouts this month (additional payments)
+    const monthCheckouts = activities.filter(activity => {
+      if (activity.type !== 'guest_checked_out') return false;
+      try {
+        const activityDate = new Date(parseInt(activity.id)).toISOString().slice(0, 7);
+        return activityDate === monthStr;
+      } catch (error) {
+        return false;
+      }
+    });
+    const checkoutRevenue = monthCheckouts.reduce((sum, activity) => sum + (activity.additionalPayment || 0), 0);
+    
+    const totalMonthRevenue = checkinRevenue + checkoutRevenue;
+    const bookings = monthCheckins.length;
+    
+    monthlyData.push({
+      month: monthName,
+      revenue: totalMonthRevenue,
+      bookings: bookings
+    });
+  }
+  
+  // Filter by date range if provided
+  let filteredData = monthlyData;
+  if (startDate && endDate) {
+    filteredData = monthlyData.filter(item => {
+      const itemDate = new Date(today.getFullYear(), today.getMonth() - (11 - monthlyData.indexOf(item)), 1);
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      return itemDate >= start && itemDate <= end;
+    });
+  }
+  
+  res.json({ success: true, data: filteredData });
+});
+
+app.get('/api/reports/charts/room-types', (req, res) => {
+  const rooms = readData('rooms.json');
+  const guests = readData('guests.json');
+  
+  // Count rooms by type and calculate their usage
+  const roomTypeCounts = {};
+  const roomTypeRevenue = {};
+  
+  rooms.forEach(room => {
+    const type = room.type?.toLowerCase() || 'standard';
+    roomTypeCounts[type] = (roomTypeCounts[type] || 0) + 1;
+    
+    // Calculate revenue for this room type
+    const roomGuests = guests.filter(guest => 
+      guest.roomNumber === room.number && guest.status === 'checked-in'
+    );
+    const revenue = roomGuests.reduce((sum, guest) => sum + (guest.paidAmount || 0), 0);
+    roomTypeRevenue[type] = (roomTypeRevenue[type] || 0) + revenue;
+  });
+  
+  const roomTypeData = Object.keys(roomTypeCounts).map(type => {
+    const colors = {
+      'standard': '#3b82f6',
+      'deluxe': '#10b981', 
+      'suite': '#8b5cf6',
+      'presidential': '#f59e0b'
+    };
+    
+    return {
+      name: type.charAt(0).toUpperCase() + type.slice(1),
+      value: roomTypeCounts[type],
+      color: colors[type] || '#6b7280',
+      revenue: roomTypeRevenue[type] || 0
+    };
+  });
+  
+  res.json({ success: true, data: roomTypeData });
+});
+
+app.get('/api/reports/charts/guest-sources', (req, res) => {
+  const guests = readData('guests.json');
+  
+  // Since we don't track guest sources in our current data model,
+  // we'll create a realistic distribution based on guest categories
+  const sourceMapping = {
+    'solo': 'Direct',
+    'couple': 'Direct', 
+    'family': 'Online Travel Agencies',
+    'corporate': 'Corporate'
+  };
+  
+  const sourceCounts = {};
+  let totalBookings = 0;
+  
+  guests.forEach(guest => {
+    const source = sourceMapping[guest.category] || 'Direct';
+    sourceCounts[source] = (sourceCounts[source] || 0) + 1;
+    totalBookings += 1;
+  });
+  
+  const guestSourceData = Object.keys(sourceCounts).map(source => {
+    const bookings = sourceCounts[source];
+    const percentage = totalBookings > 0 ? Math.round((bookings / totalBookings) * 100 * 10) / 10 : 0;
+    
+    return {
+      source: source,
+      bookings: bookings,
+      percentage: percentage
+    };
+  });
+  
+  // If no data, provide default distribution
+  if (guestSourceData.length === 0) {
+    guestSourceData.push(
+      { source: 'Direct', bookings: 0, percentage: 0 },
+      { source: 'Online Travel Agencies', bookings: 0, percentage: 0 },
+      { source: 'Corporate', bookings: 0, percentage: 0 },
+      { source: 'Travel Agents', bookings: 0, percentage: 0 },
+      { source: 'Other', bookings: 0, percentage: 0 }
+    );
+  }
+  
+  res.json({ success: true, data: guestSourceData });
+});
+
 // Clear all data endpoint
 app.post('/api/reports/clear-data', (req, res) => {
   try {

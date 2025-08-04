@@ -8,7 +8,6 @@ import {
   Bed, 
   Calendar,
   Download,
-  Filter,
   Trash2
 } from 'lucide-react'
 import { 
@@ -58,6 +57,9 @@ const Reports = () => {
   const [occupancyData, setOccupancyData] = useState<any[]>([])
   const [guestData, setGuestData] = useState<any[]>([])
   const [roomData, setRoomData] = useState<any[]>([])
+  const [monthlyRevenueData, setMonthlyRevenueData] = useState<any[]>([])
+  const [roomTypeData, setRoomTypeData] = useState<any[]>([])
+  const [guestSourceData, setGuestSourceData] = useState<any[]>([])
   const [isClearing, setIsClearing] = useState(false)
 
   // Export functionality
@@ -192,11 +194,10 @@ const Reports = () => {
         filename = 'Hotel Overview'
         break
       case 'revenue':
-        data = getFilteredData().map(item => ({
-          Date: item.date,
+        data = monthlyRevenueData.map(item => ({
+          Month: item.month,
           Revenue: `₹${item.revenue.toLocaleString()}`,
-          Bookings: item.bookings,
-          'Average Rate': `₹${item.averageRate.toLocaleString()}`
+          Bookings: item.bookings
         }))
         filename = `Revenue Report ${startDate ? `(${startDate} to ${endDate})` : ''}`
         break
@@ -281,6 +282,25 @@ const Reports = () => {
         const roomResult = await roomResponse.json()
         if (roomResult.success) {
           setRoomData(roomResult.data)
+        }
+
+        // Fetch chart data
+        const monthlyRevenueResponse = await fetch(`http://localhost:3001/api/reports/charts/monthly-revenue?${params}`)
+        const monthlyRevenueResult = await monthlyRevenueResponse.json()
+        if (monthlyRevenueResult.success) {
+          setMonthlyRevenueData(monthlyRevenueResult.data)
+        }
+
+        const roomTypeResponse = await fetch(`http://localhost:3001/api/reports/charts/room-types?${params}`)
+        const roomTypeResult = await roomTypeResponse.json()
+        if (roomTypeResult.success) {
+          setRoomTypeData(roomTypeResult.data)
+        }
+
+        const guestSourceResponse = await fetch(`http://localhost:3001/api/reports/charts/guest-sources?${params}`)
+        const guestSourceResult = await guestSourceResponse.json()
+        if (guestSourceResult.success) {
+          setGuestSourceData(guestSourceResult.data)
         }
       } catch (error) {
         console.error('Error fetching reports data:', error)
@@ -377,6 +397,25 @@ const Reports = () => {
             if (roomResult.success) {
               setRoomData(roomResult.data)
             }
+
+            // Fetch chart data
+            const monthlyRevenueResponse = await fetch('http://localhost:3001/api/reports/charts/monthly-revenue')
+            const monthlyRevenueResult = await monthlyRevenueResponse.json()
+            if (monthlyRevenueResult.success) {
+              setMonthlyRevenueData(monthlyRevenueResult.data)
+            }
+
+            const roomTypeResponse = await fetch('http://localhost:3001/api/reports/charts/room-types')
+            const roomTypeResult = await roomTypeResponse.json()
+            if (roomTypeResult.success) {
+              setRoomTypeData(roomTypeResult.data)
+            }
+
+            const guestSourceResponse = await fetch('http://localhost:3001/api/reports/charts/guest-sources')
+            const guestSourceResult = await guestSourceResponse.json()
+            if (guestSourceResult.success) {
+              setGuestSourceData(guestSourceResult.data)
+            }
           } catch (error) {
             console.error('Error fetching reports data:', error)
           }
@@ -395,37 +434,7 @@ const Reports = () => {
     }
   }
 
-  const monthlyRevenueData = [
-    { month: 'Jan', revenue: 850000, bookings: 280 },
-    { month: 'Feb', revenue: 920000, bookings: 310 },
-    { month: 'Mar', revenue: 880000, bookings: 295 },
-    { month: 'Apr', revenue: 950000, bookings: 320 },
-    { month: 'May', revenue: 1020000, bookings: 340 },
-    { month: 'Jun', revenue: 980000, bookings: 330 },
-    { month: 'Jul', revenue: 1100000, bookings: 365 },
-    { month: 'Aug', revenue: 1150000, bookings: 380 },
-    { month: 'Sep', revenue: 1080000, bookings: 360 },
-    { month: 'Oct', revenue: 1120000, bookings: 375 },
-    { month: 'Nov', revenue: 1050000, bookings: 350 },
-    { month: 'Dec', revenue: 1250000, bookings: 420 }
-  ]
 
-  const roomTypeData = [
-    { name: 'Standard', value: 14, color: '#3b82f6' },
-    { name: 'Deluxe', value: 6, color: '#10b981' },
-    { name: 'Suite', value: 10, color: '#8b5cf6' },
-    { name: 'Presidential', value: 2, color: '#f59e0b' }
-  ]
-
-
-
-  const guestSourceData = [
-    { source: 'Direct', bookings: 120, percentage: 37.5 },
-    { source: 'Online Travel Agencies', bookings: 85, percentage: 26.6 },
-    { source: 'Corporate', bookings: 65, percentage: 20.3 },
-    { source: 'Travel Agents', bookings: 35, percentage: 10.9 },
-    { source: 'Other', bookings: 15, percentage: 4.7 }
-  ]
 
   const COLORS = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444']
 
@@ -442,19 +451,17 @@ const Reports = () => {
               <table className="min-w-full divide-y divide-gray-200 text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-2 text-left">Date</th>
+                    <th className="px-4 py-2 text-left">Month</th>
                     <th className="px-4 py-2 text-left">Revenue</th>
                     <th className="px-4 py-2 text-left">Bookings</th>
-                    <th className="px-4 py-2 text-left">Avg Rate</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {getFilteredData().map((row, i) => (
+                  {monthlyRevenueData.map((row, i) => (
                     <tr key={i}>
-                      <td className="px-4 py-2">{new Date(row.date).toLocaleDateString()}</td>
+                      <td className="px-4 py-2">{row.month}</td>
                       <td className="px-4 py-2">₹{row.revenue.toLocaleString()}</td>
                       <td className="px-4 py-2">{row.bookings}</td>
-                      <td className="px-4 py-2">₹{row.averageRate.toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -689,9 +696,9 @@ const Reports = () => {
             </button>
           </div>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={getFilteredData()}>
+            <LineChart data={monthlyRevenueData}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
+              <XAxis dataKey="month" />
               <YAxis />
               <Tooltip formatter={(value) => [`₹${value.toLocaleString()}`, 'Revenue']} />
               <Line type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2} />
@@ -798,56 +805,114 @@ const Reports = () => {
               <option value="occupancy">Occupancy Report</option>
               <option value="guest">Guest Report</option>
             </select>
-            <button className="btn-secondary flex items-center">
-              <Filter className="h-4 w-4 mr-2" />
-              Filter
-            </button>
           </div>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Period
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Revenue
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Occupancy
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ADR
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Bookings
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Cancellations
-                </th>
+                {detailedReport === 'revenue' && (
+                  <>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Month
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Revenue
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Bookings
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Average Rate
+                    </th>
+                  </>
+                )}
+                {detailedReport === 'occupancy' && (
+                  <>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Day
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Occupancy Rate
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Available Rooms
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Total Rooms
+                    </th>
+                  </>
+                )}
+                {detailedReport === 'guest' && (
+                  <>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Guest Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Room Number
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Check-in Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Amount
+                    </th>
+                  </>
+                )}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {getFilteredData().map((data, index) => (
+              {detailedReport === 'revenue' && monthlyRevenueData.map((data, index) => (
                 <tr key={index} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {new Date(data.date).toLocaleDateString()}
+                    {data.month}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     ₹{data.revenue.toLocaleString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {Math.round((data.bookings / 47) * 100)}%
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ₹{Math.round(data.revenue / data.bookings)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {data.bookings}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {Math.round(data.bookings * 0.12)}
+                    ₹{data.bookings > 0 ? Math.round(data.revenue / data.bookings) : 0}
+                  </td>
+                </tr>
+              ))}
+              {detailedReport === 'occupancy' && occupancyData.map((data, index) => (
+                <tr key={index} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {data.day}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {data.rate}%
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {data.availableRooms}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {data.totalRooms}
+                  </td>
+                </tr>
+              ))}
+              {detailedReport === 'guest' && guestData.map((data, index) => (
+                <tr key={index} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {data.name}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {data.roomNumber}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {data.checkInDate}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {data.status}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    ₹{data.amount.toLocaleString()}
                   </td>
                 </tr>
               ))}
