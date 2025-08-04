@@ -88,6 +88,15 @@ const writeData = (filename, data) => {
   }
 };
 
+// Health check endpoint for Railway
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'OK', 
+    message: 'Hotel Diplomat Backend is running',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Initialize default data if empty
 const initializeDefaultData = () => {
   // Initialize users if empty
@@ -2022,9 +2031,18 @@ app.post('/api/reports/clear-data', (req, res) => {
   }
 });
 
+// Serve static files from the React build
+app.use(express.static(path.join(__dirname, '../dist')));
+
+// Handle React routing, return all requests to React app
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist', 'index.html'));
+});
+
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`🚀 Hotel Diplomat Backend running on port ${PORT}`);
   console.log(`📡 WebSocket server ready for real-time updates`);
   console.log(`🌐 API available at http://localhost:${PORT}/api`);
+  console.log(`🌍 Frontend available at http://localhost:${PORT}`);
 }); 

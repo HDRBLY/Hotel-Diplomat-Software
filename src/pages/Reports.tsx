@@ -273,20 +273,20 @@ const Reports = () => {
             
             <div class="data-section">
               <h3 class="section-title">Detailed Report</h3>
-              <table>
-                <thead>
+            <table>
+              <thead>
+                <tr>
+                  ${Object.keys(data[0]).map(key => `<th>${key}</th>`).join('')}
+                </tr>
+              </thead>
+              <tbody>
+                ${data.map(row => `
                   <tr>
-                    ${Object.keys(data[0]).map(key => `<th>${key}</th>`).join('')}
+                    ${Object.values(row).map(value => `<td>${value}</td>`).join('')}
                   </tr>
-                </thead>
-                <tbody>
-                  ${data.map(row => `
-                    <tr>
-                      ${Object.values(row).map(value => `<td>${value}</td>`).join('')}
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
+                `).join('')}
+              </tbody>
+            </table>
             </div>
             
             <div class="footer">
@@ -996,28 +996,28 @@ const Reports = () => {
               <tr>
                 {detailedReport === 'revenue' && (
                   <>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Month
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Revenue
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Revenue
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Bookings
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Average Rate
-                    </th>
+                </th>
                   </>
                 )}
                 {detailedReport === 'occupancy' && (
                   <>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Day
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Occupancy Rate
-                    </th>
+                </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Available Rooms
                     </th>

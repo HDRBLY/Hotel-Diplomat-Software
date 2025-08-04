@@ -2,7 +2,7 @@
   "name": "hotel-diplomat-residency-software",
   "version": "1.0.0",
   "type": "module",
-  "homepage": "https://hdrbly.github.io/Hotel-Diplomat-Software",
+  "homepage": "https://hotel-diplomat-software.railway.app",
   "description": "Hotel Diplomat Residency (HDR) Front Desk Management System",
   "main": "index.js",
   "scripts": {
@@ -10,6 +10,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "start": "vite --host",
+    "start:prod": "npm run build && cd backend && npm start",
     "deploy": "npm run build && gh-pages -d dist"
   },
   "dependencies": {

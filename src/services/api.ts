@@ -19,7 +19,7 @@ export interface PaginatedResponse<T> extends ApiResponse<T[]> {
 }
 
 // Base API configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 const API_TIMEOUT = 30000 // 30 seconds
 
 // Request interceptor to add auth token
@@ -490,7 +490,7 @@ export class WebSocketService {
   private reconnectInterval = 1000
 
   connect(token: string) {
-    const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:3001/ws'
+    const wsUrl = import.meta.env.VITE_WS_URL || `ws://${window.location.host}/ws`
     this.ws = new WebSocket(`${wsUrl}?token=${token}`)
 
     this.ws.onopen = () => {
