@@ -44,4 +44,7 @@ export default defineConfig({
   esbuild: {
     target: 'es2020',
   },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom', 'recharts']
+  }
 }) 
