@@ -243,36 +243,41 @@ const Reports = () => {
   useEffect(() => {
     const fetchReportsData = async () => {
       try {
-        // Fetch overview data
-        const overviewResponse = await fetch('http://localhost:3001/api/reports/overview')
+        // Build query parameters for date filtering
+        const params = new URLSearchParams()
+        if (startDate) params.append('startDate', startDate)
+        if (endDate) params.append('endDate', endDate)
+        
+        // Fetch overview data with date range
+        const overviewResponse = await fetch(`http://localhost:3001/api/reports/overview?${params}`)
         const overviewData = await overviewResponse.json()
         if (overviewData.success) {
           setReportData(overviewData.data)
         }
 
-        // Fetch revenue data
-        const revenueResponse = await fetch('http://localhost:3001/api/reports/revenue')
+        // Fetch revenue data with date range
+        const revenueResponse = await fetch(`http://localhost:3001/api/reports/revenue?${params}`)
         const revenueResult = await revenueResponse.json()
         if (revenueResult.success) {
           setRevenueData(revenueResult.data)
         }
 
-        // Fetch occupancy data
-        const occupancyResponse = await fetch('http://localhost:3001/api/reports/occupancy')
+        // Fetch occupancy data with date range
+        const occupancyResponse = await fetch(`http://localhost:3001/api/reports/occupancy?${params}`)
         const occupancyResult = await occupancyResponse.json()
         if (occupancyResult.success) {
           setOccupancyData(occupancyResult.data)
         }
 
-        // Fetch guest data
-        const guestResponse = await fetch('http://localhost:3001/api/reports/guests')
+        // Fetch guest data with date range
+        const guestResponse = await fetch(`http://localhost:3001/api/reports/guests?${params}`)
         const guestResult = await guestResponse.json()
         if (guestResult.success) {
           setGuestData(guestResult.data)
         }
 
-        // Fetch room data
-        const roomResponse = await fetch('http://localhost:3001/api/reports/rooms')
+        // Fetch room data with date range
+        const roomResponse = await fetch(`http://localhost:3001/api/reports/rooms?${params}`)
         const roomResult = await roomResponse.json()
         if (roomResult.success) {
           setRoomData(roomResult.data)

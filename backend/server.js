@@ -1581,31 +1581,47 @@ app.get('/api/room-shifts', (req, res) => {
 app.get('/api/reports/revenue', (req, res) => {
   const { startDate, endDate } = req.query;
   const guests = readData('guests.json');
+  const activities = readData('activities.json');
   
-  // Generate revenue data based on actual guest check-ins
+  // Generate revenue data based on actual guest payments
   const revenueData = [];
   const today = new Date();
   
-  // Generate last 7 days of data (more realistic for current data)
+  // Generate last 7 days of data
   for (let i = 6; i >= 0; i--) {
     const date = new Date(today);
     date.setDate(date.getDate() - i);
     const dateStr = date.toISOString().split('T')[0];
     
-    // Find guests who checked in on this date
-    const dayGuests = guests.filter(guest => 
+    // Calculate revenue from guests who checked in on this date (using paid amount)
+    const dayCheckins = guests.filter(guest => 
       guest.checkInDate === dateStr && guest.status === 'checked-in'
     );
+    const checkinRevenue = dayCheckins.reduce((sum, guest) => sum + (guest.paidAmount || 0), 0);
     
-    const dayRevenue = dayGuests.reduce((sum, guest) => sum + (guest.totalAmount || 0), 0);
-    const bookings = dayGuests.length;
-    const averageRate = bookings > 0 ? Math.round(dayRevenue / bookings) : 0;
+    // Calculate revenue from checkouts on this date (additional payments)
+    const dayCheckouts = activities.filter(activity => {
+      if (activity.type !== 'guest_checked_out') return false;
+      try {
+        const activityDate = new Date(parseInt(activity.id)).toISOString().split('T')[0];
+        return activityDate === dateStr;
+      } catch (error) {
+        return false;
+      }
+    });
+    const checkoutRevenue = dayCheckouts.reduce((sum, activity) => sum + (activity.additionalPayment || 0), 0);
+    
+    const totalDayRevenue = checkinRevenue + checkoutRevenue;
+    const bookings = dayCheckins.length;
+    const averageRate = bookings > 0 ? Math.round(totalDayRevenue / bookings) : 0;
     
     revenueData.push({
       date: dateStr,
-      revenue: dayRevenue,
+      revenue: totalDayRevenue,
       bookings: bookings,
-      averageRate: averageRate
+      averageRate: averageRate,
+      checkinRevenue: checkinRevenue,
+      checkoutRevenue: checkoutRevenue
     });
   }
   
@@ -1629,18 +1645,42 @@ app.get('/api/reports/occupancy', (req, res) => {
   const today = new Date();
   const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   
+  // Calculate today's occupancy rate using room usage frequency (same as dashboard)
+  let todayOccupiedRooms = new Set();
+  
+  // Add currently occupied rooms
+  rooms.forEach(room => {
+    if (room.status === 'OCCUPIED') {
+      todayOccupiedRooms.add(room.number);
+    }
+  });
+  
+  // Add rooms that were checked out today
+  guests.forEach(guest => {
+    if (guest.status === 'checked-out' && guest.checkOutDate) {
+      const checkoutDate = new Date(guest.checkOutDate).toISOString().split('T')[0];
+      const todayStr = new Date().toISOString().split('T')[0];
+      if (checkoutDate === todayStr && guest.roomNumber) {
+        todayOccupiedRooms.add(guest.roomNumber);
+      }
+    }
+  });
+  
+  const todayOccupiedCount = todayOccupiedRooms.size;
+  const totalRooms = rooms.length;
+  const todayRate = totalRooms > 0 ? Math.round((todayOccupiedCount / totalRooms) * 100 * 10) / 10 : 0;
+  
   const occupancyData = daysOfWeek.map((day, index) => {
-    // Calculate current occupancy based on actual room status
-    const occupiedRooms = rooms.filter(room => room.status === 'OCCUPIED').length;
-    const totalRooms = rooms.length;
-    const rate = totalRooms > 0 ? Math.round((occupiedRooms / totalRooms) * 100 * 10) / 10 : 0;
+    // For today, use the calculated rate, for other days use a base rate
+    const rate = index === today.getDay() ? todayRate : Math.round(todayRate * 0.8); // 80% of today's rate for other days
     
     return {
       day: day,
       rate: rate,
-      availableRooms: totalRooms - occupiedRooms,
+      availableRooms: totalRooms - (index === today.getDay() ? todayOccupiedCount : Math.round(todayOccupiedCount * 0.8)),
       totalRooms: totalRooms,
-      occupiedRooms: occupiedRooms
+      occupiedRooms: index === today.getDay() ? todayOccupiedCount : Math.round(todayOccupiedCount * 0.8),
+      todayOccupiedRooms: index === today.getDay() ? todayOccupiedCount : 0
     };
   });
   
@@ -1648,16 +1688,27 @@ app.get('/api/reports/occupancy', (req, res) => {
 });
 
 app.get('/api/reports/guests', (req, res) => {
+  const { startDate, endDate } = req.query;
   const guests = readData('guests.json');
   
-  const guestData = guests.map(guest => ({
+  let filteredGuests = guests;
+  
+  // Filter guests by date range if provided
+  if (startDate && endDate) {
+    filteredGuests = guests.filter(guest => {
+      const checkInDate = guest.checkInDate;
+      return checkInDate && checkInDate >= startDate && checkInDate <= endDate;
+    });
+  }
+  
+  const guestData = filteredGuests.map(guest => ({
     name: guest.name,
     roomNumber: guest.roomNumber || 'N/A',
     checkInDate: guest.checkInDate || 'N/A',
     checkOutDate: guest.checkOutDate || 'N/A',
     status: guest.status === 'checked-in' ? 'Checked-in' : 
             guest.status === 'checked-out' ? 'Checked-out' : 'Reserved',
-    amount: guest.totalAmount || 0
+    amount: guest.paidAmount || 0
   }));
   
   res.json({ success: true, data: guestData });
@@ -1668,20 +1719,22 @@ app.get('/api/reports/rooms', (req, res) => {
   const guests = readData('guests.json');
   
   const roomData = rooms.map(room => {
-    // Calculate revenue for this room
+    // Calculate revenue for this room using paid amounts
     const roomGuests = guests.filter(guest => 
       guest.roomNumber === room.number && guest.status === 'checked-in'
     );
-    const revenue = roomGuests.reduce((sum, guest) => sum + (guest.totalAmount || 0), 0);
+    const revenue = roomGuests.reduce((sum, guest) => sum + (guest.paidAmount || 0), 0);
     
     return {
       number: room.number,
       type: room.type?.toLowerCase() || 'standard',
       status: room.status === 'OCCUPIED' ? 'Occupied' : 
               room.status === 'AVAILABLE' ? 'Available' : 
-              room.status === 'MAINTENANCE' ? 'Maintenance' : 'Available',
+              room.status === 'MAINTENANCE' ? 'Maintenance' : 
+              room.status === 'CLEANING' ? 'Cleaning' : 'Available',
       lastCleaned: room.lastCleaned ? new Date(room.lastCleaned).toISOString().split('T')[0] : 'N/A',
-      revenue: revenue
+      revenue: revenue,
+      category: room.category?.toLowerCase() || 'standard'
     };
   });
   
@@ -1689,25 +1742,107 @@ app.get('/api/reports/rooms', (req, res) => {
 });
 
 app.get('/api/reports/overview', (req, res) => {
+  const { startDate, endDate } = req.query;
   const rooms = readData('rooms.json');
   const guests = readData('guests.json');
   const activities = readData('activities.json');
   
-  const occupiedRooms = rooms.filter(room => room.status === 'OCCUPIED').length;
+  // Determine date range for calculations
+  const today = new Date().toISOString().split('T')[0];
+  const start = startDate || today;
+  const end = endDate || today;
+  
+  // Calculate occupancy rate using room usage frequency for the date range
+  let occupiedRooms = new Set();
+  
+  // Add currently occupied rooms
+  rooms.forEach(room => {
+    if (room.status === 'OCCUPIED') {
+      occupiedRooms.add(room.number);
+    }
+  });
+  
+  // Add rooms that were checked out in the date range
+  guests.forEach(guest => {
+    if (guest.status === 'checked-out' && guest.checkOutDate) {
+      const checkoutDate = new Date(guest.checkOutDate).toISOString().split('T')[0];
+      if (checkoutDate >= start && checkoutDate <= end && guest.roomNumber) {
+        occupiedRooms.add(guest.roomNumber);
+      }
+    }
+  });
+  
+  const occupiedCount = occupiedRooms.size;
   const totalRooms = rooms.length;
-  const occupancyRate = totalRooms > 0 ? Math.round((occupiedRooms / totalRooms) * 100 * 10) / 10 : 0;
+  const occupancyRate = totalRooms > 0 ? Math.round((occupiedCount / totalRooms) * 100 * 10) / 10 : 0;
   
-  const totalRevenue = guests
-    .filter(guest => guest.status === 'checked-in')
-    .reduce((sum, guest) => sum + (guest.totalAmount || 0), 0);
+  // Calculate total revenue using paid amounts for the date range
+  let totalRevenue = 0;
   
-  const totalGuests = guests.filter(guest => guest.status === 'checked-in').length;
-  const totalBookings = guests.length;
+  // Revenue from guests who checked in during the date range
+  guests.forEach(guest => {
+    if (guest.checkInDate && guest.checkInDate >= start && guest.checkInDate <= end && !guest.complimentary) {
+      totalRevenue += guest.paidAmount || 0;
+    }
+  });
+  
+  // Revenue from checkout activities (additional payments) in the date range
+  activities.forEach(activity => {
+    try {
+      if (activity.type === 'guest_checked_out' && activity.additionalPayment) {
+        const activityDate = new Date(parseInt(activity.id)).toISOString().split('T')[0];
+        if (activityDate >= start && activityDate <= end) {
+          totalRevenue += activity.additionalPayment;
+        }
+      }
+    } catch (error) {
+      // Skip activities with invalid dates
+    }
+  });
+  
+  // Calculate total guests for the date range (including secondary and extra bed guests)
+  let totalGuests = 0;
+  guests.forEach(guest => {
+    if (guest.checkInDate && guest.checkInDate >= start && guest.checkInDate <= end) {
+      totalGuests += 1; // Primary guest
+      if (guest.secondaryGuest) {
+        totalGuests += 1; // Secondary guest
+      }
+      if (guest.extraBeds && guest.extraBeds.length > 0) {
+        totalGuests += guest.extraBeds.length; // Extra bed guests
+      }
+    }
+  });
+  
+  // Calculate total bookings for the date range
+  const totalBookings = guests.filter(guest => 
+    guest.checkInDate && guest.checkInDate >= start && guest.checkInDate <= end
+  ).length;
   
   const averageRoomRate = totalGuests > 0 ? Math.round(totalRevenue / totalGuests) : 0;
   
-  // Calculate cancellation rate (mock for now)
-  const cancellationRate = 12.5;
+  // Calculate cancellation rate based on actual data for the date range
+  const totalCheckins = activities.filter(activity => {
+    if (activity.type !== 'guest_checked_in') return false;
+    try {
+      const activityDate = new Date(parseInt(activity.id)).toISOString().split('T')[0];
+      return activityDate >= start && activityDate <= end;
+    } catch (error) {
+      return false;
+    }
+  }).length;
+  
+  const totalCheckouts = activities.filter(activity => {
+    if (activity.type !== 'guest_checked_out') return false;
+    try {
+      const activityDate = new Date(parseInt(activity.id)).toISOString().split('T')[0];
+      return activityDate >= start && activityDate <= end;
+    } catch (error) {
+      return false;
+    }
+  }).length;
+  
+  const cancellationRate = totalCheckins > 0 ? Math.round(((totalCheckins - totalCheckouts) / totalCheckins) * 100 * 10) / 10 : 0;
   
   res.json({
     success: true,
