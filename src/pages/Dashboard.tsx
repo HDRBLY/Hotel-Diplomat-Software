@@ -139,6 +139,11 @@ const Dashboard = () => {
       fetchDashboardData()
     })
 
+    newSocket.on('guest_checked_out', () => {
+      // Refresh dashboard stats when guest is checked out
+      fetchDashboardData()
+    })
+
     newSocket.on('room_updated', () => {
       // Refresh dashboard stats when room status changes
       fetchDashboardData()

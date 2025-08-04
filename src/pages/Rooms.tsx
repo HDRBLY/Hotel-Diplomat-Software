@@ -73,7 +73,10 @@ const Rooms = () => {
     finalAmount: 0,
     additionalCharges: 0,
     paymentMethod: 'CASH',
-    notes: ''
+    notes: '',
+    guestTotalAmount: 0,
+    guestPaidAmount: 0,
+    guestBalance: 0
   })
   const [showRoomShiftModal, setShowRoomShiftModal] = useState(false)
   const [shiftFromRoom, setShiftFromRoom] = useState<Room | null>(null)
@@ -967,7 +970,10 @@ const Rooms = () => {
         finalAmount: baseAmount, // Use guest's total amount as base
         additionalCharges: 0,
         paymentMethod: 'CASH',
-        notes: ''
+        notes: '',
+        guestTotalAmount: guest.totalAmount,
+        guestPaidAmount: guest.paidAmount,
+        guestBalance: guest.totalAmount - guest.paidAmount
       })
       setShowCheckoutModal(true)
     } catch (error) {
@@ -1036,7 +1042,10 @@ const Rooms = () => {
         finalAmount: 0,
         additionalCharges: 0,
         paymentMethod: 'CASH',
-        notes: ''
+        notes: '',
+        guestTotalAmount: 0,
+        guestPaidAmount: 0,
+        guestBalance: 0
       })
       
       showNotification('success', `Room ${checkoutRoom.number} checked out successfully!`)
@@ -2182,6 +2191,26 @@ const Rooms = () => {
                   </div>
                 </div>
 
+                <div className="bg-yellow-50 p-3 rounded-lg">
+                  <h4 className="font-medium text-gray-900 mb-2">Payment Status</h4>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <div className="flex justify-between">
+                      <span>Total Amount:</span>
+                      <span>₹{checkoutDetails.guestTotalAmount}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Paid Amount:</span>
+                      <span>₹{checkoutDetails.guestPaidAmount}</span>
+                    </div>
+                    <div className="border-t pt-1 flex justify-between font-medium">
+                      <span>Balance:</span>
+                      <span className={checkoutDetails.guestBalance > 0 ? 'text-red-600' : 'text-green-600'}>
+                        ₹{checkoutDetails.guestBalance}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="bg-blue-50 p-3 rounded-lg">
                   <h4 className="font-medium text-gray-900 mb-2">Bill Breakdown</h4>
                   <div className="text-sm text-gray-600 space-y-1">
@@ -2194,7 +2223,7 @@ const Rooms = () => {
                       <span>₹{checkoutDetails.additionalCharges || 0}</span>
                     </div>
                     <div className="border-t pt-1 flex justify-between font-medium">
-                      <span>Total Amount:</span>
+                      <span>Final Amount:</span>
                       <span>₹{checkoutDetails.finalAmount}</span>
                     </div>
                   </div>

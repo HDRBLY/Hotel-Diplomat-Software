@@ -1772,8 +1772,26 @@ const Guests = () => {
                     )}
                     <p><strong>Room:</strong> {checkoutGuest.roomNumber}</p>
                     <p><strong>Check-in:</strong> {checkoutGuest.checkInDate}</p>
-                    <p><strong>Original Amount:</strong> ₹{checkoutGuest.totalAmount}</p>
-                    <p><strong>Paid Amount:</strong> ₹{checkoutGuest.paidAmount}</p>
+                  </div>
+                </div>
+
+                <div className="bg-yellow-50 p-3 rounded-lg">
+                  <h4 className="font-medium text-gray-900 mb-2">Payment Status</h4>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <div className="flex justify-between">
+                      <span>Total Amount:</span>
+                      <span>₹{checkoutGuest.totalAmount}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Paid Amount:</span>
+                      <span>₹{checkoutGuest.paidAmount}</span>
+                    </div>
+                    <div className="border-t pt-1 flex justify-between font-medium">
+                      <span>Balance:</span>
+                      <span className={checkoutGuest.totalAmount - checkoutGuest.paidAmount > 0 ? 'text-red-600' : 'text-green-600'}>
+                        ₹{checkoutGuest.totalAmount - checkoutGuest.paidAmount}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -1818,7 +1836,7 @@ const Guests = () => {
                       <span>₹{checkoutDetails.additionalCharges || 0}</span>
                     </div>
                     <div className="border-t pt-1 flex justify-between font-medium">
-                      <span>Total Amount:</span>
+                      <span>Final Amount:</span>
                       <span>₹{checkoutDetails.finalAmount}</span>
                     </div>
                   </div>

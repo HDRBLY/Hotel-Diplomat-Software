@@ -1,21 +1,21 @@
 [
   {
-    "id": "1754293091378",
+    "id": "1754299046281",
     "name": "aman",
     "email": "",
-    "phone": "987651651",
-    "roomNumber": "218",
+    "phone": "98764681",
+    "roomNumber": "201",
     "checkInDate": "2025-08-04",
     "checkOutDate": "2025-08-04",
     "status": "checked-out",
-    "totalAmount": 4100,
-    "paidAmount": 4100,
+    "totalAmount": 3500,
+    "paidAmount": 3500,
     "address": "",
-    "idProof": "AADHAR-987646164",
+    "idProof": "AADHAR-987461684986186",
     "category": "corporate",
     "complimentary": false,
     "secondaryGuest": {
-      "name": "aksh",
+      "name": "akash",
       "phone": "",
       "idProof": ""
     },
@@ -27,32 +27,30 @@
         "charge": 500
       }
     ],
-    "createdAt": "2025-08-04T07:38:11.378Z",
-    "updatedAt": "2025-08-04T07:42:57.017Z",
-    "notes": ""
+    "createdAt": "2025-08-04T09:17:26.281Z",
+    "updatedAt": "2025-08-04T09:25:20.400Z"
   },
   {
-    "id": "1754293132875",
+    "id": "1754299079464",
     "name": "alok",
     "email": "",
-    "phone": "987686546",
-    "roomNumber": "308",
+    "phone": "987468186",
+    "roomNumber": "212",
     "checkInDate": "2025-08-04",
     "checkOutDate": "2025-08-04",
     "status": "checked-out",
-    "totalAmount": 2800,
-    "paidAmount": 2800,
+    "totalAmount": 2300,
+    "paidAmount": 2300,
     "address": "",
-    "idProof": "AADHAR-98766516548",
+    "idProof": "AADHAR-98761616841",
     "category": "couple",
     "complimentary": false,
     "secondaryGuest": {
-      "name": "Deepika",
+      "name": "pooja",
       "phone": "",
       "idProof": ""
     },
-    "createdAt": "2025-08-04T07:38:52.875Z",
-    "updatedAt": "2025-08-04T07:41:38.000Z",
-    "notes": ""
+    "createdAt": "2025-08-04T09:17:59.464Z",
+    "updatedAt": "2025-08-04T09:19:04.343Z"
   }
 ]

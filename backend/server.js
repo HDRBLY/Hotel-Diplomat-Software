@@ -945,40 +945,95 @@ app.post('/api/auth/validate', (req, res) => {
 app.get('/api/reports/dashboard', (req, res) => {
   const rooms = readData('rooms.json');
   const guests = readData('guests.json');
+  const activities = readData('activities.json');
   const reservations = readData('reservations.json');
 
   const occupiedRooms = rooms.filter(room => room.status === 'OCCUPIED').length;
   const availableRooms = rooms.filter(room => room.status === 'AVAILABLE').length;
+  const maintenanceRooms = rooms.filter(room => room.status === 'MAINTENANCE').length;
+  const cleaningRooms = rooms.filter(room => room.status === 'CLEANING').length;
+  const reservedRooms = rooms.filter(room => room.status === 'RESERVED').length;
   const totalRooms = rooms.length;
   
-  // Calculate total guests including secondary guests and extra bed guests
-  let totalGuests = 0;
+  // Calculate today's date
+  const today = new Date().toISOString().split('T')[0];
+  
+  // Calculate today's checkins and checkouts from activities
+  let todayCheckins = 0;
+  let todayCheckouts = 0;
   let todayRevenue = 0;
+  
+  // Count today's activities and calculate revenue from checkouts
+  activities.forEach(activity => {
+    try {
+      // Handle both timestamp and string IDs
+      let activityDate;
+      if (typeof activity.id === 'number' || !isNaN(parseInt(activity.id))) {
+        activityDate = new Date(parseInt(activity.id)).toISOString().split('T')[0];
+      } else {
+        // Skip activities without valid timestamps
+        return;
+      }
+      
+      if (activityDate === today) {
+        if (activity.type === 'guest_checked_in') {
+          todayCheckins++;
+        } else if (activity.type === 'guest_checked_out') {
+          todayCheckouts++;
+          // Add revenue from checkout if there's additional payment
+          if (activity.additionalPayment) {
+            todayRevenue += activity.additionalPayment;
+            console.log(`  + Checkout revenue: ${activity.additionalPayment}`);
+          }
+        }
+      }
+    } catch (error) {
+      console.log('Skipping activity with invalid date:', activity.id);
+      // Skip activities with invalid dates
+    }
+  });
+  
+  // Calculate total guests (only checked-in guests) including secondary guests and extra bed guests
+  let totalGuests = 0;
   
   console.log('Dashboard calculation - Total guests found:', guests.length);
   
   guests.forEach(guest => {
-    console.log(`Guest: ${guest.name}, Status: ${guest.status}, Room: ${guest.roomNumber}`);
-    
-    // Count primary guest
-    totalGuests += 1;
-    
-    // Count secondary guest if exists
-    if (guest.secondaryGuest) {
+    // Only count checked-in guests for total guests
+    if (guest.status === 'checked-in') {
+      console.log(`Guest: ${guest.name}, Status: ${guest.status}, Room: ${guest.roomNumber}`);
+      
+      // Count primary guest
       totalGuests += 1;
-      console.log(`  + Secondary guest: ${guest.secondaryGuest.name}`);
+      
+      // Count secondary guest if exists
+      if (guest.secondaryGuest) {
+        totalGuests += 1;
+        console.log(`  + Secondary guest: ${guest.secondaryGuest.name}`);
+      }
+      
+      // Count extra bed guests if exists
+      if (guest.extraBeds && guest.extraBeds.length > 0) {
+        totalGuests += guest.extraBeds.length;
+        console.log(`  + Extra bed guests: ${guest.extraBeds.length}`);
+      }
+      
+      // Calculate revenue from checked-in guests (use paid amount, not total amount)
+      if (!guest.complimentary) {
+        todayRevenue += guest.paidAmount || 0;
+        console.log(`  + Revenue (paid): ${guest.paidAmount || 0}`);
+      }
     }
-    
-    // Count extra bed guests if exists
-    if (guest.extraBeds && guest.extraBeds.length > 0) {
-      totalGuests += guest.extraBeds.length;
-      console.log(`  + Extra bed guests: ${guest.extraBeds.length}`);
-    }
-    
-    // Calculate revenue from checked-in guests
-    if (guest.status === 'checked-in' && !guest.complimentary) {
-      todayRevenue += guest.totalAmount;
-      console.log(`  + Revenue: ${guest.totalAmount}`);
+  });
+  
+  // Add revenue from guests who checked out today (they paid at check-in)
+  guests.forEach(guest => {
+    if (guest.status === 'checked-out' && guest.checkOutDate) {
+      const checkoutDate = new Date(guest.checkOutDate).toISOString().split('T')[0];
+      if (checkoutDate === today && !guest.complimentary) {
+        todayRevenue += guest.paidAmount || 0;
+        console.log(`  + Checkout guest revenue: ${guest.paidAmount || 0} (${guest.name})`);
+      }
     }
   });
   
@@ -992,13 +1047,13 @@ app.get('/api/reports/dashboard', (req, res) => {
       occupiedRooms,
       availableRooms,
       totalRooms,
-      todayCheckins: 8,
-      todayCheckouts: 5,
+      todayCheckins,
+      todayCheckouts,
       todayRevenue,
-      pendingReservations: 12,
-      maintenanceRooms: 1,
-      cleaningRooms: 1,
-      reservedRooms: 2,
+      pendingReservations: reservations.filter(r => r.status === 'PENDING').length,
+      maintenanceRooms,
+      cleaningRooms,
+      reservedRooms,
       totalGuests,
       occupancyRate: parseFloat(occupancyRate),
       revenue: todayRevenue
@@ -1350,18 +1405,26 @@ app.put('/api/guests/:id', (req, res) => {
   // Add to activities for checkout
   if (updateData.status === 'checked-out' && oldStatus !== 'checked-out') {
     const activities = readData('activities.json');
+    
+    // Calculate additional payment (final amount - original paid amount)
+    const originalPaidAmount = guests[guestIndex].paidAmount || 0;
+    const finalAmount = updateData.totalAmount || guests[guestIndex].totalAmount || 0;
+    const additionalPayment = finalAmount - originalPaidAmount;
+    
     activities.unshift({
       id: Date.now().toString(),
       type: 'guest_checked_out',
       guestName: guests[guestIndex].name || 'Unknown',
       roomNumber: guests[guestIndex].roomNumber || 'N/A',
       time: 'Just now',
-      status: 'completed'
+      status: 'completed',
+      additionalPayment: additionalPayment > 0 ? additionalPayment : 0
     });
     writeData('activities.json', activities);
     
-    // Broadcast activity update
+    // Broadcast activity update and guest checkout event
     broadcastUpdate('activity_updated', activities[0]);
+    broadcastUpdate('guest_checked_out', guests[guestIndex]);
   }
 
   // Broadcast guest update
