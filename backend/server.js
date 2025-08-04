@@ -1037,9 +1037,32 @@ app.get('/api/reports/dashboard', (req, res) => {
     }
   });
   
-  console.log(`Final calculation - Total guests: ${totalGuests}, Revenue: ${todayRevenue}, Occupied rooms: ${occupiedRooms}`);
+  // Calculate today's occupancy rate based on room usage frequency today
+  let todayRoomUsage = {}; // Track how many times each room was used today
   
-  const occupancyRate = totalRooms > 0 ? ((occupiedRooms / totalRooms) * 100).toFixed(1) : 0;
+  // Add currently occupied rooms
+  rooms.forEach(room => {
+    if (room.status === 'OCCUPIED') {
+      todayRoomUsage[room.number] = (todayRoomUsage[room.number] || 0) + 1;
+    }
+  });
+  
+  // Add rooms that were checked out today
+  guests.forEach(guest => {
+    if (guest.status === 'checked-out' && guest.checkOutDate) {
+      const checkoutDate = new Date(guest.checkOutDate).toISOString().split('T')[0];
+      if (checkoutDate === today && guest.roomNumber) {
+        todayRoomUsage[guest.roomNumber] = (todayRoomUsage[guest.roomNumber] || 0) + 1;
+      }
+    }
+  });
+  
+  // Count total room usages today
+  const todayOccupiedCount = Object.values(todayRoomUsage).reduce((sum, count) => sum + count, 0);
+  const occupancyRate = totalRooms > 0 ? ((todayOccupiedCount / totalRooms) * 100).toFixed(1) : 0;
+  
+  console.log(`Final calculation - Total guests: ${totalGuests}, Revenue: ${todayRevenue}, Today room usages: ${todayOccupiedCount}/${totalRooms}, Occupancy rate: ${occupancyRate}%`);
+  console.log(`Room usage details:`, todayRoomUsage);
 
   res.json({
     success: true,

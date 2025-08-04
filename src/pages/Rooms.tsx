@@ -780,7 +780,7 @@ const Rooms = () => {
     }
   }
 
-  const handleStatusChange = (roomId: string, newStatus: Room['status']) => {
+  const handleStatusChange = async (roomId: string, newStatus: Room['status']) => {
     if (!hasPermission('rooms:edit')) {
       showNotification('error', 'You do not have permission to change room status.')
       return
@@ -801,16 +801,42 @@ const Rooms = () => {
       return
     }
 
-    setRooms(rooms.map(room => 
-      room.id === roomId 
-        ? { ...room, status: newStatus }
-        : room
-    ))
-    
-    showNotification('success', `Room ${room.number} status updated to ${newStatus}`)
+    try {
+      // Call backend API to update room status
+      const response = await fetch(`http://localhost:3001/api/rooms/${roomId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update room status')
+      }
+
+      const result = await response.json()
+      
+      if (result.success) {
+        // Update local state with the response from backend
+        setRooms(rooms.map(room => 
+          room.id === roomId 
+            ? { ...room, status: newStatus }
+            : room
+        ))
+        
+        showNotification('success', `Room ${room.number} status updated to ${newStatus}`)
+      } else {
+        throw new Error(result.message || 'Failed to update room status')
+      }
+    } catch (error) {
+      console.error('Error updating room status:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update room status'
+      showNotification('error', errorMessage)
+    }
   }
 
-  const handleAddRoom = () => {
+  const handleAddRoom = async () => {
     if (!hasPermission('rooms:create')) {
       showNotification('error', 'You do not have permission to add rooms.')
       return
@@ -834,35 +860,57 @@ const Rooms = () => {
       return
     }
 
-    const room: Room = {
-      id: Date.now().toString(),
-      number: newRoom.number,
-      type: newRoom.type,
-      status: newRoom.status,
-      floor: newRoom.floor,
-      price: newRoom.price,
-      amenities: newRoom.amenities,
-      lastCleaned: new Date().toISOString().split('T')[0],
-      notes: newRoom.notes,
-      category: newRoom.category as Room['category']
-    }
+    try {
+      // Call backend API to add room
+      const response = await fetch('http://localhost:3001/api/rooms', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          number: newRoom.number,
+          type: newRoom.type,
+          status: newRoom.status,
+          floor: newRoom.floor,
+          price: newRoom.price,
+          amenities: newRoom.amenities,
+          notes: newRoom.notes,
+          category: newRoom.category
+        })
+      })
 
-    setRooms([...rooms, room])
-    
-    // Reset form
-    setNewRoom({
-      number: '',
-      type: 'standard',
-      floor: 1,
-      price: 1500,
-      amenities: [],
-      status: 'available',
-      notes: '',
-      category: 'couple'
-    })
-    
-    setShowAddRoom(false)
-    showNotification('success', 'Room added successfully!')
+      if (!response.ok) {
+        throw new Error('Failed to add room')
+      }
+
+      const result = await response.json()
+      
+      if (result.success) {
+        // Add the new room to local state
+        setRooms([...rooms, result.data])
+        
+        // Reset form
+        setNewRoom({
+          number: '',
+          type: 'standard',
+          floor: 1,
+          price: 1500,
+          amenities: [],
+          status: 'available',
+          notes: '',
+          category: 'couple'
+        })
+        
+        setShowAddRoom(false)
+        showNotification('success', 'Room added successfully!')
+      } else {
+        throw new Error(result.message || 'Failed to add room')
+      }
+    } catch (error) {
+      console.error('Error adding room:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Failed to add room'
+      showNotification('error', errorMessage)
+    }
   }
 
   const handleAmenityToggle = (amenityId: string) => {
@@ -890,7 +938,7 @@ const Rooms = () => {
     setShowEditRoom(true)
   }
 
-  const handleUpdateRoom = () => {
+  const handleUpdateRoom = async () => {
     if (!editingRoom) return
 
     // Check if trying to set status to occupied without a guest
@@ -908,13 +956,48 @@ const Rooms = () => {
       return
     }
 
-    setRooms(rooms.map(room => 
-      room.id === editingRoom.id ? editingRoom : room
-    ))
-    
-    setShowEditRoom(false)
-    setEditingRoom(null)
-    showNotification('success', 'Room updated successfully!')
+    try {
+      // Call backend API to update room
+      const response = await fetch(`http://localhost:3001/api/rooms/${editingRoom.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          number: editingRoom.number,
+          type: editingRoom.type,
+          status: editingRoom.status,
+          floor: editingRoom.floor,
+          price: editingRoom.price,
+          amenities: editingRoom.amenities,
+          notes: editingRoom.notes,
+          category: editingRoom.category
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update room')
+      }
+
+      const result = await response.json()
+      
+      if (result.success) {
+        // Update local state with the response from backend
+        setRooms(rooms.map(room => 
+          room.id === editingRoom.id ? result.data : room
+        ))
+        
+        setShowEditRoom(false)
+        setEditingRoom(null)
+        showNotification('success', 'Room updated successfully!')
+      } else {
+        throw new Error(result.message || 'Failed to update room')
+      }
+    } catch (error) {
+      console.error('Error updating room:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update room'
+      showNotification('error', errorMessage)
+    }
   }
 
   const handleEditAmenityToggle = (amenityId: string) => {
@@ -1207,7 +1290,7 @@ const Rooms = () => {
     setShowStatusChangeModal(true)
   }
 
-  const handleStatusChangeSubmit = () => {
+  const handleStatusChangeSubmit = async () => {
     if (!statusChangeRoom) return
 
     // Validation
@@ -1222,19 +1305,44 @@ const Rooms = () => {
       return
     }
 
-    // Update room status
-    setRooms(rooms.map(room => 
-      room.id === statusChangeRoom.id 
-        ? { ...room, status: newStatus }
-        : room
-    ))
+    try {
+      // Call backend API to update room status
+      const response = await fetch(`http://localhost:3001/api/rooms/${statusChangeRoom.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus })
+      })
 
-    // Close modal and show success
-    setShowStatusChangeModal(false)
-    setStatusChangeRoom(null)
-    setNewStatus('available')
-    
-    showNotification('success', `Room ${statusChangeRoom.number} status updated to ${newStatus}`)
+      if (!response.ok) {
+        throw new Error('Failed to update room status')
+      }
+
+      const result = await response.json()
+      
+      if (result.success) {
+        // Update local state with the response from backend
+        setRooms(rooms.map(room => 
+          room.id === statusChangeRoom.id 
+            ? { ...room, status: newStatus }
+            : room
+        ))
+
+        // Close modal and show success
+        setShowStatusChangeModal(false)
+        setStatusChangeRoom(null)
+        setNewStatus('available')
+        
+        showNotification('success', `Room ${statusChangeRoom.number} status updated to ${newStatus}`)
+      } else {
+        throw new Error(result.message || 'Failed to update room status')
+      }
+    } catch (error) {
+      console.error('Error updating room status:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update room status'
+      showNotification('error', errorMessage)
+    }
   }
 
   // Fetch room shifts data
