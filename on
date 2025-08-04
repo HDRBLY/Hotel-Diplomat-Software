@@ -1,0 +1,5 @@
+[33m2dea513b[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m)[m Fix Vercel build issues - Move TypeScript to dependencies - Add backend dependencies to main package.json - Simplify build script - Update vercel.json configuration
+[33m39156747[m Prepare project for Vercel deployment - Add vercel.json configuration - Update server.js for Vercel compatibility - Update API services for production - Add build scripts for Vercel
+[33m75ce9c42[m Final project cleanup and optimization - Remove deployment files (railway.json, railway.env, build.sh) - Update package.json configurations - Optimize server.js and API services - Clean up project structure for production deployment
+[33m527a2308[m Fix TypeScript permission error in Railway deployment - Update build commands to use vite build directly - Remove npm run build to avoid tsc permission issues
+[33m49bd3b8a[m Fix Railway deployment build errors - Update build scripts and Railway configuration - Add build script for backend - Simplify deployment process
