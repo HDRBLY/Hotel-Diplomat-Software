@@ -1806,6 +1806,24 @@ const Guests = () => {
                   )}
                 </div>
 
+                <div className="bg-blue-50 p-3 rounded-lg">
+                  <h4 className="font-medium text-gray-900 mb-2">Bill Breakdown</h4>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <div className="flex justify-between">
+                      <span>Room Rent (including extra bed):</span>
+                      <span>₹{checkoutGuest.totalAmount}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Fooding Charges:</span>
+                      <span>₹{checkoutDetails.additionalCharges || 0}</span>
+                    </div>
+                    <div className="border-t pt-1 flex justify-between font-medium">
+                      <span>Total Amount:</span>
+                      <span>₹{checkoutDetails.finalAmount}</span>
+                    </div>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Fooding Charges (₹)</label>
                   <input

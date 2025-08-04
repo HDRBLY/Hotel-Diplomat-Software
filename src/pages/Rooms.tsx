@@ -2223,7 +2223,7 @@ const Rooms = () => {
                     value={checkoutDetails.additionalCharges || ''}
                     onChange={(e) => {
                       const additional = e.target.value ? parseInt(e.target.value) : 0
-                      // Get the base amount (room rent + extra bed charges) from the current final amount
+                      // Calculate base amount from guest's total amount (room rent + extra bed charges)
                       const baseAmount = checkoutDetails.finalAmount - (checkoutDetails.additionalCharges || 0)
                       setCheckoutDetails({
                         ...checkoutDetails, 
