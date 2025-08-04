@@ -35,7 +35,7 @@ PORT=3001
 1. Go to "Settings" tab
 2. Set the following:
    - **Root Directory**: `/` (leave empty for root)
-   - **Build Command**: `npm run build`
+   - **Build Command**: Leave empty (uses nixpacks.toml)
    - **Start Command**: `npm start`
 
 ### 4. Deploy
@@ -57,8 +57,7 @@ PORT=3001
 {
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
-    "builder": "NIXPACKS",
-    "buildCommand": "npm run build"
+    "builder": "NIXPACKS"
   },
   "deploy": {
     "startCommand": "npm start",
@@ -81,6 +80,21 @@ cmds = ["npm run build"]
 
 [start]
 cmd = "npm start"
+
+[variables]
+NODE_ENV = "production"
+```
+
+### Dockerfile (Alternative)
+```dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY . .
+RUN npm run build
+EXPOSE 3001
+CMD ["npm", "start"]
 ```
 
 ## Troubleshooting
@@ -88,16 +102,21 @@ cmd = "npm start"
 ### Common Issues
 
 1. **TypeScript Compilation Errors**
-   - Ensure all TypeScript files are properly typed
-   - Check for missing dependencies
-   - Verify tsconfig.json configuration
+   - ✅ **FIXED**: Removed explicit `tsc` command from build script
+   - ✅ **FIXED**: Vite now handles TypeScript compilation internally
+   - ✅ **FIXED**: Added proper esbuild configuration
 
-2. **Build Failures**
+2. **Permission Denied Errors**
+   - ✅ **FIXED**: Simplified build process
+   - ✅ **FIXED**: Using Vite's built-in TypeScript handling
+   - ✅ **FIXED**: Added Dockerfile as alternative
+
+3. **Build Failures**
    - Check Railway logs for specific error messages
    - Ensure all dependencies are in package.json
    - Verify Node.js version compatibility
 
-3. **Runtime Errors**
+4. **Runtime Errors**
    - Check environment variables are set correctly
    - Verify API endpoints are accessible
    - Check file permissions for data files
@@ -162,4 +181,13 @@ cmd = "npm start"
 
 ---
 
-**🎉 Your Hotel Management System is now deployed on Railway!** 
+**🎉 Your Hotel Management System is now deployed on Railway!**
+
+## Recent Fixes Applied
+
+✅ **Fixed TypeScript compilation issues**
+✅ **Removed explicit `tsc` command from build script**
+✅ **Vite now handles TypeScript compilation internally**
+✅ **Added proper esbuild configuration**
+✅ **Simplified build process for Railway**
+✅ **Added Dockerfile as alternative deployment method** 

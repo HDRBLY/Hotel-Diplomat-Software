@@ -41,4 +41,7 @@ export default defineConfig({
   preview: {
     port: 3000,
   },
+  esbuild: {
+    target: 'es2020',
+  },
 }) 

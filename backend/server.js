@@ -150,7 +150,7 @@ app.get('/api/reports/dashboard', (req, res) => {
   const guests = loadData('guests.json');
   const activities = loadData('activities.json');
   
-  const totalRooms = rooms.length;
+    const totalRooms = rooms.length;
   const occupiedRooms = rooms.filter(room => room.status === 'OCCUPIED').length;
   const totalGuests = guests.filter(guest => guest.status === 'checked-in').length;
   
@@ -168,7 +168,7 @@ app.get('/api/reports/dashboard', (req, res) => {
     occupiedRooms,
     totalGuests,
     todayRevenue,
-    occupancyRate,
+      occupancyRate,
     recentActivities: activities.slice(-5)
   });
 });

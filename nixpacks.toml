@@ -8,4 +8,7 @@ cmds = ["npm install"]
 cmds = ["npm run build"]
 
 [start]
-cmd = "npm start" 
+cmd = "npm start"
+
+[variables]
+NODE_ENV = "production" 
