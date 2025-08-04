@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "start": "vite --host",
     "start:prod": "npm run build && cd backend && npm start",
-    "deploy": "npm run build && gh-pages -d dist"
+    "deploy": "npm run build && gh-pages -d dist",
+    "build:prod": "npm run build"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",
