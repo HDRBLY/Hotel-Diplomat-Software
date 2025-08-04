@@ -1229,11 +1229,9 @@ const Guests = () => {
                   <select
                     value={newGuest.roomNumber}
                     onChange={(e) => {
-                      const selectedRoom = rooms.find(room => room.number === e.target.value)
                       setNewGuest({
                         ...newGuest, 
-                        roomNumber: e.target.value,
-                        category: selectedRoom ? selectedRoom.category.toLowerCase() as GuestCategory : 'couple'
+                        roomNumber: e.target.value
                       })
                     }}
                     className="input-field mt-1"
@@ -1266,17 +1264,14 @@ const Guests = () => {
                     onChange={e => setNewGuest({ ...newGuest, category: e.target.value as GuestCategory })}
                     className="input-field mt-1 border-2 border-primary-300 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition-all bg-white text-base font-semibold text-primary-700"
                     required
-                    title="Room type (auto-selected based on room)"
+                    title="Select room type (solo, couple, family, corporate)"
                     aria-label="Room Type"
-                    disabled={!newGuest.roomNumber}
                   >
                     {CATEGORY_OPTIONS.map(opt => (
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
                     ))}
                   </select>
-                  {newGuest.roomNumber && (
-                    <p className="text-xs text-gray-500 mt-1">Auto-selected based on room category</p>
-                  )}
+                  <p className="text-xs text-gray-500 mt-1">Select the room type based on guest requirements</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

@@ -1,1 +1,73 @@
-[]
+[
+  {
+    "id": "1754293377019",
+    "type": "guest_checked_out",
+    "guestName": "aman",
+    "roomNumber": "218",
+    "time": "Just now",
+    "status": "completed"
+  },
+  {
+    "id": "1754293343970",
+    "type": "room_shift",
+    "guestName": "aman",
+    "roomNumber": "221 → 218",
+    "time": "Just now",
+    "status": "completed",
+    "shiftDate": "2025-08-04",
+    "shiftTime": "13:12",
+    "reason": "Guest Request",
+    "authorizedBy": "test",
+    "notes": ""
+  },
+  {
+    "id": "1754293298026",
+    "type": "guest_checked_out",
+    "guestName": "alok",
+    "roomNumber": "308",
+    "time": "Just now",
+    "status": "completed"
+  },
+  {
+    "id": "1754293270301",
+    "type": "room_shift",
+    "guestName": "aman",
+    "roomNumber": "410 → 221",
+    "time": "Just now",
+    "status": "completed",
+    "shiftDate": "2025-08-04",
+    "shiftTime": "13:11",
+    "reason": "Room Downgrade",
+    "authorizedBy": "aman",
+    "notes": ""
+  },
+  {
+    "id": "1754293249093",
+    "type": "room_shift",
+    "guestName": "alok",
+    "roomNumber": "212 → 308",
+    "time": "Just now",
+    "status": "completed",
+    "shiftDate": "2025-08-04",
+    "shiftTime": "13:10",
+    "reason": "Room Upgrade",
+    "authorizedBy": "aman",
+    "notes": ""
+  },
+  {
+    "id": "1754293132878",
+    "type": "guest_checked_in",
+    "guestName": "alok",
+    "roomNumber": "212",
+    "time": "Just now",
+    "status": "completed"
+  },
+  {
+    "id": "1754293091382",
+    "type": "guest_checked_in",
+    "guestName": "aman",
+    "roomNumber": "410",
+    "time": "Just now",
+    "status": "completed"
+  }
+]

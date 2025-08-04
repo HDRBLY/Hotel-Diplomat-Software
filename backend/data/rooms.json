@@ -227,7 +227,7 @@
     "id": "12",
     "number": "212",
     "type": "DELUXE",
-    "status": "AVAILABLE",
+    "status": "CLEANING",
     "floor": 2,
     "price": 2500,
     "amenities": [
@@ -237,12 +237,14 @@
       "Coffee",
       "Balcony"
     ],
-    "category": "SOLO",
+    "category": "COUPLE",
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
     "lastCleaned": "2025-08-03T14:26:12.620Z",
-    "createdAt": "2025-08-03T14:26:12.620Z"
+    "createdAt": "2025-08-03T14:26:12.620Z",
+    "updatedAt": "2025-08-04T07:38:52.901Z",
+    "notes": "Guest was shifted from this room and later checked out on 4/8/2025. Room needs cleaning."
   },
   {
     "id": "13",
@@ -291,7 +293,7 @@
     "id": "15",
     "number": "218",
     "type": "SUITE",
-    "status": "AVAILABLE",
+    "status": "CLEANING",
     "floor": 2,
     "price": 4000,
     "amenities": [
@@ -302,12 +304,13 @@
       "Balcony",
       "Jacuzzi"
     ],
-    "category": "COUPLE",
+    "category": "CORPORATE",
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
     "lastCleaned": "2025-08-03T14:26:12.620Z",
-    "createdAt": "2025-08-03T14:26:12.620Z"
+    "createdAt": "2025-08-03T14:26:12.620Z",
+    "notes": "Guest checked out on 4/8/2025. Room needs cleaning."
   },
   {
     "id": "16",
@@ -355,7 +358,7 @@
     "id": "18",
     "number": "221",
     "type": "DELUXE",
-    "status": "AVAILABLE",
+    "status": "CLEANING",
     "floor": 2,
     "price": 2500,
     "amenities": [
@@ -370,7 +373,8 @@
     "checkInDate": null,
     "checkOutDate": null,
     "lastCleaned": "2025-08-03T14:26:12.620Z",
-    "createdAt": "2025-08-03T14:26:12.620Z"
+    "createdAt": "2025-08-03T14:26:12.620Z",
+    "notes": "Guest was shifted from this room and later checked out on 4/8/2025. Room needs cleaning."
   },
   {
     "id": "19",
@@ -595,7 +599,7 @@
     "id": "30",
     "number": "308",
     "type": "STANDARD",
-    "status": "AVAILABLE",
+    "status": "CLEANING",
     "floor": 3,
     "price": 1500,
     "amenities": [
@@ -603,12 +607,13 @@
       "TV",
       "WiFi"
     ],
-    "category": "SOLO",
+    "category": "COUPLE",
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
     "lastCleaned": "2025-08-03T14:26:12.620Z",
-    "createdAt": "2025-08-03T14:26:12.620Z"
+    "createdAt": "2025-08-03T14:26:12.620Z",
+    "notes": "Guest checked out on 4/8/2025. Room needs cleaning."
   },
   {
     "id": "31",
@@ -897,7 +902,7 @@
     "id": "44",
     "number": "410",
     "type": "PRESIDENTIAL",
-    "status": "AVAILABLE",
+    "status": "CLEANING",
     "floor": 4,
     "price": 8000,
     "amenities": [
@@ -914,7 +919,9 @@
     "checkInDate": null,
     "checkOutDate": null,
     "lastCleaned": "2025-08-03T14:26:12.621Z",
-    "createdAt": "2025-08-03T14:26:12.621Z"
+    "createdAt": "2025-08-03T14:26:12.621Z",
+    "updatedAt": "2025-08-04T07:38:11.406Z",
+    "notes": "Guest shifted to Room 221 on 2025-08-04 at 13:11. Reason: Room Downgrade. Authorized by: aman. "
   },
   {
     "id": "45",
