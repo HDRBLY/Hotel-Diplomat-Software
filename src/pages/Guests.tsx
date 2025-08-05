@@ -32,7 +32,7 @@ interface Guest {
   address: string
   idProof: string
   category: GuestCategory
-  plan: 'EP' | 'CP'
+  plan: 'EP' | 'CP' | 'MAP' | 'AP'
   complimentary?: boolean
   secondaryGuest?: {
     name: string
@@ -96,7 +96,7 @@ const Guests = () => {
     idProof: string
     idProofType: string
     category: GuestCategory
-    plan: 'EP' | 'CP'
+    plan: 'EP' | 'CP' | 'MAP' | 'AP'
     complimentary?: boolean
     secondaryGuest?: {
       name: string
@@ -212,7 +212,7 @@ const Guests = () => {
         address: '321 Whitefield, Bangalore, Karnataka',
         idProof: 'VOTER-ID-KA-123456789',
         category: 'solo',
-        plan: 'EP'
+        plan: 'MAP'
       },
       {
         id: '4',
@@ -228,7 +228,7 @@ const Guests = () => {
         address: '654 JP Nagar, Bangalore, Karnataka',
         idProof: 'AADHAR-9876-5432-1098',
         category: 'family',
-        plan: 'CP'
+        plan: 'AP'
       }
     ])
         showNotification('error', `Failed to fetch data: ${errorMessage}`)
@@ -1569,9 +1569,17 @@ const Guests = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Plan</label>
                   <span className={`mt-1 inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                    selectedGuest.plan === 'EP' ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800'
+                    selectedGuest.plan === 'EP' ? 'bg-orange-100 text-orange-800' : 
+                    selectedGuest.plan === 'CP' ? 'bg-red-100 text-red-800' :
+                    selectedGuest.plan === 'MAP' ? 'bg-blue-100 text-blue-800' :
+                    'bg-green-100 text-green-800'
                   }`}>
-                    {selectedGuest.plan} {selectedGuest.plan === 'EP' ? '(European Plan - Room Only)' : '(Continental Plan - Room + Breakfast)'}
+                    {selectedGuest.plan} {
+                      selectedGuest.plan === 'EP' ? '(European Plan - Room Only)' : 
+                      selectedGuest.plan === 'CP' ? '(Continental Plan - Room + Breakfast)' :
+                      selectedGuest.plan === 'MAP' ? '(Modified American Plan - Room + Breakfast + Dinner)' :
+                      '(American Plan - Room + All Meals)'
+                    }
                   </span>
                 </div>
                 <div>
@@ -1741,14 +1749,16 @@ const Guests = () => {
                   </label>
                   <select
                     value={newGuest.plan}
-                    onChange={e => setNewGuest({ ...newGuest, plan: e.target.value as 'EP' | 'CP' })}
+                    onChange={e => setNewGuest({ ...newGuest, plan: e.target.value as 'EP' | 'CP' | 'MAP' | 'AP' })}
                     className="input-field mt-1 border-2 border-primary-300 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition-all bg-white text-base font-semibold text-primary-700"
                     required
-                    title="Select meal plan (EP or CP)"
+                    title="Select meal plan (EP, CP, MAP, or AP)"
                     aria-label="Plan"
                   >
                     <option value="EP">EP (European Plan - Room Only)</option>
                     <option value="CP">CP (Continental Plan - Room + Breakfast)</option>
+                    <option value="MAP">MAP (Modified American Plan - Room + Breakfast + Dinner)</option>
+                    <option value="AP">AP (American Plan - Room + All Meals)</option>
                   </select>
                   <p className="text-xs text-gray-500 mt-1">Select the meal plan for the guest</p>
                 </div>

@@ -100,7 +100,7 @@
     "id": "6",
     "number": "202",
     "type": "SUITE",
-    "status": "CLEANING",
+    "status": "available",
     "floor": 2,
     "price": 4000,
     "amenities": [
@@ -117,7 +117,7 @@
     "checkOutDate": null,
     "lastCleaned": "2025-08-05T08:26:12.759Z",
     "createdAt": "2025-08-05T08:26:12.759Z",
-    "updatedAt": "2025-08-05T08:28:00.073Z",
+    "updatedAt": "2025-08-05T14:57:13.084Z",
     "notes": "Guest was shifted from this room and later checked out on 5/8/2025. Room needs cleaning."
   },
   {
@@ -514,7 +514,7 @@
     "id": "25",
     "number": "303",
     "type": "STANDARD",
-    "status": "AVAILABLE",
+    "status": "OCCUPIED",
     "floor": 3,
     "price": 1500,
     "amenities": [
@@ -522,12 +522,13 @@
       "TV",
       "WiFi"
     ],
-    "category": "SOLO",
-    "currentGuest": null,
-    "checkInDate": null,
-    "checkOutDate": null,
+    "category": "COUPLE",
+    "currentGuest": "sftdshftdhs",
+    "checkInDate": "2025-08-05",
+    "checkOutDate": "2025-08-06",
     "lastCleaned": "2025-08-05T08:26:12.759Z",
-    "createdAt": "2025-08-05T08:26:12.759Z"
+    "createdAt": "2025-08-05T08:26:12.759Z",
+    "updatedAt": "2025-08-05T15:02:30.250Z"
   },
   {
     "id": "26",
