@@ -1,65 +1,31 @@
 [
   {
-    "id": "1754315350933",
+    "id": "1754382934326",
     "type": "guest_checked_out",
     "guestName": "aman",
-    "roomNumber": "204",
+    "roomNumber": "206",
     "time": "Just now",
     "status": "completed",
     "additionalPayment": 0
   },
   {
-    "id": "1754314734205",
+    "id": "1754382577479",
     "type": "room_shift",
     "guestName": "aman",
-    "roomNumber": "208 → 204",
+    "roomNumber": "202 → 206",
     "time": "Just now",
     "status": "completed",
-    "shiftDate": "2025-08-04",
-    "shiftTime": "19:08",
+    "shiftDate": "2025-08-05",
+    "shiftTime": "13:58",
     "reason": "Room Upgrade",
-    "authorizedBy": "test",
+    "authorizedBy": "Vinod",
     "notes": ""
   },
   {
-    "id": "1754314706926",
+    "id": "1754382480046",
     "type": "guest_checked_in",
     "guestName": "aman",
-    "roomNumber": "208",
-    "time": "Just now",
-    "status": "completed"
-  },
-  {
-    "id": "1754314661167",
-    "type": "guest_checked_out",
-    "guestName": "Adnan",
-    "roomNumber": "214",
-    "time": "Just now",
-    "status": "completed",
-    "additionalPayment": 0
-  },
-  {
-    "id": "1754314266817",
-    "type": "guest_checked_in",
-    "guestName": "Adnan",
-    "roomNumber": "214",
-    "time": "Just now",
-    "status": "completed"
-  },
-  {
-    "id": "1754313799648",
-    "type": "guest_checked_out",
-    "guestName": "aman",
-    "roomNumber": "206",
-    "time": "Just now",
-    "status": "completed",
-    "additionalPayment": 0
-  },
-  {
-    "id": "1754313757998",
-    "type": "guest_checked_in",
-    "guestName": "aman",
-    "roomNumber": "206",
+    "roomNumber": "202",
     "time": "Just now",
     "status": "completed"
   }

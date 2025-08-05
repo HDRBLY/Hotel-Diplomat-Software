@@ -1,74 +1,34 @@
 [
   {
-    "id": "1754313757995",
+    "id": "1754382480043",
     "name": "aman",
     "email": "",
-    "phone": "984651653",
+    "phone": "98746516468",
     "roomNumber": "206",
-    "checkInDate": "2025-08-04",
-    "checkOutDate": "2025-08-04",
+    "checkInDate": "2025-08-05",
+    "checkOutDate": "05-08-2025",
     "status": "checked-out",
-    "totalAmount": 3500,
-    "paidAmount": 3500,
+    "totalAmount": 2800,
+    "paidAmount": 2800,
     "address": "",
-    "idProof": "AADHAR-68468136515",
+    "idProof": "AADHAR-987468168461",
     "category": "corporate",
     "complimentary": false,
     "secondaryGuest": {
-      "name": "akash",
+      "name": "Akash",
       "phone": "",
       "idProof": ""
     },
     "extraBeds": [
       {
-        "name": "deepak",
+        "name": "Deepak",
         "phone": "",
         "idProof": "",
         "charge": 500
       }
     ],
-    "createdAt": "2025-08-04T13:22:37.995Z",
-    "updatedAt": "2025-08-04T13:23:19.644Z"
-  },
-  {
-    "id": "1754314266814",
-    "name": "Adnan",
-    "email": "",
-    "phone": "9846168",
-    "roomNumber": "214",
-    "checkInDate": "2025-08-04",
-    "checkOutDate": "2025-08-04",
-    "status": "checked-out",
-    "totalAmount": 2299,
-    "paidAmount": 2299,
-    "address": "",
-    "idProof": "AADHAR-846816818646",
-    "category": "couple",
-    "complimentary": false,
-    "secondaryGuest": {
-      "name": "Alina",
-      "phone": "",
-      "idProof": ""
-    },
-    "createdAt": "2025-08-04T13:31:06.814Z",
-    "updatedAt": "2025-08-04T13:37:41.164Z"
-  },
-  {
-    "id": "1754314706924",
-    "name": "aman",
-    "email": "",
-    "phone": "68464",
-    "roomNumber": "204",
-    "checkInDate": "2025-08-04",
-    "checkOutDate": "2025-08-04",
-    "status": "checked-out",
-    "totalAmount": 2300,
-    "paidAmount": 2300,
-    "address": "",
-    "idProof": "AADHAR-6984616531684",
-    "category": "solo",
-    "complimentary": false,
-    "createdAt": "2025-08-04T13:38:26.924Z",
-    "updatedAt": "2025-08-04T13:49:10.926Z"
+    "createdAt": "2025-08-05T08:28:00.043Z",
+    "updatedAt": "2025-08-05T08:35:34.305Z",
+    "notes": ""
   }
 ]
