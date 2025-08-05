@@ -1,5 +1,13 @@
 [
   {
+    "id": "1754405065124",
+    "type": "guest_checked_in",
+    "guestName": "Aquib",
+    "roomNumber": "219",
+    "time": "Just now",
+    "status": "completed"
+  },
+  {
     "id": "1754404447586",
     "type": "guest_checked_in",
     "guestName": "ZSGFSRG",

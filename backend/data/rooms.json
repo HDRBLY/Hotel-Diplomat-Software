@@ -323,7 +323,7 @@
     "id": "16",
     "number": "219",
     "type": "DELUXE",
-    "status": "AVAILABLE",
+    "status": "OCCUPIED",
     "floor": 2,
     "price": 2500,
     "amenities": [
@@ -333,12 +333,13 @@
       "Coffee",
       "Balcony"
     ],
-    "category": "SOLO",
-    "currentGuest": null,
-    "checkInDate": null,
-    "checkOutDate": null,
+    "category": "CORPORATE",
+    "currentGuest": "Aquib",
+    "checkInDate": "2025-08-05",
+    "checkOutDate": "2025-08-06",
     "lastCleaned": "2025-08-05T08:26:12.759Z",
-    "createdAt": "2025-08-05T08:26:12.759Z"
+    "createdAt": "2025-08-05T08:26:12.759Z",
+    "updatedAt": "2025-08-05T14:44:25.151Z"
   },
   {
     "id": "17",

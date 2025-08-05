@@ -1538,6 +1538,24 @@ const Guests = () => {
                   <p className="mt-1 text-sm text-gray-900">{selectedGuest.roomNumber}</p>
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-gray-700">Total Amount</label>
+                  <p className="mt-1 text-sm text-gray-900 font-semibold">₹{selectedGuest.totalAmount}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Paid Amount</label>
+                  <p className="mt-1 text-sm text-gray-900">₹{selectedGuest.paidAmount}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Balance</label>
+                  <p className={`mt-1 text-sm font-medium ${
+                    selectedGuest.totalAmount - selectedGuest.paidAmount > 0 
+                      ? 'text-red-600' 
+                      : 'text-green-600'
+                  }`}>
+                    ₹{selectedGuest.totalAmount - selectedGuest.paidAmount}
+                  </p>
+                </div>
+                <div>
                   <label className="block text-sm font-medium text-gray-700">Room Type</label>
                   <span className={`mt-1 inline-flex px-2 py-1 text-xs font-medium rounded-full ${
                     selectedGuest.category === 'couple' ? 'bg-blue-100 text-blue-800' :
@@ -1555,6 +1573,44 @@ const Guests = () => {
                   }`}>
                     {selectedGuest.plan} {selectedGuest.plan === 'EP' ? '(European Plan - Room Only)' : '(Continental Plan - Room + Breakfast)'}
                   </span>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Check-in Date</label>
+                  <p className="mt-1 text-sm text-gray-900">
+                    {selectedGuest.checkInDate ? new Date(selectedGuest.checkInDate).toLocaleDateString('en-GB', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric'
+                    }) : 'Not specified'}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Check-in Time</label>
+                  <p className="mt-1 text-sm text-gray-900">
+                    {selectedGuest.createdAt ? new Date(selectedGuest.createdAt).toLocaleTimeString('en-GB', {
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    }) : 'Not available'}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Check-out Date</label>
+                  <p className="mt-1 text-sm text-gray-900">
+                    {selectedGuest.checkOutDate ? new Date(selectedGuest.checkOutDate).toLocaleDateString('en-GB', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric'
+                    }) : 'Not specified'}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Check-out Time</label>
+                  <p className="mt-1 text-sm text-gray-900">
+                    {selectedGuest.updatedAt && selectedGuest.status === 'checked-out' ? new Date(selectedGuest.updatedAt).toLocaleTimeString('en-GB', {
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    }) : 'Not checked out yet'}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Status</label>

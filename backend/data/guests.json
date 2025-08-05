@@ -210,5 +210,28 @@
     "plan": "EP",
     "complimentary": false,
     "createdAt": "2025-08-05T14:34:07.582Z"
+  },
+  {
+    "id": "1754405065121",
+    "name": "Aquib",
+    "email": "",
+    "phone": "9846841684",
+    "roomNumber": "219",
+    "checkInDate": "2025-08-05",
+    "checkOutDate": "2025-08-06",
+    "status": "checked-in",
+    "totalAmount": 2200,
+    "paidAmount": 2200,
+    "address": "",
+    "idProof": "AADHAR-984681684",
+    "category": "corporate",
+    "plan": "CP",
+    "complimentary": false,
+    "secondaryGuest": {
+      "name": "Vinod",
+      "phone": "",
+      "idProof": ""
+    },
+    "createdAt": "2025-08-05T14:44:25.121Z"
   }
 ]
