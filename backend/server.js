@@ -1323,6 +1323,7 @@ app.post('/api/guests', (req, res) => {
     address: guestData.address || '',
     idProof: guestData.idProof || '',
     category: guestData.category || 'couple',
+    plan: guestData.plan || 'EP',
     complimentary: guestData.complimentary || false,
     secondaryGuest: guestData.secondaryGuest || undefined,
     extraBeds: guestData.extraBeds || undefined,

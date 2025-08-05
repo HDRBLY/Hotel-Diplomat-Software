@@ -32,6 +32,7 @@ interface Guest {
   address: string
   idProof: string
   category: GuestCategory
+  plan: 'EP' | 'CP'
   complimentary?: boolean
   secondaryGuest?: {
     name: string
@@ -95,6 +96,7 @@ const Guests = () => {
     idProof: string
     idProofType: string
     category: GuestCategory
+    plan: 'EP' | 'CP'
     complimentary?: boolean
     secondaryGuest?: {
       name: string
@@ -123,6 +125,7 @@ const Guests = () => {
       idProof: '',
       idProofType: 'AADHAR',
       category: 'couple',
+      plan: 'EP',
       complimentary: false,
       secondaryGuest: undefined
     }
@@ -176,7 +179,8 @@ const Guests = () => {
         paidAmount: 4500,
         address: '456 Koramangala, Bangalore, Karnataka',
         idProof: 'AADHAR-1234-5678-9012',
-        category: 'couple'
+        category: 'couple',
+        plan: 'EP'
       },
       {
         id: '2',
@@ -191,7 +195,8 @@ const Guests = () => {
         paidAmount: 3000,
         address: '789 Indiranagar, Bangalore, Karnataka',
         idProof: 'DL-KA-01-2020-1234567',
-        category: 'corporate'
+        category: 'corporate',
+        plan: 'CP'
       },
       {
         id: '3',
@@ -206,7 +211,8 @@ const Guests = () => {
         paidAmount: 2000,
         address: '321 Whitefield, Bangalore, Karnataka',
         idProof: 'VOTER-ID-KA-123456789',
-        category: 'solo'
+        category: 'solo',
+        plan: 'EP'
       },
       {
         id: '4',
@@ -221,7 +227,8 @@ const Guests = () => {
         paidAmount: 4500,
         address: '654 JP Nagar, Bangalore, Karnataka',
         idProof: 'AADHAR-9876-5432-1098',
-        category: 'family'
+        category: 'family',
+        plan: 'CP'
       }
     ])
         showNotification('error', `Failed to fetch data: ${errorMessage}`)
@@ -667,7 +674,23 @@ const Guests = () => {
   const generateBill = async () => {
     if (!checkoutGuest) return
 
+    // Debug: Log guest data to see plan
+    console.log('Guest data for bill:', checkoutGuest)
+    console.log('Guest plan:', checkoutGuest.plan)
+
     try {
+      // Fetch fresh guest data from backend to ensure we have the latest data including plan
+      const guestsResponse = await fetch('http://localhost:3001/api/guests')
+      const guestsData = await guestsResponse.json()
+      const freshGuestData = guestsData.data.find((g: any) => g.id === checkoutGuest?.id)
+      
+      // Use fresh guest data if available, otherwise use checkoutGuest
+      const guestForBill = freshGuestData || checkoutGuest
+      
+      if (freshGuestData) {
+        console.log('Fresh guest data:', freshGuestData)
+        console.log('Fresh guest plan:', freshGuestData.plan)
+      }
       // Get bill number from backend
       const billResponse = await fetch('http://localhost:3001/api/bill-number')
       const billData = await billResponse.json()
@@ -683,12 +706,12 @@ const Guests = () => {
       const billTime = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
 
       // Get actual check-in time from guest data
-      const checkInTime = new Date(checkoutGuest.createdAt || checkoutGuest.updatedAt || Date.now())
+      const checkInTime = new Date(guestForBill.createdAt || guestForBill.updatedAt || Date.now())
       const formattedCheckInTime = checkInTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
 
       // Calculate number of days properly
       // Convert dates to proper format for calculation
-      const checkInDateStr = checkoutGuest.checkInDate // Format: yyyy-mm-dd
+      const checkInDateStr = guestForBill.checkInDate // Format: yyyy-mm-dd
       const checkOutDateStr = checkoutDetails.actualCheckOutDate // Format: dd-mm-yyyy
       
       // Parse check-in date (yyyy-mm-dd)
@@ -704,20 +727,22 @@ const Guests = () => {
       if (checkOutDate.getTime() !== checkInDate.getTime()) {
         const timeDiff = checkOutDate.getTime() - checkInDate.getTime()
         daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24))
+        // Ensure minimum 1 day
+        if (daysDiff < 1) daysDiff = 1
       }
 
       // Get room price from rooms data
       const roomsResponse = await fetch('http://localhost:3001/api/rooms')
       const roomsData = await roomsResponse.json()
-      const room = roomsData.data.find((r: any) => r.number === checkoutGuest.roomNumber)
-      const roomPrice = room ? room.price : checkoutGuest.totalAmount
+      const room = roomsData.data.find((r: any) => r.number === guestForBill.roomNumber)
+      const roomPrice = room ? room.price : guestForBill.totalAmount
 
       // Calculate room rent and extra bed charges separately
-      const extraBedCharges = checkoutGuest.extraBeds ? checkoutGuest.extraBeds.reduce((sum, bed) => sum + bed.charge, 0) : 0
+      const extraBedCharges = guestForBill.extraBeds ? guestForBill.extraBeds.reduce((sum: number, bed: any) => sum + bed.charge, 0) : 0
       
       // Room rent should be totalAmount - extraBedCharges (as shown in checkout form)
-      const roomRent = checkoutGuest.totalAmount - extraBedCharges
-      const totalRoomCharges = checkoutGuest.totalAmount
+      const roomRent = guestForBill.totalAmount - extraBedCharges
+      const totalRoomCharges = guestForBill.totalAmount
 
       // Calculate price per day based on actual room rate (room rent only)
       const pricePerDay = Math.round(roomRent / daysDiff)
@@ -837,24 +862,24 @@ const Guests = () => {
                       <div class="guest-info">
               <div class="guest-details">
                 <div class="section-title">Billing To:</div>
-                <div class="info-row editable" contenteditable="false">Name: ${checkoutGuest.name}</div>
-                <div class="info-row editable" contenteditable="false">Company: </div>
-                <div class="info-row editable" contenteditable="false">Designation: </div>
-                <div class="info-row editable" contenteditable="false">Address: ${checkoutGuest.address || 'BAREILLY'}</div>
-                <div class="info-row editable" contenteditable="false">Phone No: ${checkoutGuest.phone}</div>
-                <div class="info-row editable" contenteditable="false">Email ID: ${checkoutGuest.email || ''}</div>
-                <div class="info-row editable" contenteditable="false">GST NO: </div>
+                              <div class="info-row editable" contenteditable="false">Name: ${guestForBill.name}</div>
+              <div class="info-row editable" contenteditable="false">Company: </div>
+              <div class="info-row editable" contenteditable="false">Designation: </div>
+              <div class="info-row editable" contenteditable="false">Address: ${guestForBill.address || 'BAREILLY'}</div>
+              <div class="info-row editable" contenteditable="false">Phone No: ${guestForBill.phone}</div>
+              <div class="info-row editable" contenteditable="false">Email ID: ${guestForBill.email || ''}</div>
+              <div class="info-row editable" contenteditable="false">GST NO: </div>
               </div>
               <div class="stay-details">
                 <div class="section-title">Stay Details:</div>
-                <div class="info-row editable" contenteditable="false">Date of Arrival: ${formattedArrivalDate}</div>
-                <div class="info-row editable" contenteditable="false">Date of Departure: ${checkoutDetails.actualCheckOutDate}</div>
-                <div class="info-row editable" contenteditable="false">Bill No: ${billNumber}</div>
-                <div class="info-row editable" contenteditable="false">ROOM NO: ${checkoutGuest.roomNumber}</div>
-                <div class="info-row editable" contenteditable="false">PAX: ${1 + (checkoutGuest.secondaryGuest ? 1 : 0) + (checkoutGuest.extraBeds ? checkoutGuest.extraBeds.length : 0)}</div>
-                <div class="info-row editable" contenteditable="false">Plan: EP</div>
-                <div class="info-row editable" contenteditable="false">Check In Time: ${formattedCheckInTime}</div>
-                <div class="info-row editable" contenteditable="false">Check Out Time: ${billTime}</div>
+                              <div class="info-row editable" contenteditable="false">Date of Arrival: ${formattedArrivalDate}</div>
+              <div class="info-row editable" contenteditable="false">Date of Departure: ${checkoutDetails.actualCheckOutDate}</div>
+              <div class="info-row editable" contenteditable="false">Bill No: ${billNumber}</div>
+              <div class="info-row editable" contenteditable="false">ROOM NO: ${guestForBill.roomNumber}</div>
+              <div class="info-row editable" contenteditable="false">PAX: ${1 + (guestForBill.secondaryGuest ? 1 : 0) + (guestForBill.extraBeds ? guestForBill.extraBeds.length : 0)}</div>
+              <div class="info-row editable" contenteditable="false">Plan: ${guestForBill.plan || 'EP'}</div>
+              <div class="info-row editable" contenteditable="false">Check In Time: ${formattedCheckInTime}</div>
+              <div class="info-row editable" contenteditable="false">Check Out Time: ${billTime}</div>
               </div>
             </div>
 
@@ -874,8 +899,8 @@ const Guests = () => {
             </thead>
             <tbody>
               <tr>
-                <td class="editable" contenteditable="false">${checkoutGuest.roomNumber}</td>
-                <td class="editable" contenteditable="false">${checkoutGuest.name}</td>
+                <td class="editable" contenteditable="false">${guestForBill.roomNumber}</td>
+                <td class="editable" contenteditable="false">${guestForBill.name}</td>
                 <td class="editable" contenteditable="false">${daysDiff}</td>
                 <td class="editable" contenteditable="false">₹${pricePerDay}</td>
                 <td class="editable" contenteditable="false">₹${roomRentTaxableValue.toFixed(2)}</td>
@@ -1112,6 +1137,7 @@ const Guests = () => {
       address: newGuest.address,
       idProof: `${newGuest.idProofType}-${newGuest.idProof}`,
       category: newGuest.category,
+      plan: newGuest.plan,
         status: 'checked-in',
       complimentary: !!newGuest.complimentary,
       secondaryGuest: showSecondaryGuest && newGuest.secondaryGuest ? {
@@ -1183,6 +1209,7 @@ const Guests = () => {
       idProof: '',
       idProofType: 'AADHAR',
       category: 'couple',
+      plan: 'EP',
       complimentary: false,
       secondaryGuest: undefined,
     })
@@ -1522,6 +1549,14 @@ const Guests = () => {
                   </span>
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-gray-700">Plan</label>
+                  <span className={`mt-1 inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                    selectedGuest.plan === 'EP' ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800'
+                  }`}>
+                    {selectedGuest.plan} {selectedGuest.plan === 'EP' ? '(European Plan - Room Only)' : '(Continental Plan - Room + Breakfast)'}
+                  </span>
+                </div>
+                <div>
                   <label className="block text-sm font-medium text-gray-700">Status</label>
                   <span className={`mt-1 inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(selectedGuest.status)}`}>
                     {selectedGuest.status.replace('-', ' ')}
@@ -1642,6 +1677,24 @@ const Guests = () => {
                     ))}
                   </select>
                   <p className="text-xs text-gray-500 mt-1">Select the room type based on guest requirements</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-800 mb-1">
+                    Plan <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={newGuest.plan}
+                    onChange={e => setNewGuest({ ...newGuest, plan: e.target.value as 'EP' | 'CP' })}
+                    className="input-field mt-1 border-2 border-primary-300 rounded-lg focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition-all bg-white text-base font-semibold text-primary-700"
+                    required
+                    title="Select meal plan (EP or CP)"
+                    aria-label="Plan"
+                  >
+                    <option value="EP">EP (European Plan - Room Only)</option>
+                    <option value="CP">CP (Continental Plan - Room + Breakfast)</option>
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">Select the meal plan for the guest</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

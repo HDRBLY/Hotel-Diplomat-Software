@@ -1,5 +1,37 @@
 [
   {
+    "id": "1754404447586",
+    "type": "guest_checked_in",
+    "guestName": "ZSGFSRG",
+    "roomNumber": "301",
+    "time": "Just now",
+    "status": "completed"
+  },
+  {
+    "id": "1754404413043",
+    "type": "guest_checked_in",
+    "guestName": "tuitiut",
+    "roomNumber": "226",
+    "time": "Just now",
+    "status": "completed"
+  },
+  {
+    "id": "1754403143484",
+    "type": "guest_checked_in",
+    "guestName": "asretawREf",
+    "roomNumber": "208",
+    "time": "Just now",
+    "status": "completed"
+  },
+  {
+    "id": "1754402580100",
+    "type": "guest_checked_in",
+    "guestName": "Alok",
+    "roomNumber": "222",
+    "time": "Just now",
+    "status": "completed"
+  },
+  {
     "id": "1754398598910",
     "type": "guest_checked_out",
     "guestName": "Farhat",

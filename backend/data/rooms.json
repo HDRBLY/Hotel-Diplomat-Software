@@ -190,7 +190,7 @@
     "id": "10",
     "number": "208",
     "type": "DELUXE",
-    "status": "AVAILABLE",
+    "status": "OCCUPIED",
     "floor": 2,
     "price": 2500,
     "amenities": [
@@ -200,12 +200,13 @@
       "Coffee",
       "Balcony"
     ],
-    "category": "CORPORATE",
-    "currentGuest": null,
-    "checkInDate": null,
-    "checkOutDate": null,
+    "category": "COUPLE",
+    "currentGuest": "asretawREf",
+    "checkInDate": "2025-08-06",
+    "checkOutDate": "2025-08-07",
     "lastCleaned": "2025-08-05T08:26:12.759Z",
-    "createdAt": "2025-08-05T08:26:12.759Z"
+    "createdAt": "2025-08-05T08:26:12.759Z",
+    "updatedAt": "2025-08-05T14:12:23.511Z"
   },
   {
     "id": "11",
@@ -385,7 +386,7 @@
     "id": "19",
     "number": "222",
     "type": "DELUXE",
-    "status": "AVAILABLE",
+    "status": "OCCUPIED",
     "floor": 2,
     "price": 2500,
     "amenities": [
@@ -395,12 +396,13 @@
       "Coffee",
       "Balcony"
     ],
-    "category": "SOLO",
-    "currentGuest": null,
-    "checkInDate": null,
-    "checkOutDate": null,
+    "category": "COUPLE",
+    "currentGuest": "Alok",
+    "checkInDate": "2025-08-05",
+    "checkOutDate": "2025-08-06",
     "lastCleaned": "2025-08-05T08:26:12.759Z",
-    "createdAt": "2025-08-05T08:26:12.759Z"
+    "createdAt": "2025-08-05T08:26:12.759Z",
+    "updatedAt": "2025-08-05T14:03:00.122Z"
   },
   {
     "id": "20",
@@ -469,7 +471,7 @@
     "id": "23",
     "number": "226",
     "type": "DELUXE",
-    "status": "AVAILABLE",
+    "status": "OCCUPIED",
     "floor": 2,
     "price": 2500,
     "amenities": [
@@ -479,18 +481,19 @@
       "Coffee",
       "Balcony"
     ],
-    "category": "SOLO",
-    "currentGuest": null,
-    "checkInDate": null,
-    "checkOutDate": null,
+    "category": "COUPLE",
+    "currentGuest": "tuitiut",
+    "checkInDate": "2025-08-05",
+    "checkOutDate": "2025-08-05",
     "lastCleaned": "2025-08-05T08:26:12.759Z",
-    "createdAt": "2025-08-05T08:26:12.759Z"
+    "createdAt": "2025-08-05T08:26:12.759Z",
+    "updatedAt": "2025-08-05T14:33:33.064Z"
   },
   {
     "id": "24",
     "number": "301",
     "type": "STANDARD",
-    "status": "AVAILABLE",
+    "status": "OCCUPIED",
     "floor": 3,
     "price": 1500,
     "amenities": [
@@ -499,11 +502,12 @@
       "WiFi"
     ],
     "category": "SOLO",
-    "currentGuest": null,
-    "checkInDate": null,
-    "checkOutDate": null,
+    "currentGuest": "ZSGFSRG",
+    "checkInDate": "2025-08-05",
+    "checkOutDate": "2025-08-05",
     "lastCleaned": "2025-08-05T08:26:12.759Z",
-    "createdAt": "2025-08-05T08:26:12.759Z"
+    "createdAt": "2025-08-05T08:26:12.759Z",
+    "updatedAt": "2025-08-05T14:34:07.627Z"
   },
   {
     "id": "25",

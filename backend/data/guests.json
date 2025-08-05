@@ -13,6 +13,7 @@
     "address": "",
     "idProof": "AADHAR-987468168461",
     "category": "corporate",
+    "plan": "EP",
     "complimentary": false,
     "secondaryGuest": {
       "name": "Akash",
@@ -45,6 +46,7 @@
     "address": "",
     "idProof": "AADHAR-987986461861",
     "category": "solo",
+    "plan": "EP",
     "complimentary": false,
     "createdAt": "2025-08-05T09:11:49.082Z"
   },
@@ -62,6 +64,7 @@
     "address": "",
     "idProof": "AADHAR-98746841684",
     "category": "corporate",
+    "plan": "EP",
     "complimentary": false,
     "secondaryGuest": {
       "name": "Vinod",
@@ -92,6 +95,7 @@
     "address": "",
     "idProof": "AADHAR-9849198186",
     "category": "solo",
+    "plan": "EP",
     "complimentary": false,
     "createdAt": "2025-08-05T10:08:19.616Z"
   },
@@ -109,6 +113,7 @@
     "address": "",
     "idProof": "AADHAR-98746816849681",
     "category": "solo",
+    "plan": "EP",
     "complimentary": false,
     "secondaryGuest": {
       "name": "Alina",
@@ -118,5 +123,92 @@
     "createdAt": "2025-08-05T12:52:43.284Z",
     "updatedAt": "2025-08-05T12:56:38.695Z",
     "notes": ""
+  },
+  {
+    "id": "1754402580095",
+    "name": "Alok",
+    "email": "",
+    "phone": "987681684",
+    "roomNumber": "222",
+    "checkInDate": "2025-08-05",
+    "checkOutDate": "2025-08-06",
+    "status": "checked-in",
+    "totalAmount": 2200,
+    "paidAmount": 2200,
+    "address": "",
+    "idProof": "AADHAR-98746981684",
+    "category": "couple",
+    "plan": "CP",
+    "complimentary": false,
+    "secondaryGuest": {
+      "name": "anamika",
+      "phone": "",
+      "idProof": ""
+    },
+    "createdAt": "2025-08-05T14:03:00.095Z"
+  },
+  {
+    "id": "1754403143479",
+    "name": "asretawREf",
+    "email": "",
+    "phone": "987468468",
+    "roomNumber": "208",
+    "checkInDate": "2025-08-06",
+    "checkOutDate": "2025-08-07",
+    "status": "checked-in",
+    "totalAmount": 2000,
+    "paidAmount": 2000,
+    "address": "",
+    "idProof": "AADHAR-9846846816",
+    "category": "couple",
+    "plan": "CP",
+    "complimentary": false,
+    "secondaryGuest": {
+      "name": "sgdf",
+      "phone": "",
+      "idProof": ""
+    },
+    "createdAt": "2025-08-05T14:12:23.479Z"
+  },
+  {
+    "id": "1754404413034",
+    "name": "tuitiut",
+    "email": "",
+    "phone": "987684684",
+    "roomNumber": "226",
+    "checkInDate": "2025-08-05",
+    "checkOutDate": "2025-08-05",
+    "status": "checked-in",
+    "totalAmount": 2000,
+    "paidAmount": 2000,
+    "address": "",
+    "idProof": "AADHAR-9874681681",
+    "category": "couple",
+    "plan": "CP",
+    "complimentary": false,
+    "secondaryGuest": {
+      "name": "dteg",
+      "phone": "",
+      "idProof": ""
+    },
+    "createdAt": "2025-08-05T14:33:33.034Z"
+  },
+  {
+    "id": "1754404447582",
+    "name": "ZSGFSRG",
+    "email": "",
+    "phone": "984681864",
+    "roomNumber": "301",
+    "checkInDate": "2025-08-05",
+    "checkOutDate": "2025-08-05",
+    "status": "checked-in",
+    "totalAmount": 1800,
+    "paidAmount": 1800,
+    "address": "",
+    "idProof": "AADHAR-98468168468",
+    "category": "solo",
+    "plan": "EP",
+    "complimentary": false,
+    "createdAt": "2025-08-05T14:34:07.582Z"
   }
 ]

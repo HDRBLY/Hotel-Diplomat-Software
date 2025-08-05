@@ -1278,7 +1278,7 @@ const Rooms = () => {
                 <div class="info-row editable" contenteditable="false">Bill No: ${billNumber}</div>
                 <div class="info-row editable" contenteditable="false">ROOM NO: ${guest.roomNumber}</div>
                 <div class="info-row editable" contenteditable="false">PAX: ${1 + (guest.secondaryGuest ? 1 : 0) + (guest.extraBeds ? guest.extraBeds.length : 0)}</div>
-                <div class="info-row editable" contenteditable="false">Plan: EP</div>
+                <div class="info-row editable" contenteditable="false">Plan: ${guest.plan || 'EP'}</div>
                 <div class="info-row editable" contenteditable="false">Check In Time: ${formattedCheckInTime}</div>
                 <div class="info-row editable" contenteditable="false">Check Out Time: ${billTime}</div>
               </div>
