@@ -1,5 +1,59 @@
 [
   {
+    "id": "1754398598910",
+    "type": "guest_checked_out",
+    "guestName": "Farhat",
+    "roomNumber": "308",
+    "time": "Just now",
+    "status": "completed",
+    "additionalPayment": 0
+  },
+  {
+    "id": "1754398420480",
+    "type": "room_shift",
+    "guestName": "Farhat",
+    "roomNumber": "216 → 308",
+    "time": "Just now",
+    "status": "completed",
+    "shiftDate": "2025-08-05",
+    "shiftTime": "18:23",
+    "reason": "Room Upgrade",
+    "authorizedBy": "Aman",
+    "notes": "Special Guest"
+  },
+  {
+    "id": "1754398363296",
+    "type": "guest_checked_in",
+    "guestName": "Farhat",
+    "roomNumber": "216",
+    "time": "Just now",
+    "status": "completed"
+  },
+  {
+    "id": "1754388499618",
+    "type": "guest_checked_in",
+    "guestName": "vikas",
+    "roomNumber": "204",
+    "time": "Just now",
+    "status": "completed"
+  },
+  {
+    "id": "1754388011637",
+    "type": "guest_checked_in",
+    "guestName": "aman",
+    "roomNumber": "218",
+    "time": "Just now",
+    "status": "completed"
+  },
+  {
+    "id": "1754385109097",
+    "type": "guest_checked_in",
+    "guestName": "aman",
+    "roomNumber": "210",
+    "time": "Just now",
+    "status": "completed"
+  },
+  {
     "id": "1754382934326",
     "type": "guest_checked_out",
     "guestName": "aman",

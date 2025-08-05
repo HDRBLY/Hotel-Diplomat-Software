@@ -46,6 +46,8 @@ interface Guest {
     idProofType: string
     charge: number
   }>
+  createdAt?: string
+  updatedAt?: string
 }
 
 const Guests = () => {
@@ -659,6 +661,367 @@ const Guests = () => {
       console.error('Error checking out guest:', error)
       showNotification('error', 'Failed to check out guest. Please try again.')
     }
+  }
+
+  // Bill generation function
+  const generateBill = async () => {
+    if (!checkoutGuest) return
+
+    try {
+      // Get bill number from backend
+      const billResponse = await fetch('http://localhost:3001/api/bill-number')
+      const billData = await billResponse.json()
+      const billNumber = billData.success ? billData.billNumber : '0001'
+
+
+
+      // Format amount in words
+      const amountInWords = numberToWords(checkoutDetails.finalAmount)
+
+      // Get current date and time for checkout
+      const now = new Date()
+      const billTime = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+
+      // Get actual check-in time from guest data
+      const checkInTime = new Date(checkoutGuest.createdAt || checkoutGuest.updatedAt || Date.now())
+      const formattedCheckInTime = checkInTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+
+      // Calculate number of days properly
+      // Convert dates to proper format for calculation
+      const checkInDateStr = checkoutGuest.checkInDate // Format: yyyy-mm-dd
+      const checkOutDateStr = checkoutDetails.actualCheckOutDate // Format: dd-mm-yyyy
+      
+      // Parse check-in date (yyyy-mm-dd)
+      const checkInParts = checkInDateStr.split('-')
+      const checkInDate = new Date(parseInt(checkInParts[0]), parseInt(checkInParts[1]) - 1, parseInt(checkInParts[2]))
+      
+      // Parse check-out date (dd-mm-yyyy)
+      const checkOutParts = checkOutDateStr.split('-')
+      const checkOutDate = new Date(parseInt(checkOutParts[2]), parseInt(checkOutParts[1]) - 1, parseInt(checkOutParts[0]))
+      
+      // Calculate days difference - if same day, count as 1 day
+      let daysDiff = 1
+      if (checkOutDate.getTime() !== checkInDate.getTime()) {
+        const timeDiff = checkOutDate.getTime() - checkInDate.getTime()
+        daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24))
+      }
+
+      // Get room price from rooms data
+      const roomsResponse = await fetch('http://localhost:3001/api/rooms')
+      const roomsData = await roomsResponse.json()
+      const room = roomsData.data.find((r: any) => r.number === checkoutGuest.roomNumber)
+      const roomPrice = room ? room.price : checkoutGuest.totalAmount
+
+      // Calculate room rent and extra bed charges separately
+      const extraBedCharges = checkoutGuest.extraBeds ? checkoutGuest.extraBeds.reduce((sum, bed) => sum + bed.charge, 0) : 0
+      
+      // Room rent should be totalAmount - extraBedCharges (as shown in checkout form)
+      const roomRent = checkoutGuest.totalAmount - extraBedCharges
+      const totalRoomCharges = checkoutGuest.totalAmount
+
+      // Calculate price per day based on actual room rate (room rent only)
+      const pricePerDay = Math.round(roomRent / daysDiff)
+
+      // Calculate tax breakdown for room rent (12% GST: 6% CGST + 6% SGST)
+      const roomRentTaxableValue = roomRent / 1.12 // Remove GST to get base amount
+      const roomRentCgst = roomRentTaxableValue * 0.06
+      const roomRentSgst = roomRentTaxableValue * 0.06
+
+      // Calculate tax breakdown for extra bed charges (12% GST: 6% CGST + 6% SGST)
+      const extraBedTaxableValue = extraBedCharges / 1.12
+      const extraBedCgst = extraBedTaxableValue * 0.06
+      const extraBedSgst = extraBedTaxableValue * 0.06
+
+      // Calculate tax breakdown for fooding charges (5% GST: 2.5% CGST + 2.5% SGST)
+      const foodingTaxableValue = checkoutDetails.additionalCharges > 0 ? checkoutDetails.additionalCharges / 1.05 : 0
+      const foodingCgst = foodingTaxableValue * 0.025
+      const foodingSgst = foodingTaxableValue * 0.025
+
+      // Total tax values
+      const taxableValue = roomRentTaxableValue + extraBedTaxableValue + foodingTaxableValue
+      const cgst = roomRentCgst + extraBedCgst + foodingCgst
+      const sgst = roomRentSgst + extraBedSgst + foodingSgst
+
+      // Calculate total amount (sum of all individual row totals)
+      const totalAmount = roomRent + extraBedCharges + checkoutDetails.additionalCharges
+
+      // Format arrival date properly (convert yyyy-mm-dd to dd-mm-yyyy)
+      const arrivalDateParts = checkoutGuest.checkInDate.split('-')
+      const formattedArrivalDate = `${arrivalDateParts[2]}-${arrivalDateParts[1]}-${arrivalDateParts[0]}`
+
+      // Create bill HTML
+      const billHTML = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Tax Invoice - Hotel Diplomat Residency</title>
+          <style>
+            @media print {
+              body { margin: 0; padding: 20px; }
+              .no-print { display: none !important; }
+            }
+            body { 
+              font-family: Arial, sans-serif; 
+              margin: 0; 
+              padding: 20px; 
+              font-size: 12px;
+              line-height: 1.4;
+            }
+            .header { text-align: center; margin-bottom: 20px; }
+            .hotel-name { font-size: 18px; font-weight: bold; margin-bottom: 5px; }
+            .hotel-details { font-size: 10px; color: #666; }
+            .invoice-title { font-size: 16px; font-weight: bold; text-align: center; margin: 20px 0; }
+            .guest-info { display: flex; justify-content: space-between; margin-bottom: 20px; }
+            .guest-details, .stay-details { width: 48%; }
+            .section-title { font-weight: bold; margin-bottom: 10px; }
+            .info-row { margin-bottom: 5px; }
+            .charges-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+            .charges-table th, .charges-table td { 
+              border: 1px solid #ddd; 
+              padding: 8px; 
+              text-align: left; 
+              font-size: 11px;
+            }
+            .charges-table th { background-color: #f5f5f5; font-weight: bold; }
+            .total-row { font-weight: bold; background-color: #f9f9f9; }
+            .bank-details { margin-top: 20px; }
+            .footer { margin-top: 20px; text-align: center; font-size: 10px; }
+            .print-btn, .edit-btn { 
+              position: fixed; 
+              top: 20px; 
+              padding: 10px 20px; 
+              color: white; 
+              border: none; 
+              border-radius: 5px; 
+              cursor: pointer;
+              margin-right: 10px;
+            }
+            .print-btn { 
+              right: 20px; 
+              background: #007bff; 
+            }
+            .print-btn:hover { background: #0056b3; }
+            .edit-btn { 
+              right: 120px; 
+              background: #28a745; 
+            }
+            .edit-btn:hover { background: #218838; }
+            .editable { 
+              border: 1px dashed #ccc; 
+              padding: 2px; 
+              min-height: 1em; 
+            }
+            .editable:focus { 
+              outline: 2px solid #007bff; 
+              border: 1px solid #007bff; 
+            }
+          </style>
+        </head>
+        <body>
+          <button class="edit-btn no-print" onclick="toggleEdit()">Edit Bill</button>
+          <button class="print-btn no-print" onclick="window.print()">Print Bill</button>
+          
+          <div class="header">
+            <div class="hotel-name">Hotel Diplomat Residency</div>
+            <div class="hotel-details">
+              (A Unit of Aronax Enterprises Private Limited)<br>
+              GST No: 09AANCA1929Q1ZY | CIN: U521000L2015PTC274988<br>
+              63 Prakash Tower, Choupla Road Civil Lines, Bareilly - 243001 (Uttar Pradesh) INDIA<br>
+              Mail: diplomatresidency.bly@gmail.com<br>
+              Ph No: +91-9219414284
+            </div>
+          </div>
+
+          <div class="invoice-title">TAX INVOICE</div>
+
+                      <div class="guest-info">
+              <div class="guest-details">
+                <div class="section-title">Billing To:</div>
+                <div class="info-row editable" contenteditable="false">Name: ${checkoutGuest.name}</div>
+                <div class="info-row editable" contenteditable="false">Company: </div>
+                <div class="info-row editable" contenteditable="false">Designation: </div>
+                <div class="info-row editable" contenteditable="false">Address: ${checkoutGuest.address || 'BAREILLY'}</div>
+                <div class="info-row editable" contenteditable="false">Phone No: ${checkoutGuest.phone}</div>
+                <div class="info-row editable" contenteditable="false">Email ID: ${checkoutGuest.email || ''}</div>
+                <div class="info-row editable" contenteditable="false">GST NO: </div>
+              </div>
+              <div class="stay-details">
+                <div class="section-title">Stay Details:</div>
+                <div class="info-row editable" contenteditable="false">Date of Arrival: ${formattedArrivalDate}</div>
+                <div class="info-row editable" contenteditable="false">Date of Departure: ${checkoutDetails.actualCheckOutDate}</div>
+                <div class="info-row editable" contenteditable="false">Bill No: ${billNumber}</div>
+                <div class="info-row editable" contenteditable="false">ROOM NO: ${checkoutGuest.roomNumber}</div>
+                <div class="info-row editable" contenteditable="false">PAX: ${1 + (checkoutGuest.secondaryGuest ? 1 : 0) + (checkoutGuest.extraBeds ? checkoutGuest.extraBeds.length : 0)}</div>
+                <div class="info-row editable" contenteditable="false">Plan: EP</div>
+                <div class="info-row editable" contenteditable="false">Check In Time: ${formattedCheckInTime}</div>
+                <div class="info-row editable" contenteditable="false">Check Out Time: ${billTime}</div>
+              </div>
+            </div>
+
+          <table class="charges-table">
+            <thead>
+              <tr>
+                <th>Room No.</th>
+                <th>Name</th>
+                <th>No. of Days</th>
+                <th>Price/Day</th>
+                <th>Taxable Value</th>
+                <th>Tax Rate</th>
+                <th>CGST</th>
+                <th>SGST</th>
+                <th>Total Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="editable" contenteditable="false">${checkoutGuest.roomNumber}</td>
+                <td class="editable" contenteditable="false">${checkoutGuest.name}</td>
+                <td class="editable" contenteditable="false">${daysDiff}</td>
+                <td class="editable" contenteditable="false">₹${pricePerDay}</td>
+                <td class="editable" contenteditable="false">₹${roomRentTaxableValue.toFixed(2)}</td>
+                <td>12%</td>
+                <td class="editable" contenteditable="false">₹${roomRentCgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${roomRentSgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${roomRent}</td>
+              </tr>
+              ${extraBedCharges > 0 ? `
+              <tr>
+                <td colspan="4" class="editable" contenteditable="false">Extra Bed Charges</td>
+                <td class="editable" contenteditable="false">₹${extraBedTaxableValue.toFixed(2)}</td>
+                <td>12%</td>
+                <td class="editable" contenteditable="false">₹${extraBedCgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${extraBedSgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${extraBedCharges}</td>
+              </tr>
+              ` : ''}
+              ${checkoutDetails.additionalCharges > 0 ? `
+              <tr>
+                <td colspan="4" class="editable" contenteditable="false">Fooding Charges</td>
+                <td class="editable" contenteditable="false">₹${foodingTaxableValue.toFixed(2)}</td>
+                <td>5%</td>
+                <td class="editable" contenteditable="false">₹${foodingCgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${foodingSgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${checkoutDetails.additionalCharges}</td>
+              </tr>
+              ` : ''}
+              <tr class="total-row">
+                <td colspan="4">TOTAL</td>
+                <td class="editable" contenteditable="false">₹${taxableValue.toFixed(2)}</td>
+                <td></td>
+                <td class="editable" contenteditable="false">₹${cgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${sgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${totalAmount}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div style="margin: 20px 0;">
+            <strong>IN WORD:</strong> ${amountInWords} ONLY.
+          </div>
+
+          <div style="margin: 20px 0;">
+            <strong>STAX NO:</strong> AANCA1929QSD001 | <strong>PAN NO:</strong> AANCA1929Q
+          </div>
+
+          <div class="bank-details">
+            <div class="section-title">Bank Account Detail:</div>
+            <div class="info-row">Account Holder: Aronax Enterprises Private Limited</div>
+            <div class="info-row">Bank Name: HDFC Bank Limited</div>
+            <div class="info-row">Account No: 50200011166109</div>
+            <div class="info-row">IFSC Code: HDFC0000304</div>
+          </div>
+
+          <div class="footer">
+            <div style="margin-bottom: 10px;">*Please Deposit your Key to the Receptionists*</div>
+            <div>THANK YOU FOR YOUR VISIT, PLEASE VISIT AGAIN !!!!</div>
+          </div>
+
+          <script>
+            let isEditMode = false;
+            
+            function toggleEdit() {
+              const editables = document.querySelectorAll('.editable');
+              const editBtn = document.querySelector('.edit-btn');
+              
+              isEditMode = !isEditMode;
+              
+              editables.forEach(element => {
+                element.contentEditable = isEditMode;
+                if (isEditMode) {
+                  element.style.backgroundColor = '#f8f9fa';
+                } else {
+                  element.style.backgroundColor = '';
+                }
+              });
+              
+              if (isEditMode) {
+                editBtn.textContent = 'Save & Exit Edit';
+                editBtn.style.background = '#dc3545';
+                editBtn.onclick = saveAndExitEdit;
+              } else {
+                editBtn.textContent = 'Edit Bill';
+                editBtn.style.background = '#28a745';
+                editBtn.onclick = toggleEdit;
+              }
+            }
+            
+            function saveAndExitEdit() {
+              const editables = document.querySelectorAll('.editable');
+              const editBtn = document.querySelector('.edit-btn');
+              
+              editables.forEach(element => {
+                element.contentEditable = false;
+                element.style.backgroundColor = '';
+              });
+              
+              editBtn.textContent = 'Edit Bill';
+              editBtn.style.background = '#28a745';
+              editBtn.onclick = toggleEdit;
+              
+              isEditMode = false;
+              
+              // Show confirmation
+              alert('Bill has been saved! You can now print the modified bill.');
+            }
+          </script>
+        </body>
+        </html>
+      `
+
+      // Open bill in new window
+      const billWindow = window.open('', '_blank', 'width=800,height=600')
+      if (billWindow) {
+        billWindow.document.write(billHTML)
+        billWindow.document.close()
+      }
+    } catch (error) {
+      console.error('Bill generation error:', error)
+      showNotification('error', 'Failed to generate bill. Please try again.')
+    }
+  }
+
+  // Helper function to convert number to words
+  const numberToWords = (num: number): string => {
+    const ones = ['', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE']
+    const tens = ['', '', 'TWENTY', 'THIRTY', 'FORTY', 'FIFTY', 'SIXTY', 'SEVENTY', 'EIGHTY', 'NINETY']
+    const teens = ['TEN', 'ELEVEN', 'TWELVE', 'THIRTEEN', 'FOURTEEN', 'FIFTEEN', 'SIXTEEN', 'SEVENTEEN', 'EIGHTEEN', 'NINETEEN']
+
+    if (num === 0) return 'ZERO'
+    if (num < 10) return ones[num]
+    if (num < 20) return teens[num - 10]
+    if (num < 100) {
+      if (num % 10 === 0) return tens[Math.floor(num / 10)]
+      return tens[Math.floor(num / 10)] + ' ' + ones[num % 10]
+    }
+    if (num < 1000) {
+      if (num % 100 === 0) return ones[Math.floor(num / 100)] + ' HUNDRED'
+      return ones[Math.floor(num / 100)] + ' HUNDRED AND ' + numberToWords(num % 100)
+    }
+    if (num < 100000) {
+      if (num % 1000 === 0) return numberToWords(Math.floor(num / 1000)) + ' THOUSAND'
+      return numberToWords(Math.floor(num / 1000)) + ' THOUSAND ' + numberToWords(num % 1000)
+    }
+    return 'RUPEES'
   }
 
   const handleAddGuest = async () => {
@@ -1908,6 +2271,15 @@ const Guests = () => {
                 </div>
 
                 <div className="pt-4 border-t border-gray-200">
+                  <div className="flex space-x-2 mb-3">
+                    <button
+                      onClick={generateBill}
+                      className="btn-secondary flex-1"
+                      title="Generate and print professional bill"
+                    >
+                      Generate Bill
+                    </button>
+                  </div>
                   <div className="flex space-x-2">
                     <button
                       onClick={handleCheckoutSubmit}

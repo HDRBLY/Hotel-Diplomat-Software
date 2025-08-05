@@ -30,5 +30,93 @@
     "createdAt": "2025-08-05T08:28:00.043Z",
     "updatedAt": "2025-08-05T08:35:34.305Z",
     "notes": ""
+  },
+  {
+    "id": "1754385109082",
+    "name": "aman",
+    "email": "",
+    "phone": "98468168",
+    "roomNumber": "210",
+    "checkInDate": "2025-08-05",
+    "checkOutDate": "2025-08-06",
+    "status": "checked-in",
+    "totalAmount": 2000,
+    "paidAmount": 2000,
+    "address": "",
+    "idProof": "AADHAR-987986461861",
+    "category": "solo",
+    "complimentary": false,
+    "createdAt": "2025-08-05T09:11:49.082Z"
+  },
+  {
+    "id": "1754388011627",
+    "name": "aman",
+    "email": "",
+    "phone": "9874684681",
+    "roomNumber": "218",
+    "checkInDate": "2025-08-05",
+    "checkOutDate": "2025-08-06",
+    "status": "checked-in",
+    "totalAmount": 3000,
+    "paidAmount": 2500,
+    "address": "",
+    "idProof": "AADHAR-98746841684",
+    "category": "corporate",
+    "complimentary": false,
+    "secondaryGuest": {
+      "name": "Vinod",
+      "phone": "",
+      "idProof": ""
+    },
+    "extraBeds": [
+      {
+        "name": "Aquib",
+        "phone": "",
+        "idProof": "",
+        "charge": 500
+      }
+    ],
+    "createdAt": "2025-08-05T10:00:11.627Z"
+  },
+  {
+    "id": "1754388499616",
+    "name": "vikas",
+    "email": "",
+    "phone": "9878641616",
+    "roomNumber": "204",
+    "checkInDate": "2025-08-05",
+    "checkOutDate": "2025-08-05",
+    "status": "checked-in",
+    "totalAmount": 2000,
+    "paidAmount": 2000,
+    "address": "",
+    "idProof": "AADHAR-9849198186",
+    "category": "solo",
+    "complimentary": false,
+    "createdAt": "2025-08-05T10:08:19.616Z"
+  },
+  {
+    "id": "1754398363284",
+    "name": "Farhat",
+    "email": "",
+    "phone": "987684684",
+    "roomNumber": "308",
+    "checkInDate": "2025-08-05",
+    "checkOutDate": "2025-08-07",
+    "status": "checked-out",
+    "totalAmount": 5500,
+    "paidAmount": 5500,
+    "address": "",
+    "idProof": "AADHAR-98746816849681",
+    "category": "solo",
+    "complimentary": false,
+    "secondaryGuest": {
+      "name": "Alina",
+      "phone": "",
+      "idProof": ""
+    },
+    "createdAt": "2025-08-05T12:52:43.284Z",
+    "updatedAt": "2025-08-05T12:56:38.695Z",
+    "notes": ""
   }
 ]

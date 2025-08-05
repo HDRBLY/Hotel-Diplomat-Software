@@ -864,6 +864,29 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Hotel Diplomat Backend is running' });
 });
 
+// Bill number management
+app.get('/api/bill-number', (req, res) => {
+  try {
+    const billCounterPath = path.join(dataDir, 'billCounter.json');
+    let billCounter = { currentBillNumber: 1 };
+    
+    if (fs.existsSync(billCounterPath)) {
+      billCounter = JSON.parse(fs.readFileSync(billCounterPath, 'utf8'));
+    }
+    
+    const billNumber = billCounter.currentBillNumber.toString().padStart(4, '0');
+    
+    // Increment for next use
+    billCounter.currentBillNumber += 1;
+    fs.writeFileSync(billCounterPath, JSON.stringify(billCounter, null, 2));
+    
+    res.json({ success: true, billNumber });
+  } catch (error) {
+    console.error('Error getting bill number:', error);
+    res.status(500).json({ success: false, message: 'Failed to generate bill number' });
+  }
+});
+
 // Authentication routes
 app.post('/api/auth/login', (req, res) => {
   const { username, password } = req.body;

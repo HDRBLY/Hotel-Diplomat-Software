@@ -145,7 +145,7 @@
     "id": "8",
     "number": "204",
     "type": "DELUXE",
-    "status": "AVAILABLE",
+    "status": "OCCUPIED",
     "floor": 2,
     "price": 2500,
     "amenities": [
@@ -156,11 +156,12 @@
       "Balcony"
     ],
     "category": "SOLO",
-    "currentGuest": null,
-    "checkInDate": null,
-    "checkOutDate": null,
+    "currentGuest": "vikas",
+    "checkInDate": "2025-08-05",
+    "checkOutDate": "2025-08-05",
     "lastCleaned": "2025-08-05T08:26:12.759Z",
-    "createdAt": "2025-08-05T08:26:12.759Z"
+    "createdAt": "2025-08-05T08:26:12.759Z",
+    "updatedAt": "2025-08-05T10:08:19.646Z"
   },
   {
     "id": "9",
@@ -210,7 +211,7 @@
     "id": "11",
     "number": "210",
     "type": "DELUXE",
-    "status": "AVAILABLE",
+    "status": "OCCUPIED",
     "floor": 2,
     "price": 2500,
     "amenities": [
@@ -221,11 +222,12 @@
       "Balcony"
     ],
     "category": "SOLO",
-    "currentGuest": null,
-    "checkInDate": null,
-    "checkOutDate": null,
+    "currentGuest": "aman",
+    "checkInDate": "2025-08-05",
+    "checkOutDate": "2025-08-06",
     "lastCleaned": "2025-08-05T08:26:12.759Z",
-    "createdAt": "2025-08-05T08:26:12.759Z"
+    "createdAt": "2025-08-05T08:26:12.759Z",
+    "updatedAt": "2025-08-05T09:11:49.194Z"
   },
   {
     "id": "12",
@@ -273,7 +275,7 @@
     "id": "14",
     "number": "216",
     "type": "SUITE",
-    "status": "AVAILABLE",
+    "status": "CLEANING",
     "floor": 2,
     "price": 4000,
     "amenities": [
@@ -289,13 +291,15 @@
     "checkInDate": null,
     "checkOutDate": null,
     "lastCleaned": "2025-08-05T08:26:12.759Z",
-    "createdAt": "2025-08-05T08:26:12.759Z"
+    "createdAt": "2025-08-05T08:26:12.759Z",
+    "updatedAt": "2025-08-05T12:52:43.389Z",
+    "notes": "Guest was shifted from this room and later checked out on 5/8/2025. Room needs cleaning."
   },
   {
     "id": "15",
     "number": "218",
     "type": "SUITE",
-    "status": "AVAILABLE",
+    "status": "OCCUPIED",
     "floor": 2,
     "price": 4000,
     "amenities": [
@@ -306,12 +310,13 @@
       "Balcony",
       "Jacuzzi"
     ],
-    "category": "COUPLE",
-    "currentGuest": null,
-    "checkInDate": null,
-    "checkOutDate": null,
+    "category": "CORPORATE",
+    "currentGuest": "aman",
+    "checkInDate": "2025-08-05",
+    "checkOutDate": "2025-08-06",
     "lastCleaned": "2025-08-05T08:26:12.759Z",
-    "createdAt": "2025-08-05T08:26:12.759Z"
+    "createdAt": "2025-08-05T08:26:12.759Z",
+    "updatedAt": "2025-08-05T10:00:11.697Z"
   },
   {
     "id": "16",
@@ -599,7 +604,7 @@
     "id": "30",
     "number": "308",
     "type": "STANDARD",
-    "status": "AVAILABLE",
+    "status": "CLEANING",
     "floor": 3,
     "price": 1500,
     "amenities": [
@@ -612,7 +617,8 @@
     "checkInDate": null,
     "checkOutDate": null,
     "lastCleaned": "2025-08-05T08:26:12.760Z",
-    "createdAt": "2025-08-05T08:26:12.760Z"
+    "createdAt": "2025-08-05T08:26:12.760Z",
+    "notes": "Guest checked out on 5/8/2025. Room needs cleaning."
   },
   {
     "id": "31",
