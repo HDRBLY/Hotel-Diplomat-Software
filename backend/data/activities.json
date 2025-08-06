@@ -1,5 +1,13 @@
 [
   {
+    "id": "1754418128928",
+    "type": "guest_checked_in",
+    "guestName": "Test1",
+    "roomNumber": "306",
+    "time": "Just now",
+    "status": "completed"
+  },
+  {
     "id": "1754406150199",
     "type": "guest_checked_in",
     "guestName": "sftdshftdhs",

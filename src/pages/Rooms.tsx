@@ -1342,7 +1342,7 @@ const Rooms = () => {
           </table>
 
           <div style="margin: 20px 0;">
-            <strong>IN WORD:</strong> ${amountInWords} ONLY.
+            <strong>IN WORD:</strong> <span class="editable" contenteditable="false">${amountInWords} ONLY.</span>
           </div>
 
           <div style="margin: 20px 0;">
@@ -1406,8 +1406,10 @@ const Rooms = () => {
               
               isEditMode = false;
               
-              // Show confirmation
-              alert('Bill has been saved! You can now print the modified bill.');
+              // Send message to parent window to show notification
+              if (window.opener) {
+                window.opener.postMessage('bill-saved', '*');
+              }
             }
           </script>
         </body>
@@ -1419,6 +1421,13 @@ const Rooms = () => {
       if (billWindow) {
         billWindow.document.write(billHTML)
         billWindow.document.close()
+        
+        // Listen for save notification from bill window
+        window.addEventListener('message', (event) => {
+          if (event.data === 'bill-saved') {
+            showNotification('success', 'Bill has been saved! You can now print the modified bill.', 5000)
+          }
+        })
       }
     } catch (error) {
       console.error('Bill generation error:', error)

@@ -251,5 +251,28 @@
     "plan": "MAP",
     "complimentary": false,
     "createdAt": "2025-08-05T15:02:30.191Z"
+  },
+  {
+    "id": "1754418128910",
+    "name": "Test1",
+    "email": "",
+    "phone": "8486464",
+    "roomNumber": "306",
+    "checkInDate": "2025-08-05",
+    "checkOutDate": "2025-08-06",
+    "status": "checked-in",
+    "totalAmount": 2000,
+    "paidAmount": 2000,
+    "address": "",
+    "idProof": "AADHAR-8974647634634",
+    "category": "couple",
+    "plan": "AP",
+    "complimentary": false,
+    "secondaryGuest": {
+      "name": "Muskan",
+      "phone": "",
+      "idProof": ""
+    },
+    "createdAt": "2025-08-05T18:22:08.910Z"
   }
 ]

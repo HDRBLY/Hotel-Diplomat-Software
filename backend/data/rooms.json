@@ -41,7 +41,7 @@
     "id": "3",
     "number": "103",
     "type": "STANDARD",
-    "status": "AVAILABLE",
+    "status": "CLEANING",
     "floor": 1,
     "price": 1500,
     "amenities": [
@@ -54,7 +54,9 @@
     "checkInDate": null,
     "checkOutDate": null,
     "lastCleaned": "2025-08-05T08:26:12.759Z",
-    "createdAt": "2025-08-05T08:26:12.759Z"
+    "createdAt": "2025-08-05T08:26:12.759Z",
+    "updatedAt": "2025-08-06T08:19:33.436Z",
+    "notes": "Guest shifted to Room 309 on 2025-08-06 at 13:50. Reason: Room Upgrade. Authorized by: Aman. "
   },
   {
     "id": "4",
@@ -572,7 +574,7 @@
     "id": "28",
     "number": "306",
     "type": "STANDARD",
-    "status": "AVAILABLE",
+    "status": "OCCUPIED",
     "floor": 3,
     "price": 1500,
     "amenities": [
@@ -580,12 +582,13 @@
       "TV",
       "WiFi"
     ],
-    "category": "SOLO",
-    "currentGuest": null,
-    "checkInDate": null,
-    "checkOutDate": null,
+    "category": "COUPLE",
+    "currentGuest": "Test1",
+    "checkInDate": "2025-08-05",
+    "checkOutDate": "2025-08-06",
     "lastCleaned": "2025-08-05T08:26:12.759Z",
-    "createdAt": "2025-08-05T08:26:12.759Z"
+    "createdAt": "2025-08-05T08:26:12.759Z",
+    "updatedAt": "2025-08-05T18:22:08.959Z"
   },
   {
     "id": "29",
@@ -630,7 +633,7 @@
     "id": "31",
     "number": "309",
     "type": "STANDARD",
-    "status": "AVAILABLE",
+    "status": "OCCUPIED",
     "floor": 3,
     "price": 1500,
     "amenities": [
@@ -638,12 +641,13 @@
       "TV",
       "WiFi"
     ],
-    "category": "SOLO",
-    "currentGuest": null,
-    "checkInDate": null,
-    "checkOutDate": null,
+    "category": "CORPORATE",
+    "currentGuest": "aman",
+    "checkInDate": "2025-08-06",
+    "checkOutDate": "2025-08-07",
     "lastCleaned": "2025-08-05T08:26:12.760Z",
-    "createdAt": "2025-08-05T08:26:12.760Z"
+    "createdAt": "2025-08-05T08:26:12.760Z",
+    "notes": "Guest shifted from Room 103 on 2025-08-06 at 13:50. Reason: Room Upgrade. Authorized by: Aman. "
   },
   {
     "id": "32",
