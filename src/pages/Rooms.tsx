@@ -1422,12 +1422,14 @@ const Rooms = () => {
         billWindow.document.write(billHTML)
         billWindow.document.close()
         
-        // Listen for save notification from bill window
-        window.addEventListener('message', (event) => {
+        // Listen for save notification from bill window (once)
+        const handler = (event: MessageEvent) => {
           if (event.data === 'bill-saved') {
             showNotification('success', 'Bill has been saved! You can now print the modified bill.', 5000)
+            window.removeEventListener('message', handler)
           }
-        })
+        }
+        window.addEventListener('message', handler)
       }
     } catch (error) {
       console.error('Bill generation error:', error)

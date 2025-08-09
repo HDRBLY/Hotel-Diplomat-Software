@@ -61,6 +61,38 @@ const Guests = () => {
   const [selectedGuest, setSelectedGuest] = useState<Guest | null>(null)
   const [showCheckoutModal, setShowCheckoutModal] = useState(false)
   const [checkoutGuest, setCheckoutGuest] = useState<Guest | null>(null)
+  const [editGuest, setEditGuest] = useState<Guest | null>(null)
+  const [editMenuGuestId, setEditMenuGuestId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState<{
+    name: string
+    email: string
+    phone: string
+    address: string
+    idProof: string
+    idProofType: string
+    secondaryGuest?: {
+      name: string
+      phone?: string
+      idProof?: string
+      idProofType: string
+    }
+    extraBeds: Array<{
+      name: string
+      phone?: string
+      idProof?: string
+      idProofType: string
+      charge: number
+    }>
+  }>({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    idProof: '',
+    idProofType: '',
+    secondaryGuest: undefined,
+    extraBeds: []
+  })
   const [socket, setSocket] = useState<Socket | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -130,6 +162,80 @@ const Guests = () => {
       secondaryGuest: undefined
     }
   )
+
+  const recalculateTotals = (guestBaseAmount: number, beds: Array<{ charge: number }>) => {
+    const extraBedsTotal = beds.reduce((sum, b) => sum + (Number(b.charge) || 0), 0)
+    return {
+      extraBedsTotal,
+      totalAmount: Math.max(0, Math.round(guestBaseAmount + extraBedsTotal))
+    }
+  }
+
+  const handleEditExtraBedChange = (index: number, field: string, value: string) => {
+    setEditForm(prev => {
+      const updated = { ...prev }
+      updated.extraBeds = [...(prev.extraBeds || [])]
+      const bed = { ...(updated.extraBeds[index] || { name: '', charge: 0 }) }
+      ;(bed as any)[field] = field === 'charge' ? Number(value) || 0 : value
+      updated.extraBeds[index] = bed
+      return updated
+    })
+  }
+
+  const addEditExtraBed = () => {
+    setEditForm(prev => ({
+      ...prev,
+      extraBeds: [...(prev.extraBeds || []), { name: '', charge: 0, idProofType: '' }]
+    }))
+  }
+
+  const removeEditExtraBed = (index: number) => {
+    setEditForm(prev => ({
+      ...prev,
+      extraBeds: (prev.extraBeds || []).filter((_, i) => i !== index)
+    }))
+  }
+
+  const handleSaveEditGuest = async () => {
+    if (!editGuest) return
+
+    // Keep paidAmount and balance unchanged; only adjust totalAmount based on extra beds
+    const baseRoomAmount = (editGuest.totalAmount || 0) - (editGuest.extraBeds?.reduce((s, b) => s + (b.charge || 0), 0) || 0)
+    const { totalAmount } = recalculateTotals(baseRoomAmount, editForm.extraBeds || [])
+
+    try {
+      const response = await fetch(`http://localhost:3001/api/guests/${editGuest.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editForm.name,
+          email: editForm.email,
+          phone: editForm.phone,
+          address: editForm.address,
+          idProof: editForm.idProof,
+          idProofType: editForm.idProofType,
+          secondaryGuest: editForm.secondaryGuest,
+          extraBeds: editForm.extraBeds,
+          totalAmount: totalAmount
+        })
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        showNotification('success', 'Guest details updated successfully!')
+        setEditGuest(null)
+        // Refresh list
+        const guestsRes = await fetch('http://localhost:3001/api/guests')
+        const guestsData = await guestsRes.json()
+        if (guestsData.success) setGuests(guestsData.data)
+      } else {
+        showNotification('error', 'Failed to update guest. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error updating guest:', error)
+      showNotification('error', 'Failed to update guest. Please try again.')
+    }
+  }
 
   // Fetch guests and rooms from backend and setup WebSocket
   useEffect(() => {
@@ -1021,12 +1127,14 @@ const Guests = () => {
         billWindow.document.write(billHTML)
         billWindow.document.close()
         
-        // Listen for save notification from bill window
-        window.addEventListener('message', (event) => {
+        // Listen for save notification from bill window (once)
+        const handler = (event: MessageEvent) => {
           if (event.data === 'bill-saved') {
             showNotification('success', 'Bill has been saved! You can now print the modified bill.', 5000)
+            window.removeEventListener('message', handler)
           }
-        })
+        }
+        window.addEventListener('message', handler)
       }
     } catch (error) {
       console.error('Bill generation error:', error)
@@ -1450,9 +1558,50 @@ const Guests = () => {
                       >
                         View Details
                       </button>
-                      <button className="text-gray-400 hover:text-gray-600" title="More actions">
-                        <MoreVertical className="h-4 w-4" />
-                      </button>
+                      <div className="relative">
+                        <button
+                          onClick={() => setEditMenuGuestId(editMenuGuestId === guest.id ? null : guest.id)}
+                          className="text-gray-400 hover:text-gray-600"
+                          title="More actions"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </button>
+                        {editMenuGuestId === guest.id && (
+                          <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                            <button
+                              onClick={() => {
+                                // Open edit modal with pre-filled data
+                                setEditMenuGuestId(null)
+                                setEditGuest(guest)
+                                setEditForm({
+                                  name: guest.name || '',
+                                  email: guest.email || '',
+                                  phone: guest.phone || '',
+                                  address: guest.address || '',
+                                  idProof: guest.idProof || '',
+                                  idProofType: (guest as any).idProofType || '',
+                                  secondaryGuest: guest.secondaryGuest ? {
+                                    name: guest.secondaryGuest.name || '',
+                                    phone: guest.secondaryGuest.phone,
+                                    idProof: guest.secondaryGuest.idProof,
+                                    idProofType: guest.secondaryGuest.idProofType
+                                  } : undefined,
+                                  extraBeds: (guest.extraBeds || []).map(b => ({
+                                    name: b.name,
+                                    phone: b.phone,
+                                    idProof: b.idProof,
+                                    idProofType: b.idProofType,
+                                    charge: b.charge
+                                  }))
+                                })
+                              }}
+                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                            >
+                              Edit Details
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -1486,6 +1635,112 @@ const Guests = () => {
                   <p className="mt-1 text-sm text-gray-600">{selectedGuest.phone}</p>
                 </div>
 
+      {/* Edit Guest Modal */}
+      {editGuest && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" onClick={() => setEditGuest(null)}>
+          <div className="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white" onClick={e => e.stopPropagation()}>
+            <div className="mt-3">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Edit Guest Details</h3>
+                <button onClick={() => setEditGuest(null)} className="text-gray-400 hover:text-gray-600" title="Close">
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Name</label>
+                  <input className="input-field mt-1" value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Email</label>
+                  <input className="input-field mt-1" value={editForm.email} onChange={e => setEditForm({ ...editForm, email: e.target.value })} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Phone</label>
+                  <input className="input-field mt-1" value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Address</label>
+                  <input className="input-field mt-1" value={editForm.address} onChange={e => setEditForm({ ...editForm, address: e.target.value })} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">ID Proof</label>
+                  <input className="input-field mt-1" value={editForm.idProof} onChange={e => setEditForm({ ...editForm, idProof: e.target.value })} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">ID Proof Type</label>
+                  <input className="input-field mt-1" value={editForm.idProofType} onChange={e => setEditForm({ ...editForm, idProofType: e.target.value })} />
+                </div>
+              </div>
+
+              {/* Secondary guest (optional) */}
+              <div className="mt-4">
+                <h4 className="text-sm font-medium text-gray-900 mb-2">Secondary Guest (optional)</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Name</label>
+                    <input className="input-field mt-1" value={editForm.secondaryGuest?.name || ''} onChange={e => setEditForm({ ...editForm, secondaryGuest: { name: e.target.value, phone: editForm.secondaryGuest?.phone, idProof: editForm.secondaryGuest?.idProof, idProofType: editForm.secondaryGuest?.idProofType || '' } })} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Phone</label>
+                    <input className="input-field mt-1" value={editForm.secondaryGuest?.phone || ''} onChange={e => setEditForm({ ...editForm, secondaryGuest: { name: editForm.secondaryGuest?.name || '', phone: e.target.value, idProof: editForm.secondaryGuest?.idProof, idProofType: editForm.secondaryGuest?.idProofType || '' } })} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">ID Proof</label>
+                    <input className="input-field mt-1" value={editForm.secondaryGuest?.idProof || ''} onChange={e => setEditForm({ ...editForm, secondaryGuest: { name: editForm.secondaryGuest?.name || '', phone: editForm.secondaryGuest?.phone, idProof: e.target.value, idProofType: editForm.secondaryGuest?.idProofType || '' } })} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">ID Proof Type</label>
+                    <input className="input-field mt-1" value={editForm.secondaryGuest?.idProofType || ''} onChange={e => setEditForm({ ...editForm, secondaryGuest: { name: editForm.secondaryGuest?.name || '', phone: editForm.secondaryGuest?.phone, idProof: editForm.secondaryGuest?.idProof, idProofType: e.target.value } })} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Extra beds */}
+              <div className="mt-6">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-sm font-medium text-gray-900">Extra Beds</h4>
+                  <button onClick={addEditExtraBed} className="text-sm text-primary-600 hover:text-primary-800">+ Add Extra Bed</button>
+                </div>
+                {(editForm.extraBeds || []).map((bed, index) => (
+                  <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-3 p-3 bg-gray-50 rounded">
+                    <div>
+                      <label className="block text-xs text-gray-600">Name</label>
+                      <input className="input-field mt-1" value={bed.name} onChange={e => handleEditExtraBedChange(index, 'name', e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600">Phone</label>
+                      <input className="input-field mt-1" value={bed.phone || ''} onChange={e => handleEditExtraBedChange(index, 'phone', e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600">ID Proof</label>
+                      <input className="input-field mt-1" value={bed.idProof || ''} onChange={e => handleEditExtraBedChange(index, 'idProof', e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600">ID Proof Type</label>
+                      <input className="input-field mt-1" value={bed.idProofType || ''} onChange={e => handleEditExtraBedChange(index, 'idProofType', e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600">Charge</label>
+                      <input type="number" className="input-field mt-1" value={bed.charge} onChange={e => handleEditExtraBedChange(index, 'charge', e.target.value)} />
+                    </div>
+                    <div className="md:col-span-5">
+                      <button onClick={() => removeEditExtraBed(index)} className="text-xs text-red-600 hover:text-red-800">Remove</button>
+                    </div>
+                  </div>
+                ))}
+                <div className="text-xs text-gray-600">Paid Amount and Balance are not editable here.</div>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-2">
+                <button onClick={() => setEditGuest(null)} className="btn-secondary">Cancel</button>
+                <button onClick={handleSaveEditGuest} className="btn-primary">Save Changes</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Address</label>
                   <p className="mt-1 text-sm text-gray-900">{selectedGuest.address}</p>

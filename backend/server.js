@@ -874,7 +874,7 @@ app.get('/api/bill-number', (req, res) => {
       billCounter = JSON.parse(fs.readFileSync(billCounterPath, 'utf8'));
     }
     
-    const billNumber = billCounter.currentBillNumber.toString().padStart(4, '0');
+    const billNumber = billCounter.currentBillNumber.toString().padStart(3, '0');
     
     // Increment for next use
     billCounter.currentBillNumber += 1;
@@ -2032,6 +2032,15 @@ app.post('/api/reports/clear-data', (req, res) => {
     writeData('rooms.json', []);
     writeData('reservations.json', []);
     writeData('activities.json', []);
+    
+    // Reset bill counter to start from 0001 again
+    try {
+      const billCounterPath = path.join(dataDir, 'billCounter.json');
+      fs.writeFileSync(billCounterPath, JSON.stringify({ currentBillNumber: 1 }, null, 2));
+    } catch (err) {
+      console.error('Error resetting bill counter:', err);
+      // Continue even if bill counter reset fails; main clear operation should not be blocked
+    }
     
     // Reinitialize with default data
     initializeDefaultData();
