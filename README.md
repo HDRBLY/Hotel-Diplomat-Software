@@ -64,9 +64,14 @@ npm run dev
 
 ## 🌐 Access URLs
 
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:3001
-- **API Health Check**: http://localhost:3001/api/health
+- Development Frontend: http://localhost:3000
+- Development Backend API: http://localhost:3001
+- Development API Health Check: http://localhost:3001/api/health
+
+Production (Stage 1 Completed & Deployed)
+- Production Frontend: https://rodeomulticuisine.com
+- Production Backend API: https://api.rodeomulticuisine.com/api
+- Production API Health Check: https://api.rodeomulticuisine.com/api/health
 
 ## 🔧 Environment Configuration
 
@@ -75,6 +80,14 @@ Create a `.env` file in the root directory:
 ```env
 VITE_API_BASE_URL=http://localhost:3001/api
 VITE_WS_URL=ws://localhost:3001/ws
+```
+
+Production build variables (used at build time only): create `.env.production` in project root
+
+```env
+VITE_BACKEND_URL=https://api.rodeomulticuisine.com
+VITE_API_BASE_URL=https://api.rodeomulticuisine.com/api
+VITE_WS_URL=wss://api.rodeomulticuisine.com
 ```
 
 ## 📁 Project Structure
@@ -91,6 +104,24 @@ VITE_WS_URL=ws://localhost:3001/ws
 │   └── config.env     # Backend configuration
 └── README.md
 ```
+
+## 📦 Stage 1: Completed & Deployed
+
+- Bill flow: inline bill edit with Save & Exit notification (single, non-duplicated)
+- Bill counter: resets to 001 on Reports → Clear All Data
+- Guests: three-dots Edit Details with extra-bed management; Paid/Balance read-only; correct total math
+- Notifications: attractive, accessible toasts; consistent timing
+- Auth & permissions: role-based access checks at routes and actions
+- WebSocket updates: guests/rooms/reports live refresh
+
+Deployment summary (MilesWeb / cPanel)
+- Backend (Node.js app) deployed at `api.rodeomulticuisine.com` with `/api/health`
+- Frontend (Vite static build) deployed to `public_html` for `rodeomulticuisine.com`
+- DNS: `api` A record → server IP; SSL via AutoSSL
+- Backend `config.env`: `PORT=3001`, `JWT_SECRET=…`, `CORS_ORIGIN=https://rodeomulticuisine.com`, `NODE_ENV=production`
+- Frontend build uses `.env.production` variables shown above
+
+See full, step-by-step deployment guide in `docs/DEPLOYMENT.md`.
 
 ## 🚨 Error Handling
 
