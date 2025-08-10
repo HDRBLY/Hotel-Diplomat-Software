@@ -25,6 +25,7 @@ import {
   Cell
 } from 'recharts'
 import { Dialog } from '@headlessui/react'
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
 
 interface ReportData {
   occupancyRate: number
@@ -433,54 +434,54 @@ const Reports = () => {
         if (endDate) params.append('endDate', endDate)
         
         // Fetch overview data with date range
-        const overviewResponse = await fetch(`http://localhost:3001/api/reports/overview?${params}`)
+        const overviewResponse = await fetch(`${BACKEND_URL}/api/reports/overview?${params}`)
         const overviewData = await overviewResponse.json()
         if (overviewData.success) {
           setReportData(overviewData.data)
         }
 
         // Fetch revenue data with date range
-        const revenueResponse = await fetch(`http://localhost:3001/api/reports/revenue?${params}`)
+        const revenueResponse = await fetch(`${BACKEND_URL}/api/reports/revenue?${params}`)
         const revenueResult = await revenueResponse.json()
         if (revenueResult.success) {
           setRevenueData(revenueResult.data)
         }
 
         // Fetch occupancy data with date range
-        const occupancyResponse = await fetch(`http://localhost:3001/api/reports/occupancy?${params}`)
+        const occupancyResponse = await fetch(`${BACKEND_URL}/api/reports/occupancy?${params}`)
         const occupancyResult = await occupancyResponse.json()
         if (occupancyResult.success) {
           setOccupancyData(occupancyResult.data)
         }
 
         // Fetch guest data with date range
-        const guestResponse = await fetch(`http://localhost:3001/api/reports/guests?${params}`)
+        const guestResponse = await fetch(`${BACKEND_URL}/api/reports/guests?${params}`)
         const guestResult = await guestResponse.json()
         if (guestResult.success) {
           setGuestData(guestResult.data)
         }
 
         // Fetch room data with date range
-        const roomResponse = await fetch(`http://localhost:3001/api/reports/rooms?${params}`)
+        const roomResponse = await fetch(`${BACKEND_URL}/api/reports/rooms?${params}`)
         const roomResult = await roomResponse.json()
         if (roomResult.success) {
           setRoomData(roomResult.data)
         }
 
         // Fetch chart data
-        const monthlyRevenueResponse = await fetch(`http://localhost:3001/api/reports/charts/monthly-revenue?${params}`)
+        const monthlyRevenueResponse = await fetch(`${BACKEND_URL}/api/reports/charts/monthly-revenue?${params}`)
         const monthlyRevenueResult = await monthlyRevenueResponse.json()
         if (monthlyRevenueResult.success) {
           setMonthlyRevenueData(monthlyRevenueResult.data)
         }
 
-        const roomTypeResponse = await fetch(`http://localhost:3001/api/reports/charts/room-types?${params}`)
+        const roomTypeResponse = await fetch(`${BACKEND_URL}/api/reports/charts/room-types?${params}`)
         const roomTypeResult = await roomTypeResponse.json()
         if (roomTypeResult.success) {
           setRoomTypeData(roomTypeResult.data)
         }
 
-        const guestSourceResponse = await fetch(`http://localhost:3001/api/reports/charts/guest-sources?${params}`)
+        const guestSourceResponse = await fetch(`${BACKEND_URL}/api/reports/charts/guest-sources?${params}`)
         const guestSourceResult = await guestSourceResponse.json()
         if (guestSourceResult.success) {
           setGuestSourceData(guestSourceResult.data)
@@ -493,7 +494,7 @@ const Reports = () => {
     fetchReportsData()
 
     // Setup WebSocket connection for real-time updates
-    const newSocket = io('http://localhost:3001')
+    const newSocket = io(BACKEND_URL)
     setSocket(newSocket)
 
     newSocket.on('connect', () => {
@@ -533,7 +534,7 @@ const Reports = () => {
 
     setIsClearing(true)
     try {
-      const response = await fetch('http://localhost:3001/api/reports/clear-data', {
+      const response = await fetch(`${BACKEND_URL}/api/reports/clear-data`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -547,54 +548,54 @@ const Reports = () => {
         const fetchReportsData = async () => {
           try {
             // Fetch overview data
-            const overviewResponse = await fetch('http://localhost:3001/api/reports/overview')
+            const overviewResponse = await fetch(`${BACKEND_URL}/api/reports/overview`)
             const overviewData = await overviewResponse.json()
             if (overviewData.success) {
               setReportData(overviewData.data)
             }
 
             // Fetch revenue data
-            const revenueResponse = await fetch('http://localhost:3001/api/reports/revenue')
+            const revenueResponse = await fetch(`${BACKEND_URL}/api/reports/revenue`)
             const revenueResult = await revenueResponse.json()
             if (revenueResult.success) {
               setRevenueData(revenueResult.data)
             }
 
             // Fetch occupancy data
-            const occupancyResponse = await fetch('http://localhost:3001/api/reports/occupancy')
+            const occupancyResponse = await fetch(`${BACKEND_URL}/api/reports/occupancy`)
             const occupancyResult = await occupancyResponse.json()
             if (occupancyResult.success) {
               setOccupancyData(occupancyResult.data)
             }
 
             // Fetch guest data
-            const guestResponse = await fetch('http://localhost:3001/api/reports/guests')
+            const guestResponse = await fetch(`${BACKEND_URL}/api/reports/guests`)
             const guestResult = await guestResponse.json()
             if (guestResult.success) {
               setGuestData(guestResult.data)
             }
 
             // Fetch room data
-            const roomResponse = await fetch('http://localhost:3001/api/reports/rooms')
+            const roomResponse = await fetch(`${BACKEND_URL}/api/reports/rooms`)
             const roomResult = await roomResponse.json()
             if (roomResult.success) {
               setRoomData(roomResult.data)
             }
 
             // Fetch chart data
-            const monthlyRevenueResponse = await fetch('http://localhost:3001/api/reports/charts/monthly-revenue')
+            const monthlyRevenueResponse = await fetch(`${BACKEND_URL}/api/reports/charts/monthly-revenue`)
             const monthlyRevenueResult = await monthlyRevenueResponse.json()
             if (monthlyRevenueResult.success) {
               setMonthlyRevenueData(monthlyRevenueResult.data)
             }
 
-            const roomTypeResponse = await fetch('http://localhost:3001/api/reports/charts/room-types')
+            const roomTypeResponse = await fetch(`${BACKEND_URL}/api/reports/charts/room-types`)
             const roomTypeResult = await roomTypeResponse.json()
             if (roomTypeResult.success) {
               setRoomTypeData(roomTypeResult.data)
             }
 
-            const guestSourceResponse = await fetch('http://localhost:3001/api/reports/charts/guest-sources')
+            const guestSourceResponse = await fetch(`${BACKEND_URL}/api/reports/charts/guest-sources`)
             const guestSourceResult = await guestSourceResponse.json()
             if (guestSourceResult.success) {
               setGuestSourceData(guestSourceResult.data)

@@ -18,6 +18,7 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
 
 // Mock user database - REMOVED: Using backend authentication instead
 // const users: Array<{
@@ -180,7 +181,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }: { 
 
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
-      const response = await fetch('http://localhost:3001/api/auth/login', {
+      const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -220,7 +221,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }: { 
 
   const validateToken = async (token: string): Promise<boolean> => {
     try {
-      const response = await fetch('http://localhost:3001/api/auth/validate', {
+      const response = await fetch(`${BACKEND_URL}/api/auth/validate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

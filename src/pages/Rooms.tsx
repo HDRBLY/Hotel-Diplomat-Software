@@ -25,6 +25,7 @@ import { useAuth } from '../components/AuthContext'
 import Notification from '../components/Notification'
 import { useRef } from 'react'
 import { useCallback } from 'react'
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
 
 interface Room {
   id: string
@@ -122,7 +123,7 @@ const Rooms = () => {
     setError(null)
     try {
       console.log('Manual refresh triggered...')
-      const response = await fetch('http://localhost:3001/api/rooms')
+      const response = await fetch(`${BACKEND_URL}/api/rooms`)
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
@@ -162,7 +163,7 @@ const Rooms = () => {
       setError(null)
       try {
         console.log('Fetching rooms from API...')
-        const response = await fetch('http://localhost:3001/api/rooms')
+        const response = await fetch(`${BACKEND_URL}/api/rooms`)
         console.log('API Response status:', response.status)
         
         if (!response.ok) {
@@ -591,7 +592,7 @@ const Rooms = () => {
     fetchRooms()
 
     // Setup WebSocket connection for real-time updates
-    const newSocket = io('http://localhost:3001')
+    const newSocket = io(BACKEND_URL)
     setSocket(newSocket)
 
     newSocket.on('connect', () => {
@@ -803,7 +804,7 @@ const Rooms = () => {
 
     try {
       // Call backend API to update room status
-      const response = await fetch(`http://localhost:3001/api/rooms/${roomId}`, {
+      const response = await fetch(`${BACKEND_URL}/api/rooms/${roomId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -862,7 +863,7 @@ const Rooms = () => {
 
     try {
       // Call backend API to add room
-      const response = await fetch('http://localhost:3001/api/rooms', {
+      const response = await fetch(`${BACKEND_URL}/api/rooms`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -958,7 +959,7 @@ const Rooms = () => {
 
     try {
       // Call backend API to update room
-      const response = await fetch(`http://localhost:3001/api/rooms/${editingRoom.id}`, {
+      const response = await fetch(`${BACKEND_URL}/api/rooms/${editingRoom.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -1027,7 +1028,7 @@ const Rooms = () => {
     
     try {
       // Fetch guest data to get the actual total amount (including extra bed charges)
-      const response = await fetch(`http://localhost:3001/api/guests`)
+      const response = await fetch(`${BACKEND_URL}/api/guests`)
       const guestsData = await response.json()
       
       if (!guestsData.success) {
@@ -1078,12 +1079,12 @@ const Rooms = () => {
 
     try {
       // Get bill number from backend
-      const billResponse = await fetch('http://localhost:3001/api/bill-number')
+      const billResponse = await fetch(`${BACKEND_URL}/api/bill-number`)
       const billData = await billResponse.json()
       const billNumber = billData.success ? billData.billNumber : '0001'
 
       // Find the guest for this room
-      const response = await fetch(`http://localhost:3001/api/guests`)
+      const response = await fetch(`${BACKEND_URL}/api/guests`)
       const guestsData = await response.json()
       
       if (!guestsData.success) {
@@ -1133,7 +1134,7 @@ const Rooms = () => {
       }
 
       // Get room price from rooms data
-      const roomsResponse = await fetch('http://localhost:3001/api/rooms')
+      const roomsResponse = await fetch(`${BACKEND_URL}/api/rooms`)
       const roomsData = await roomsResponse.json()
       const room = roomsData.data.find((r: any) => r.number === guest.roomNumber)
       const roomPrice = room ? room.price : guest.totalAmount
@@ -1477,7 +1478,7 @@ const Rooms = () => {
 
     try {
       // Find the guest for this room
-      const response = await fetch(`http://localhost:3001/api/guests`)
+      const response = await fetch(`${BACKEND_URL}/api/guests`)
       const guestsData = await response.json()
       
       if (!guestsData.success) {
@@ -1494,7 +1495,7 @@ const Rooms = () => {
       }
 
       // Update guest status to checked-out
-      const updateResponse = await fetch(`http://localhost:3001/api/guests/${guest.id}`, {
+      const updateResponse = await fetch(`${BACKEND_URL}/api/guests/${guest.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -1610,7 +1611,7 @@ const Rooms = () => {
 
     try {
       // Call the API to shift the room
-      const response = await fetch(`http://localhost:3001/api/rooms/${shiftFromRoom.id}/shift`, {
+      const response = await fetch(`${BACKEND_URL}/api/rooms/${shiftFromRoom.id}/shift`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1655,7 +1656,7 @@ const Rooms = () => {
       ])
       
       // Refresh rooms data to get updated state (but don't show notification)
-      const refreshResponse = await fetch('http://localhost:3001/api/rooms')
+      const refreshResponse = await fetch(`${BACKEND_URL}/api/rooms`)
       if (refreshResponse.ok) {
         const refreshData = await refreshResponse.json()
         if (refreshData.success) {
@@ -1703,7 +1704,7 @@ const Rooms = () => {
 
     try {
       // Call backend API to update room status
-      const response = await fetch(`http://localhost:3001/api/rooms/${statusChangeRoom.id}`, {
+      const response = await fetch(`${BACKEND_URL}/api/rooms/${statusChangeRoom.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -1745,7 +1746,7 @@ const Rooms = () => {
   useEffect(() => {
     const fetchRoomShifts = async () => {
       try {
-        const response = await fetch('http://localhost:3001/api/room-shifts?limit=100')
+        const response = await fetch(`${BACKEND_URL}/api/room-shifts?limit=100`)
         if (response.ok) {
           const data = await response.json()
           if (data.success) {
@@ -1767,7 +1768,7 @@ const Rooms = () => {
         // Refresh room shifts data when a new shift happens
         const fetchRoomShifts = async () => {
           try {
-            const response = await fetch('http://localhost:3001/api/room-shifts?limit=100')
+            const response = await fetch(`${BACKEND_URL}/api/room-shifts?limit=100`)
             if (response.ok) {
               const data = await response.json()
               if (data.success) {

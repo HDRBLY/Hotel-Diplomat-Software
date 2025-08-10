@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { io, Socket } from 'socket.io-client'
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
 import { 
   Users, 
   Bed, 
@@ -68,7 +69,7 @@ const Dashboard = () => {
       console.log('Fetching dashboard data...')
       try {
         // Fetch dashboard stats
-        const statsResponse = await fetch('http://localhost:3001/api/reports/dashboard')
+        const statsResponse = await fetch(`${BACKEND_URL}/api/reports/dashboard`)
         console.log('Dashboard API response status:', statsResponse.status)
         if (!statsResponse.ok) {
           throw new Error(`Failed to fetch dashboard stats: ${statsResponse.status}`)
@@ -83,7 +84,7 @@ const Dashboard = () => {
         }
 
         // Fetch recent activities
-        const activitiesResponse = await fetch('http://localhost:3001/api/activities')
+        const activitiesResponse = await fetch(`${BACKEND_URL}/api/activities`)
         if (!activitiesResponse.ok) {
           throw new Error(`Failed to fetch activities: ${activitiesResponse.status}`)
         }
@@ -123,7 +124,7 @@ const Dashboard = () => {
     fetchDashboardData()
 
     // Setup WebSocket connection for real-time updates
-    const newSocket = io('http://localhost:3001')
+    const newSocket = io(BACKEND_URL)
     setSocket(newSocket)
 
     newSocket.on('connect', () => {

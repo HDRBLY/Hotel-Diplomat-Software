@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import Notification, { useNotification } from '../components/Notification'
 import { useAuth } from '../components/AuthContext'
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
 
 // Define GuestCategory type for type safety
 export type GuestCategory = 'couple' | 'corporate' | 'solo' | 'family'
@@ -204,7 +205,7 @@ const Guests = () => {
     const { totalAmount } = recalculateTotals(baseRoomAmount, editForm.extraBeds || [])
 
     try {
-      const response = await fetch(`http://localhost:3001/api/guests/${editGuest.id}`, {
+      const response = await fetch(`${BACKEND_URL}/api/guests/${editGuest.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -225,7 +226,7 @@ const Guests = () => {
         showNotification('success', 'Guest details updated successfully!')
         setEditGuest(null)
         // Refresh list
-        const guestsRes = await fetch('http://localhost:3001/api/guests')
+        const guestsRes = await fetch(`${BACKEND_URL}/api/guests`)
         const guestsData = await guestsRes.json()
         if (guestsData.success) setGuests(guestsData.data)
       } else {
@@ -244,7 +245,7 @@ const Guests = () => {
       setError(null)
       try {
         // Fetch guests
-        const guestsResponse = await fetch('http://localhost:3001/api/guests')
+        const guestsResponse = await fetch(`${BACKEND_URL}/api/guests`)
         if (!guestsResponse.ok) {
           throw new Error(`Failed to fetch guests: ${guestsResponse.status}`)
         }
@@ -256,7 +257,7 @@ const Guests = () => {
         }
 
         // Fetch rooms
-        const roomsResponse = await fetch('http://localhost:3001/api/rooms')
+        const roomsResponse = await fetch(`${BACKEND_URL}/api/rooms`)
         if (!roomsResponse.ok) {
           throw new Error(`Failed to fetch rooms: ${roomsResponse.status}`)
         }
@@ -346,7 +347,7 @@ const Guests = () => {
     fetchData()
 
     // Setup WebSocket connection for real-time updates
-    const newSocket = io('http://localhost:3001')
+    const newSocket = io(BACKEND_URL)
     setSocket(newSocket)
 
     newSocket.on('connect', () => {
@@ -668,7 +669,7 @@ const Guests = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/api/guests/${guestId}`, {
+      const response = await fetch(`${BACKEND_URL}/api/guests/${guestId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -739,7 +740,7 @@ const Guests = () => {
 
     try {
       // Update guest status via backend API
-      const response = await fetch(`http://localhost:3001/api/guests/${checkoutGuest.id}`, {
+      const response = await fetch(`${BACKEND_URL}/api/guests/${checkoutGuest.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -786,7 +787,7 @@ const Guests = () => {
 
     try {
       // Fetch fresh guest data from backend to ensure we have the latest data including plan
-      const guestsResponse = await fetch('http://localhost:3001/api/guests')
+      const guestsResponse = await fetch(`${BACKEND_URL}/api/guests`)
       const guestsData = await guestsResponse.json()
       const freshGuestData = guestsData.data.find((g: any) => g.id === checkoutGuest?.id)
       
@@ -798,7 +799,7 @@ const Guests = () => {
         console.log('Fresh guest plan:', freshGuestData.plan)
       }
       // Get bill number from backend
-      const billResponse = await fetch('http://localhost:3001/api/bill-number')
+      const billResponse = await fetch(`${BACKEND_URL}/api/bill-number`)
       const billData = await billResponse.json()
       const billNumber = billData.success ? billData.billNumber : '0001'
 
@@ -838,7 +839,7 @@ const Guests = () => {
       }
 
       // Get room price from rooms data
-      const roomsResponse = await fetch('http://localhost:3001/api/rooms')
+      const roomsResponse = await fetch(`${BACKEND_URL}/api/rooms`)
       const roomsData = await roomsResponse.json()
       const room = roomsData.data.find((r: any) => r.number === guestForBill.roomNumber)
       const roomPrice = room ? room.price : guestForBill.totalAmount
@@ -1270,7 +1271,7 @@ const Guests = () => {
       })) : undefined
     }
 
-      const response = await fetch('http://localhost:3001/api/guests', {
+      const response = await fetch(`${BACKEND_URL}/api/guests`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1282,7 +1283,7 @@ const Guests = () => {
       
       if (data.success) {
         // Update room status to occupied
-        const roomResponse = await fetch(`http://localhost:3001/api/rooms`, {
+        const roomResponse = await fetch(`${BACKEND_URL}/api/rooms`, {
           method: 'GET',
         })
         const roomsData = await roomResponse.json()
@@ -1290,7 +1291,7 @@ const Guests = () => {
         if (roomsData.success) {
           const room = roomsData.data.find((r: any) => r.number === newGuest.roomNumber)
           if (room) {
-            await fetch(`http://localhost:3001/api/rooms/${room.id}`, {
+            await fetch(`${BACKEND_URL}/api/rooms/${room.id}`, {
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
@@ -1306,7 +1307,7 @@ const Guests = () => {
         }
 
         // Refresh guests list
-        const refreshResponse = await fetch('http://localhost:3001/api/guests')
+        const refreshResponse = await fetch(`${BACKEND_URL}/api/guests`)
         const refreshData = await refreshResponse.json()
         if (refreshData.success) {
           setGuests(refreshData.data)
