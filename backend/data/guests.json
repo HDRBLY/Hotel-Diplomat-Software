@@ -1,1 +1,20 @@
-[]
+[
+  {
+    "id": "1754917452759",
+    "name": "aman",
+    "email": "",
+    "phone": "984984",
+    "roomNumber": "210",
+    "checkInDate": "2025-08-11",
+    "checkOutDate": "2025-08-11",
+    "status": "checked-in",
+    "totalAmount": 1500,
+    "paidAmount": 1500,
+    "address": "",
+    "idProof": "AADHAR-9879861684",
+    "category": "couple",
+    "plan": "EP",
+    "complimentary": false,
+    "createdAt": "2025-08-11T13:04:12.759Z"
+  }
+]

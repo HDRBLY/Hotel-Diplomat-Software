@@ -1233,13 +1233,9 @@ const Guests = () => {
       return
     }
 
-    // Validate minimum amount for non-complimentary bookings (including extra bed charges)
+    // Note: Minimum amount restriction removed (UI hint remains as requested)
     const totalExtraBedCharges = extraBeds.reduce((sum, bed) => sum + bed.charge, 0)
     const totalWithExtraBeds = newGuest.totalAmount + totalExtraBedCharges
-    if (!newGuest.complimentary && totalWithExtraBeds < 1800) {
-      showNotification('error', 'Total amount (including extra bed charges) must be at least ₹1800 for non-complimentary bookings.')
-      return
-    }
 
     try {
       // Send guest data to backend
@@ -2409,16 +2405,11 @@ const Guests = () => {
                       onChange={(e) => setNewGuest({...newGuest, totalAmount: e.target.value ? parseInt(e.target.value) : 0})}
                       className="input-field mt-1"
                       placeholder={newGuest.complimentary ? "Complimentary booking" : "Enter total amount (min ₹1800)"}
-                      min={newGuest.complimentary ? "0" : "1800"}
+                      min={newGuest.complimentary ? "0" : undefined}
                       title={newGuest.complimentary ? "Complimentary booking - no charge" : "Total amount (minimum ₹1800)"}
                       disabled={newGuest.complimentary}
                     />
-                    {!newGuest.complimentary && newGuest.totalAmount > 0 && newGuest.totalAmount < 1800 && extraBeds.length === 0 && (
-                      <p className="text-red-500 text-xs mt-1">Minimum amount required is ₹1800</p>
-                    )}
-                    {!newGuest.complimentary && extraBeds.length > 0 && (newGuest.totalAmount + extraBeds.reduce((sum, bed) => sum + bed.charge, 0)) > 0 && (newGuest.totalAmount + extraBeds.reduce((sum, bed) => sum + bed.charge, 0)) < 1800 && (
-                      <p className="text-red-500 text-xs mt-1">Total amount (including extra bed charges) must be at least ₹1800</p>
-                    )}
+                    {/* UI hint retained visually above; validation warnings removed per requirement */}
                     {extraBeds.length > 0 && extraBeds.reduce((sum, bed) => sum + bed.charge, 0) > 0 && (
                       <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-xs">
                         <div className="text-gray-600">Base Amount: ₹{newGuest.totalAmount}</div>

@@ -206,7 +206,7 @@
     "id": "11",
     "number": "210",
     "type": "DELUXE",
-    "status": "AVAILABLE",
+    "status": "OCCUPIED",
     "floor": 2,
     "price": 2500,
     "amenities": [
@@ -216,12 +216,13 @@
       "Coffee",
       "Balcony"
     ],
-    "category": "SOLO",
-    "currentGuest": null,
-    "checkInDate": null,
-    "checkOutDate": null,
+    "category": "COUPLE",
+    "currentGuest": "aman",
+    "checkInDate": "2025-08-11",
+    "checkOutDate": "2025-08-11",
     "lastCleaned": "2025-08-09T11:49:02.646Z",
-    "createdAt": "2025-08-09T11:49:02.646Z"
+    "createdAt": "2025-08-09T11:49:02.646Z",
+    "updatedAt": "2025-08-11T13:04:12.816Z"
   },
   {
     "id": "12",
