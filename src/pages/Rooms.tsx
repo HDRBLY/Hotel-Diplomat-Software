@@ -73,6 +73,7 @@ const Rooms = () => {
     actualCheckOutDate: '',
     finalAmount: 0,
     additionalCharges: 0,
+    laundryCharges: 0,
     paymentMethod: 'CASH',
     notes: '',
     guestTotalAmount: 0,
@@ -1060,6 +1061,7 @@ const Rooms = () => {
         actualCheckOutDate: formattedToday,
         finalAmount: baseAmount, // Use guest's total amount as base
         additionalCharges: 0,
+        laundryCharges: 0,
         paymentMethod: 'CASH',
         notes: '',
         guestTotalAmount: guest.totalAmount,
@@ -1164,13 +1166,18 @@ const Rooms = () => {
       const foodingCgst = foodingTaxableValue * 0.025
       const foodingSgst = foodingTaxableValue * 0.025
 
+      // Calculate tax breakdown for laundry charges (5% GST: 2.5% CGST + 2.5% SGST)
+      const laundryTaxableValue = checkoutDetails.laundryCharges > 0 ? checkoutDetails.laundryCharges / 1.05 : 0
+      const laundryCgst = laundryTaxableValue * 0.025
+      const laundrySgst = laundryTaxableValue * 0.025
+
       // Total tax values
-      const taxableValue = roomRentTaxableValue + extraBedTaxableValue + foodingTaxableValue
-      const cgst = roomRentCgst + extraBedCgst + foodingCgst
-      const sgst = roomRentSgst + extraBedSgst + foodingSgst
+      const taxableValue = roomRentTaxableValue + extraBedTaxableValue + foodingTaxableValue + laundryTaxableValue
+      const cgst = roomRentCgst + extraBedCgst + foodingCgst + laundryCgst
+      const sgst = roomRentSgst + extraBedSgst + foodingSgst + laundrySgst
 
       // Calculate total amount (sum of all individual row totals)
-      const totalAmount = roomRent + extraBedCharges + checkoutDetails.additionalCharges
+      const totalAmount = roomRent + extraBedCharges + checkoutDetails.additionalCharges + checkoutDetails.laundryCharges
 
       // Format arrival date properly (convert yyyy-mm-dd to dd-mm-yyyy)
       const arrivalDateParts = guest.checkInDate.split('-')
@@ -1343,6 +1350,16 @@ const Rooms = () => {
                 <td class="editable" contenteditable="false">₹${foodingCgst.toFixed(2)}</td>
                 <td class="editable" contenteditable="false">₹${foodingSgst.toFixed(2)}</td>
                 <td class="editable" contenteditable="false">₹${checkoutDetails.additionalCharges}</td>
+              </tr>
+              ` : ''}
+              ${checkoutDetails.laundryCharges > 0 ? `
+              <tr>
+                <td colspan="4" class="editable" contenteditable="false">Laundry Charges</td>
+                <td class="editable" contenteditable="false">₹${laundryTaxableValue.toFixed(2)}</td>
+                <td>5%</td>
+                <td class="editable" contenteditable="false">₹${laundryCgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${laundrySgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${checkoutDetails.laundryCharges}</td>
               </tr>
               ` : ''}
               <tr class="total-row">
@@ -1545,6 +1562,7 @@ const Rooms = () => {
         actualCheckOutDate: '',
         finalAmount: 0,
         additionalCharges: 0,
+        laundryCharges: 0,
         paymentMethod: 'CASH',
         notes: '',
         guestTotalAmount: 0,
@@ -2745,11 +2763,15 @@ const Rooms = () => {
                   <div className="text-sm text-gray-600 space-y-1">
                     <div className="flex justify-between">
                       <span>Room Rent (including extra bed):</span>
-                      <span>₹{checkoutDetails.finalAmount - (checkoutDetails.additionalCharges || 0)}</span>
+                      <span>₹{checkoutDetails.finalAmount - (checkoutDetails.additionalCharges || 0) - (checkoutDetails.laundryCharges || 0)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Fooding Charges:</span>
                       <span>₹{checkoutDetails.additionalCharges || 0}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Laundry Charges:</span>
+                      <span>₹{checkoutDetails.laundryCharges || 0}</span>
                     </div>
                     <div className="border-t pt-1 flex justify-between font-medium">
                       <span>Final Amount:</span>
@@ -2782,11 +2804,32 @@ const Rooms = () => {
                     onChange={(e) => {
                       const additional = e.target.value ? parseInt(e.target.value) : 0
                       // Calculate base amount from guest's total amount (room rent + extra bed charges)
-                      const baseAmount = checkoutDetails.finalAmount - (checkoutDetails.additionalCharges || 0)
+                      const baseAmount = checkoutDetails.finalAmount - (checkoutDetails.additionalCharges || 0) - (checkoutDetails.laundryCharges || 0)
                       setCheckoutDetails({
                         ...checkoutDetails, 
                         additionalCharges: additional,
-                        finalAmount: baseAmount + additional
+                        finalAmount: baseAmount + additional + checkoutDetails.laundryCharges
+                      })
+                    }}
+                    className="input-field mt-1"
+                    placeholder="0"
+                    min="0"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Laundry Charges (₹)</label>
+                  <input
+                    type="number"
+                    value={checkoutDetails.laundryCharges || ''}
+                    onChange={(e) => {
+                      const laundry = e.target.value ? parseInt(e.target.value) : 0
+                      // Calculate base amount from guest's total amount (room rent + extra bed charges)
+                      const baseAmount = checkoutDetails.finalAmount - (checkoutDetails.additionalCharges || 0) - (checkoutDetails.laundryCharges || 0)
+                      setCheckoutDetails({
+                        ...checkoutDetails, 
+                        laundryCharges: laundry,
+                        finalAmount: baseAmount + checkoutDetails.additionalCharges + laundry
                       })
                     }}
                     className="input-field mt-1"
