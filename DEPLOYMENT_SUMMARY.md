@@ -59,7 +59,7 @@ backend/
 - `package.json` - Added socket.io-client
 
 ## 🔐 Demo Credentials (Working)
-- **Admin**: `admin` / `admin123`
+- **Admin**: `admin` / `Aronax@2k25`
 - **Manager**: `manager` / `manager123`
 - **Staff**: `staff` / `staff123`
 - **Accounts**: `accounts` / `accounts123`

@@ -331,7 +331,8 @@ const Login = () => {
             </button>
           </form>
 
-          {/* Demo Credentials */}
+          {/* Demo Credentials - Commented out for security */}
+          {/* 
           <div className="mt-8 p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg border border-gray-200">
             <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
               <Building2 className="h-4 w-4 mr-2 text-blue-500" />
@@ -339,7 +340,7 @@ const Login = () => {
             </h3>
             <div className="space-y-2 text-xs text-gray-600">
               <div className="flex justify-between items-center p-2 bg-white rounded border">
-                <span><strong>Admin:</strong> admin / admin123</span>
+                <span><strong>Admin:</strong> admin / Aronax@2k25</span>
                 <span className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs">Full Access</span>
               </div>
               <div className="flex justify-between items-center p-2 bg-white rounded border">
@@ -356,6 +357,7 @@ const Login = () => {
               </div>
             </div>
           </div>
+          */}
         </div>
 
         {/* Footer */}

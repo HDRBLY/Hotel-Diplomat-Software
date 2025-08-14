@@ -53,7 +53,7 @@ This document provides a detailed testing checklist to ensure all functionality 
   - [ ] Token is stored in localStorage
 
 ### User Roles & Permissions
-- [ ] **Admin User (admin/admin123)**
+- [ ] **Admin User (admin/Aronax@2k25)**
   - [ ] Can access all pages
   - [ ] Can perform all actions
   - [ ] Can view all data

@@ -57,7 +57,7 @@ npm run dev
 
 | Role | Username | Password | Permissions |
 |------|----------|----------|-------------|
-| Admin | admin | admin123 | Full access to all features |
+| Admin | admin | Aronax@2k25 | Full access to all features |
 | Manager | manager | manager123 | Management features (no settings) |
 | Staff | staff | staff123 | Limited access (rooms view only) |
 | Accounts | accounts | accounts123 | Reports only |

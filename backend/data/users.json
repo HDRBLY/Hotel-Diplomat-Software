@@ -2,13 +2,13 @@
   {
     "id": "1",
     "username": "admin",
-    "password": "$2a$10$MKrfv8rnXDnfVqXNQHkWYODjDElAB1yY8T3cFchWnog25AxzHVaEm",
+    "password": "$2a$10$N6nRt5Aj91uBqgJ.R.dg0utJem2bq2RFlvux0j8gD90wKkowdkFLa",
     "name": "System Administrator",
     "role": "admin",
     "email": "admin@hoteldiplomat.com",
     "isActive": true,
     "createdAt": "2025-08-02T07:04:54.186Z",
-    "lastLogin": "2025-08-14T13:12:09.961Z"
+    "lastLogin": "2025-08-14T14:34:09.576Z"
   },
   {
     "id": "2",

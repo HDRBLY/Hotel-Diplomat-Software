@@ -116,7 +116,7 @@ const DeleteRooms = () => {
     }
 
     // Verify password (in real app, this would be an API call)
-    const correctPassword = user?.role === 'admin' ? 'admin123' : 'manager123'
+    const correctPassword = user?.role === 'admin' ? 'Aronax@2k25' : 'manager123'
     
     if (password !== correctPassword) {
       showNotification('error', 'Incorrect password')

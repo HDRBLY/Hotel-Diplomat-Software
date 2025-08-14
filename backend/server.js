@@ -94,7 +94,7 @@ const initializeDefaultData = () => {
   let users = readData('users.json');
   if (users.length === 0) {
     const bcrypt = require('bcryptjs');
-    const adminPassword = bcrypt.hashSync('admin123', 10);
+    const adminPassword = bcrypt.hashSync('Aronax@2k25', 10);
     const managerPassword = bcrypt.hashSync('manager123', 10);
     const staffPassword = bcrypt.hashSync('staff123', 10);
     const accountsPassword = bcrypt.hashSync('accounts123', 10);
