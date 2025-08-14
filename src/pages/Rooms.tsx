@@ -1184,35 +1184,41 @@ const Rooms = () => {
           <title>Tax Invoice - Hotel Diplomat Residency</title>
           <style>
             @media print {
-              body { margin: 0; padding: 20px; }
+              @page { size: A4; margin: 10mm; }
+              html, body { margin: 0; padding: 0; }
               .no-print { display: none !important; }
+              .charges-table, .signature-row { page-break-inside: avoid; }
+              .invoice-container { height: 277mm; padding: 6mm; box-sizing: border-box; display: flex; flex-direction: column; }
+              .content { flex: 1 1 auto; }
+              .signature-row { margin-top: auto; margin-bottom: 6mm; }
             }
             body { 
               font-family: Arial, sans-serif; 
               margin: 0; 
-              padding: 20px; 
-              font-size: 12px;
-              line-height: 1.4;
+              padding: 0;
+              font-size: 11.5px;
+              line-height: 1.3;
             }
-            .header { text-align: center; margin-bottom: 20px; }
-            .hotel-name { font-size: 18px; font-weight: bold; margin-bottom: 5px; }
-            .hotel-details { font-size: 10px; color: #666; }
-            .invoice-title { font-size: 16px; font-weight: bold; text-align: center; margin: 20px 0; }
-            .guest-info { display: flex; justify-content: space-between; margin-bottom: 20px; }
+            .header { text-align: center; margin-bottom: 12px; }
+            .hotel-name { font-size: 26px; font-weight: bold; margin-bottom: 4px; }
+            .hotel-details { font-size: 11px; color: #444; line-height: 1.5; }
+            .invoice-title { font-size: 16px; font-weight: bold; text-align: center; margin: 12px 0; }
+            .guest-info { display: flex; justify-content: space-between; margin-bottom: 12px; }
             .guest-details, .stay-details { width: 48%; }
-            .section-title { font-weight: bold; margin-bottom: 10px; }
-            .info-row { margin-bottom: 5px; }
-            .charges-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+            .section-title { font-weight: bold; margin-bottom: 8px; font-size: 15px; }
+            .info-row { margin-bottom: 6px; font-size: 13px; }
+            .charges-table { width: 100%; border-collapse: collapse; margin: 12px 0; table-layout: fixed; }
             .charges-table th, .charges-table td { 
               border: 1px solid #ddd; 
-              padding: 8px; 
+              padding: 6px; 
               text-align: left; 
               font-size: 11px;
+              word-wrap: break-word;
             }
             .charges-table th { background-color: #f5f5f5; font-weight: bold; }
             .total-row { font-weight: bold; background-color: #f9f9f9; }
-            .bank-details { margin-top: 20px; }
-            .footer { margin-top: 20px; text-align: center; font-size: 10px; }
+            .bank-details { margin-top: 16px; }
+            .footer { margin-top: 16px; text-align: center; font-size: 10px; }
             .print-btn, .edit-btn { 
               position: fixed; 
               top: 20px; 
@@ -1242,12 +1248,20 @@ const Rooms = () => {
               outline: 2px solid #007bff; 
               border: 1px solid #007bff; 
             }
+
+            /* Signature area */
+            .signature-row {
+              display: flex; justify-content: space-between; margin-top: 32px;
+            }
+            .signature-box { width: 40%; text-align: center; }
+            .signature-line { border-top: 1px solid #000; margin-top: 24px; padding-top: 6px; }
           </style>
         </head>
         <body>
           <button class="edit-btn no-print" onclick="toggleEdit()">Edit Bill</button>
           <button class="print-btn no-print" onclick="window.print()">Print Bill</button>
           
+          <div class="invoice-container">
           <div class="header">
             <div class="hotel-name">Hotel Diplomat Residency</div>
             <div class="hotel-details">
@@ -1261,7 +1275,7 @@ const Rooms = () => {
 
           <div class="invoice-title">TAX INVOICE</div>
 
-                      <div class="guest-info">
+                      <div class="guest-info content">
               <div class="guest-details">
                 <div class="section-title">Billing To:</div>
                 <div class="info-row editable" contenteditable="false">Name: ${guest.name}</div>
@@ -1342,11 +1356,11 @@ const Rooms = () => {
             </tbody>
           </table>
 
-          <div style="margin: 20px 0;">
+          <div style="margin: 10px 0;">
             <strong>IN WORD:</strong> <span class="editable" contenteditable="false">${amountInWords} ONLY.</span>
           </div>
 
-          <div style="margin: 20px 0;">
+          <div style="margin: 10px 0;">
             <strong>STAX NO:</strong> AANCA1929QSD001 | <strong>PAN NO:</strong> AANCA1929Q
           </div>
 
@@ -1358,9 +1372,19 @@ const Rooms = () => {
             <div class="info-row">IFSC Code: HDFC0000304</div>
           </div>
 
+          <div class="signature-row">
+            <div class="signature-box">
+              <div class="signature-line">Guest Signature</div>
+            </div>
+            <div class="signature-box">
+              <div class="signature-line">Authorised Signatory</div>
+            </div>
+          </div>
+
           <div class="footer">
-            <div style="margin-bottom: 10px;">*Please Deposit your Key to the Receptionists*</div>
+            <div style="margin-bottom: 6px;">*Please Deposit your Key to the Receptionists*</div>
             <div>THANK YOU FOR YOUR VISIT, PLEASE VISIT AGAIN !!!!</div>
+          </div>
           </div>
 
           <script>
