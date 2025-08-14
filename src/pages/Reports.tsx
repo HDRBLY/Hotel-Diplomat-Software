@@ -8,7 +8,8 @@ import {
   Bed, 
   Calendar,
   Download,
-  Trash2
+  Trash2,
+  FileText
 } from 'lucide-react'
 import { 
   BarChart, 
@@ -78,6 +79,268 @@ const Reports = () => {
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+  }
+
+  // Function to convert number to words
+  const numberToWords = (num: number): string => {
+    const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine']
+    const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety']
+    const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen']
+    
+    if (num === 0) return 'Zero'
+    if (num < 10) return ones[num]
+    if (num < 20) return teens[num - 10]
+    if (num < 100) return tens[Math.floor(num / 10)] + (num % 10 !== 0 ? ' ' + ones[num % 10] : '')
+    if (num < 1000) return ones[Math.floor(num / 100)] + ' Hundred' + (num % 100 !== 0 ? ' and ' + numberToWords(num % 100) : '')
+    if (num < 100000) return numberToWords(Math.floor(num / 1000)) + ' Thousand' + (num % 1000 !== 0 ? ' ' + numberToWords(num % 1000) : '')
+    if (num < 10000000) return numberToWords(Math.floor(num / 100000)) + ' Lakh' + (num % 100000 !== 0 ? ' ' + numberToWords(num % 100000) : '')
+    return numberToWords(Math.floor(num / 10000000)) + ' Crore' + (num % 10000000 !== 0 ? ' ' + numberToWords(num % 10000000) : '')
+  }
+
+  // Function to generate and download bill for a specific guest
+  const downloadGuestBill = async (guest: any) => {
+    try {
+      // Use the original bill number that was stored when the guest checked out
+      const billNumber = guest.billNumber || '0001'
+
+      // Calculate days difference
+      const checkIn = new Date(guest.checkInDate)
+      const checkOut = new Date(guest.checkOutDate || new Date())
+      const daysDiff = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
+      const days = daysDiff > 0 ? daysDiff : 1
+
+      // Calculate price per day
+      const pricePerDay = Math.round(guest.amount / days)
+
+      // Calculate tax components (assuming 12% GST)
+      const roomRentTaxableValue = guest.amount / 1.12
+      const roomRentCgst = roomRentTaxableValue * 0.06
+      const roomRentSgst = roomRentTaxableValue * 0.06
+
+      // Convert amount to words
+      const amountInWords = numberToWords(guest.amount)
+
+      // Format dates properly (convert yyyy-mm-dd to dd-mm-yyyy)
+      const checkInDateParts = guest.checkInDate.split('-')
+      const formattedCheckInDate = `${checkInDateParts[2]}-${checkInDateParts[1]}-${checkInDateParts[0]}`
+      
+      const checkOutDateParts = guest.checkOutDate ? guest.checkOutDate.split('-') : new Date().toISOString().split('T')[0].split('-')
+      const formattedCheckOutDate = `${checkOutDateParts[2]}-${checkOutDateParts[1]}-${checkOutDateParts[0]}`
+
+      // Current time for bill
+      const now = new Date()
+      const billTime = now.toLocaleTimeString('en-US', { 
+        hour12: false, 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      })
+
+      // Generate bill HTML
+      const billHTML = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Tax Invoice - Hotel Diplomat Residency</title>
+          <style>
+            @media print {
+              @page { size: A4; margin: 10mm; }
+              html, body { margin: 0; padding: 0; }
+              .no-print { display: none !important; }
+              .charges-table, .signature-row { page-break-inside: avoid; }
+              .invoice-container { height: 277mm; padding: 6mm; box-sizing: border-box; display: flex; flex-direction: column; }
+              .content { flex: 1 1 auto; }
+              .signature-row { margin-top: auto; margin-bottom: 6mm; }
+            }
+            body { 
+              font-family: Arial, sans-serif; 
+              margin: 0; 
+              padding: 0;
+              font-size: 11.5px;
+              line-height: 1.3;
+            }
+            .header { text-align: center; margin-bottom: 12px; }
+            .hotel-name { font-size: 26px; font-weight: bold; margin-bottom: 4px; }
+            .hotel-details { font-size: 11px; color: #444; line-height: 1.5; }
+            .invoice-title { font-size: 16px; font-weight: bold; text-align: center; margin: 12px 0; }
+            .guest-info { display: flex; justify-content: space-between; margin-bottom: 12px; }
+            .guest-details, .stay-details { width: 48%; }
+            .section-title { font-weight: bold; margin-bottom: 8px; font-size: 15px; }
+            .info-row { margin-bottom: 6px; font-size: 13px; }
+            .charges-table { width: 100%; border-collapse: collapse; margin: 12px 0; table-layout: fixed; }
+            .charges-table th, .charges-table td { 
+              border: 1px solid #ddd; 
+              padding: 6px; 
+              text-align: left; 
+              font-size: 11px;
+              word-wrap: break-word;
+            }
+            .charges-table th { background-color: #f5f5f5; font-weight: bold; }
+            .total-row { font-weight: bold; background-color: #f9f9f9; }
+            .bank-details { margin-top: 16px; }
+            .footer { margin-top: 16px; text-align: center; font-size: 10px; }
+            .print-btn { 
+              position: fixed; 
+              top: 20px; 
+              right: 20px; 
+              padding: 10px 20px; 
+              color: white; 
+              border: none; 
+              border-radius: 5px; 
+              cursor: pointer;
+              background: #007bff; 
+            }
+            .print-btn:hover { background: #0056b3; }
+            .editable { 
+              border: 1px dashed #ccc; 
+              padding: 2px; 
+              min-height: 1em; 
+            }
+            .editable:focus { 
+              outline: 2px solid #007bff; 
+              border: 1px solid #007bff; 
+            }
+
+                         /* Signature area */
+             .signature-row {
+               display: flex; justify-content: space-between; margin-top: 32px;
+             }
+             .signature-box { width: 40%; text-align: center; }
+             .signature-line { border-top: 1px solid #000; margin-top: 24px; padding-top: 6px; }
+          </style>
+        </head>
+        <body>
+          <button class="print-btn no-print" onclick="window.print()">Print Bill</button>
+          
+          <div class="invoice-container">
+          <div class="header">
+            <div class="hotel-name">Hotel Diplomat Residency</div>
+            <div class="hotel-details">
+              (A Unit of Aronax Enterprises Private Limited)<br>
+              GST No: 09AANCA1929Q1ZY | CIN: U521000L2015PTC274988<br>
+              63 Prakash Tower, Choupla Road Civil Lines, Bareilly - 243001 (Uttar Pradesh) INDIA<br>
+              Mail: diplomatresidency.bly@gmail.com<br>
+              Ph No: +91-9219414284
+            </div>
+          </div>
+
+          <div class="invoice-title">TAX INVOICE</div>
+
+                      <div class="guest-info content">
+              <div class="guest-details">
+                <div class="section-title">Billing To:</div>
+                              <div class="info-row editable" contenteditable="false">Name: ${guest.name}</div>
+              <div class="info-row editable" contenteditable="false">Company: </div>
+              <div class="info-row editable" contenteditable="false">Designation: </div>
+              <div class="info-row editable" contenteditable="false">Address: ${guest.address || 'BAREILLY'}</div>
+              <div class="info-row editable" contenteditable="false">Phone No: ${guest.phone}</div>
+              <div class="info-row editable" contenteditable="false">Email ID: ${guest.email || ''}</div>
+              <div class="info-row editable" contenteditable="false">GST NO: </div>
+              </div>
+              <div class="stay-details">
+                <div class="section-title">Stay Details:</div>
+                              <div class="info-row editable" contenteditable="false">Date of Arrival: ${formattedCheckInDate}</div>
+              <div class="info-row editable" contenteditable="false">Date of Departure: ${formattedCheckOutDate}</div>
+              <div class="info-row editable" contenteditable="false">Bill No: ${billNumber}</div>
+              <div class="info-row editable" contenteditable="false">ROOM NO: ${guest.roomNumber}</div>
+              <div class="info-row editable" contenteditable="false">PAX: 1</div>
+              <div class="info-row editable" contenteditable="false">Plan: ${guest.plan || 'EP'}</div>
+              <div class="info-row editable" contenteditable="false">Check In Time: 12:00</div>
+              <div class="info-row editable" contenteditable="false">Check Out Time: ${billTime}</div>
+              </div>
+            </div>
+
+          <table class="charges-table">
+            <thead>
+              <tr>
+                <th>Room No.</th>
+                <th>Name</th>
+                <th>No. of Days</th>
+                <th>Price/Day</th>
+                <th>Taxable Value</th>
+                <th>Tax Rate</th>
+                <th>CGST</th>
+                <th>SGST</th>
+                <th>Total Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="editable" contenteditable="false">${guest.roomNumber}</td>
+                <td class="editable" contenteditable="false">${guest.name}</td>
+                <td class="editable" contenteditable="false">${days}</td>
+                <td class="editable" contenteditable="false">₹${pricePerDay}</td>
+                <td class="editable" contenteditable="false">₹${roomRentTaxableValue.toFixed(2)}</td>
+                <td>12%</td>
+                <td class="editable" contenteditable="false">₹${roomRentCgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${roomRentSgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${guest.amount}</td>
+              </tr>
+              <tr class="total-row">
+                <td colspan="4">TOTAL</td>
+                <td class="editable" contenteditable="false">₹${roomRentTaxableValue.toFixed(2)}</td>
+                <td></td>
+                <td class="editable" contenteditable="false">₹${roomRentCgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${roomRentSgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${guest.amount}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div style="margin: 10px 0;">
+            <strong>IN WORD:</strong> <span class="editable" contenteditable="false">${amountInWords} ONLY.</span>
+          </div>
+
+          <div style="margin: 10px 0;">
+            <strong>STAX NO:</strong> AANCA1929QSD001 | <strong>PAN NO:</strong> AANCA1929Q
+          </div>
+
+          <div class="bank-details">
+            <div class="section-title">Bank Account Detail:</div>
+            <div class="info-row">Account Holder: Aronax Enterprises Private Limited</div>
+            <div class="info-row">Bank Name: HDFC Bank Limited</div>
+            <div class="info-row">Account No: 50200011166109</div>
+            <div class="info-row">IFSC Code: HDFC0000304</div>
+          </div>
+
+          <div class="signature-row">
+            <div class="signature-box">
+              <div class="signature-line">Guest Signature</div>
+            </div>
+            <div class="signature-box">
+              <div class="signature-line">Authorised Signatory</div>
+            </div>
+          </div>
+
+          <div class="footer">
+            <div style="margin-bottom: 6px;">*Please Deposit your Key to the Receptionists*</div>
+            <div>THANK YOU FOR YOUR VISIT, PLEASE VISIT AGAIN !!!!</div>
+          </div>
+          </div>
+
+          <script>
+            // Print functionality only
+          </script>
+        </body>
+        </html>
+      `
+
+      // Open bill in new window and trigger print
+      const printWindow = window.open('', '_blank')
+      if (printWindow) {
+        printWindow.document.write(billHTML)
+        printWindow.document.close()
+        
+        // Wait for content to load then trigger print
+        printWindow.onload = () => {
+          printWindow.print()
+        }
+      }
+
+      showNotification('success', 'Bill generated successfully!')
+    } catch (error) {
+      console.error('Error generating bill:', error)
+      showNotification('error', 'Error generating bill. Please try again.')
+    }
   }
 
   const exportToPDF = (data: any[], filename: string) => {
@@ -1044,6 +1307,9 @@ const Reports = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Amount
                     </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </>
                 )}
               </tr>
@@ -1097,6 +1363,18 @@ const Reports = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     ₹{data.amount.toLocaleString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {data.status === 'Checked-out' && (
+                      <button
+                        onClick={() => downloadGuestBill(data)}
+                        className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                        title="Download Bill"
+                      >
+                        <FileText className="w-4 h-4 mr-1" />
+                        Download Bill
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

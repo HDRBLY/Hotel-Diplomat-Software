@@ -1458,6 +1458,13 @@ app.put('/api/guests/:id', (req, res) => {
     const finalAmount = updateData.totalAmount || guests[guestIndex].totalAmount || 0;
     const additionalPayment = finalAmount - originalPaidAmount;
     
+    // Get the current bill number for this guest
+    const billCounter = readData('billCounter.json');
+    const currentBillNumber = billCounter.currentBillNumber || 1;
+    
+    // Store the bill number with the guest data
+    guests[guestIndex].billNumber = currentBillNumber.toString().padStart(4, '0');
+    
     activities.unshift({
       id: Date.now().toString(),
       type: 'guest_checked_out',
@@ -1468,6 +1475,7 @@ app.put('/api/guests/:id', (req, res) => {
       additionalPayment: additionalPayment > 0 ? additionalPayment : 0
     });
     writeData('activities.json', activities);
+    writeData('guests.json', guests);
     
     // Broadcast activity update and guest checkout event
     broadcastUpdate('activity_updated', activities[0]);
@@ -1726,13 +1734,22 @@ app.get('/api/reports/guests', (req, res) => {
   }
   
   const guestData = filteredGuests.map(guest => ({
+    id: guest.id,
     name: guest.name,
+    email: guest.email || '',
+    phone: guest.phone || '',
     roomNumber: guest.roomNumber || 'N/A',
     checkInDate: guest.checkInDate || 'N/A',
     checkOutDate: guest.checkOutDate || 'N/A',
     status: guest.status === 'checked-in' ? 'Checked-in' : 
             guest.status === 'checked-out' ? 'Checked-out' : 'Reserved',
-    amount: guest.paidAmount || 0
+    amount: guest.paidAmount || 0,
+    address: guest.address || '',
+    idProof: guest.idProof || '',
+    category: guest.category || 'couple',
+    plan: guest.plan || 'EP',
+    complimentary: guest.complimentary || false,
+    billNumber: guest.billNumber || ''
   }));
   
   res.json({ success: true, data: guestData });
