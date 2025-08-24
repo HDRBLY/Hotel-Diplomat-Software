@@ -69,6 +69,7 @@ const Rooms = () => {
   const [editingRoom, setEditingRoom] = useState<Room | null>(null)
   const [showCheckoutModal, setShowCheckoutModal] = useState(false)
   const [checkoutRoom, setCheckoutRoom] = useState<Room | null>(null)
+  const [showConfirmCheckout, setShowConfirmCheckout] = useState(false)
   const [checkoutDetails, setCheckoutDetails] = useState({
     guestName: '',
     actualCheckOutDate: '',
@@ -784,18 +785,23 @@ const Rooms = () => {
       const extraBedCgst = extraBedTaxableValue * 0.06
       const extraBedSgst = extraBedTaxableValue * 0.06
 
+      // Normalize optional charges to numbers to avoid NaN
+      const addl = Number(checkoutDetails.additionalCharges) || 0
+      const laundry = Number(checkoutDetails.laundryCharges) || 0
+      const halfDay = Number(checkoutDetails.halfDayCharges) || 0
+
       // Calculate tax breakdown for fooding charges (5% GST: 2.5% CGST + 2.5% SGST)
-      const foodingTaxableValue = checkoutDetails.additionalCharges > 0 ? checkoutDetails.additionalCharges / 1.05 : 0
+      const foodingTaxableValue = addl > 0 ? addl / 1.05 : 0
       const foodingCgst = foodingTaxableValue * 0.025
       const foodingSgst = foodingTaxableValue * 0.025
 
       // Calculate tax breakdown for laundry charges (5% GST: 2.5% CGST + 2.5% SGST)
-      const laundryTaxableValue = checkoutDetails.laundryCharges > 0 ? checkoutDetails.laundryCharges / 1.05 : 0
+      const laundryTaxableValue = laundry > 0 ? laundry / 1.05 : 0
       const laundryCgst = laundryTaxableValue * 0.025
       const laundrySgst = laundryTaxableValue * 0.025
 
       // Half-day charges are treated as room rent (12% GST)
-      const halfDayTaxableValue = checkoutDetails.halfDayCharges > 0 ? checkoutDetails.halfDayCharges / 1.12 : 0
+      const halfDayTaxableValue = halfDay > 0 ? halfDay / 1.12 : 0
       const halfDayCgst = halfDayTaxableValue * 0.06
       const halfDaySgst = halfDayTaxableValue * 0.06
 
@@ -805,58 +811,66 @@ const Rooms = () => {
       const sgst = roomRentSgst + extraBedSgst + foodingSgst + laundrySgst + halfDaySgst
 
       // Calculate total amount (sum of all individual row totals)
-      const totalAmount = roomRent + extraBedCharges + checkoutDetails.additionalCharges + checkoutDetails.laundryCharges + checkoutDetails.halfDayCharges
+      const totalAmount = (Number(roomRent) || 0) + (Number(extraBedCharges) || 0) + addl + laundry + halfDay
+
+      // Rounded total for display/words
+      const totalAmountDisplay = Math.round(totalAmount)
 
       // Now compute amount in words based on the grand total
-      amountInWords = numberToWords(Math.round(totalAmount))
+      amountInWords = numberToWords(totalAmountDisplay || 0)
 
       // Format arrival date properly (convert yyyy-mm-dd to dd-mm-yyyy)
       const arrivalDateParts = guest.checkInDate.split('-')
       const formattedArrivalDate = `${arrivalDateParts[2]}-${arrivalDateParts[1]}-${arrivalDateParts[0]}`
+
+      // Compute logo URL (served from public/logo.png)
+      const logoUrl = `${window.location.origin}/logo.png`
 
       // Create bill HTML
       const billHTML = `
         <!DOCTYPE html>
         <html>
         <head>
-          <title>Tax Invoice - Hotel Diplomat Residency</title>
+          <title></title>
           <style>
             @media print {
-              @page { size: A4; margin: 10mm; }
+              @page { size: A4; margin: 5mm; }
               html, body { margin: 0; padding: 0; }
               .no-print { display: none !important; }
               .charges-table, .signature-row { page-break-inside: avoid; }
-              .invoice-container { height: 277mm; padding: 6mm; box-sizing: border-box; display: flex; flex-direction: column; }
+              .invoice-container { height: 287mm; padding: 4mm; box-sizing: border-box; display: flex; flex-direction: column; }
               .content { flex: 1 1 auto; }
-              .signature-row { margin-top: auto; margin-bottom: 6mm; }
+              .signature-row { margin-top: auto; margin-bottom: 3mm; }
             }
             body { 
               font-family: Arial, sans-serif; 
               margin: 0; 
               padding: 0;
-              font-size: 11.5px;
+              font-size: 12px;
               line-height: 1.3;
             }
-            .header { text-align: center; margin-bottom: 12px; }
-            .hotel-name { font-size: 26px; font-weight: bold; margin-bottom: 4px; }
+            .header { text-align: center; margin-bottom: 10px; }
+            .hotel-name { font-size: 28px; font-weight: bold; margin-bottom: 4px; }
             .hotel-details { font-size: 11px; color: #444; line-height: 1.5; }
+            .logo-row { display: flex; justify-content: center; margin-bottom: 8px; }
+            .logo { max-height: 70px; width: auto; }
             .invoice-title { font-size: 16px; font-weight: bold; text-align: center; margin: 12px 0; }
             .guest-info { display: flex; justify-content: space-between; margin-bottom: 12px; }
             .guest-details, .stay-details { width: 48%; }
-            .section-title { font-weight: bold; margin-bottom: 8px; font-size: 15px; }
-            .info-row { margin-bottom: 6px; font-size: 13px; }
-            .charges-table { width: 100%; border-collapse: collapse; margin: 12px 0; table-layout: fixed; }
+            .section-title { font-weight: bold; margin-bottom: 8px; font-size: 16px; }
+            .info-row { margin-bottom: 6px; font-size: 13.5px; }
+            .charges-table { width: 100%; border-collapse: collapse; margin: 10px 0; table-layout: fixed; }
             .charges-table th, .charges-table td { 
               border: 1px solid #ddd; 
               padding: 6px; 
               text-align: left; 
-              font-size: 11px;
+              font-size: 12px;
               word-wrap: break-word;
             }
             .charges-table th { background-color: #f5f5f5; font-weight: bold; }
             .total-row { font-weight: bold; background-color: #f9f9f9; }
-            .bank-details { margin-top: 16px; }
-            .footer { margin-top: 16px; text-align: center; font-size: 10px; }
+            .bank-details { margin-top: 14px; }
+            .footer { margin-top: 12px; text-align: center; font-size: 10px; }
             .print-btn, .edit-btn { 
               position: fixed; 
               top: 20px; 
@@ -901,6 +915,9 @@ const Rooms = () => {
           
           <div class="invoice-container">
           <div class="header">
+            <div class="logo-row">
+              <img src="${logoUrl}" alt="Logo" class="logo" />
+            </div>
             <div class="hotel-name">Hotel Diplomat Residency</div>
             <div class="hotel-details">
               (A Unit of Aronax Enterprises Private Limited)<br>
@@ -911,7 +928,7 @@ const Rooms = () => {
             </div>
           </div>
 
-          <div class="invoice-title">TAX INVOICE</div>
+          
 
                       <div class="guest-info content">
               <div class="guest-details">
@@ -1009,10 +1026,14 @@ const Rooms = () => {
                 <td></td>
                 <td class="editable" contenteditable="false">₹${cgst.toFixed(2)}</td>
                 <td class="editable" contenteditable="false">₹${sgst.toFixed(2)}</td>
-                <td class="editable" contenteditable="false">₹${totalAmount}</td>
+                <td class="editable" contenteditable="false">₹${totalAmountDisplay}</td>
               </tr>
             </tbody>
           </table>
+
+          <div style="text-align: right; font-size: 11px; margin-top: 4px;">
+            <span>Round Off:</span> <span class="editable" contenteditable="false">₹${(totalAmountDisplay - totalAmount).toFixed(2)}</span>
+          </div>
 
           <div style="margin: 10px 0;">
             <strong>IN WORD:</strong> <span class="editable" contenteditable="false">${amountInWords} ONLY.</span>
@@ -2542,6 +2563,87 @@ const Rooms = () => {
                 <div className="pt-4 border-t border-gray-200">
                   <div className="flex space-x-2 mb-3">
                     <button
+                      onClick={async () => {
+                        // Quick preview: clone generateBill without bill number and edit button
+                        // Reuse Guests preview approach by calling a small inline helper
+                        await (async function previewBill() {
+                          if (!checkoutRoom) return
+                          try {
+                            // Fetch guest
+                            const response = await fetch(`${BACKEND_URL}/api/guests`)
+                            const guestsData = await response.json()
+                            if (!guestsData.success) throw new Error('Failed to fetch guests')
+                            const guest = guestsData.data.find((g: any) => g.roomNumber === checkoutRoom.number && g.status === 'checked-in')
+                            if (!guest) { showNotification('error', 'No active guest found for this room'); return }
+
+                            // Build all same math as generateBill
+                            const now = new Date()
+                            const billTime = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+                            const checkInTime = new Date(guest.createdAt || guest.updatedAt || Date.now())
+                            const formattedCheckInTime = checkInTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+                            const checkInParts = guest.checkInDate.split('-')
+                            const checkInDate = new Date(parseInt(checkInParts[0]), parseInt(checkInParts[1]) - 1, parseInt(checkInParts[2]))
+                            const outParts = checkoutDetails.actualCheckOutDate.split('-')
+                            const checkOutDate = new Date(parseInt(outParts[2]), parseInt(outParts[1]) - 1, parseInt(outParts[0]))
+                            let daysDiff = 1
+                            if (checkOutDate.getTime() !== checkInDate.getTime()) {
+                              const timeDiff = checkOutDate.getTime() - checkInDate.getTime()
+                              daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24))
+                            }
+
+                            const roomsResponse = await fetch(`${BACKEND_URL}/api/rooms`)
+                            const roomsData = await roomsResponse.json()
+                            const room = roomsData.data.find((r: any) => r.number === guest.roomNumber)
+                            const roomBasePricePerDay: number = room && typeof room.price === 'number' ? room.price : 0
+                            const perDayFromCheckout = Math.max(0,(checkoutDetails.finalAmount || 0)-(checkoutDetails.additionalCharges || 0)-(checkoutDetails.laundryCharges || 0)-(checkoutDetails.halfDayCharges || 0))
+                            let pricePerDay = 0; let extraBedCharges = 0
+                            if (perDayFromCheckout > 0) { pricePerDay = perDayFromCheckout; extraBedCharges = 0 } else {
+                              const fallbackExtra = guest.extraBeds ? guest.extraBeds.reduce((s: number, b: any) => s + b.charge, 0) : 0
+                              const derivedPerDay = Math.round(Math.max(0, (guest.totalAmount - fallbackExtra)) / Math.max(1, daysDiff))
+                              pricePerDay = roomBasePricePerDay > 0 ? roomBasePricePerDay : derivedPerDay
+                              extraBedCharges = fallbackExtra
+                            }
+                            const roomRent = pricePerDay * daysDiff
+                            const roomRentTaxableValue = roomRent / 1.12
+                            const roomRentCgst = roomRentTaxableValue * 0.06
+                            const roomRentSgst = roomRentTaxableValue * 0.06
+                            const extraBedTaxableValue = extraBedCharges / 1.12
+                            const extraBedCgst = extraBedTaxableValue * 0.06
+                            const extraBedSgst = extraBedTaxableValue * 0.06
+                            const addl = Number(checkoutDetails.additionalCharges) || 0
+                            const laundry = Number(checkoutDetails.laundryCharges) || 0
+                            const halfDay = Number(checkoutDetails.halfDayCharges) || 0
+                            const foodingTaxableValue = addl > 0 ? addl / 1.05 : 0
+                            const foodingCgst = foodingTaxableValue * 0.025
+                            const foodingSgst = foodingTaxableValue * 0.025
+                            const laundryTaxableValue = laundry > 0 ? laundry / 1.05 : 0
+                            const laundryCgst = laundryTaxableValue * 0.025
+                            const laundrySgst = laundryTaxableValue * 0.025
+                            const halfDayTaxableValue = halfDay > 0 ? halfDay / 1.12 : 0
+                            const halfDayCgst = halfDayTaxableValue * 0.06
+                            const halfDaySgst = halfDayTaxableValue * 0.06
+                            const taxableValue = roomRentTaxableValue + extraBedTaxableValue + foodingTaxableValue + laundryTaxableValue + halfDayTaxableValue
+                            const cgst = roomRentCgst + extraBedCgst + foodingCgst + laundryCgst + halfDayCgst
+                            const sgst = roomRentSgst + extraBedSgst + foodingSgst + laundrySgst + halfDaySgst
+                            const totalAmount = (Number(roomRent) || 0) + (Number(extraBedCharges) || 0) + addl + laundry + halfDay
+                            const totalAmountDisplay = Math.round(totalAmount)
+                            const numberToWords = (num: number): string => { const o=['','ONE','TWO','THREE','FOUR','FIVE','SIX','SEVEN','EIGHT','NINE']; const t=['','', 'TWENTY','THIRTY','FORTY','FIFTY','SIXTY','SEVENTY','EIGHTY','NINETY']; const e=['TEN','ELEVEN','TWELVE','THIRTEEN','FOURTEEN','FIFTEEN','SIXTEEN','SEVENTEEN','EIGHTEEN','NINETEEN']; if(num===0) return 'ZERO'; if(num<10) return o[num]; if(num<20) return e[num-10]; if(num<100){ if(num%10===0) return t[Math.floor(num/10)]; return t[Math.floor(num/10)]+' '+o[num%10]; } if(num<1000){ if(num%100===0) return o[Math.floor(num/100)]+' HUNDRED'; return o[Math.floor(num/100)]+' HUNDRED AND '+numberToWords(num%100);} if(num<100000){ if(num%1000===0) return numberToWords(Math.floor(num/1000))+' THOUSAND'; return numberToWords(Math.floor(num/1000))+' THOUSAND '+numberToWords(num%1000);} return 'RUPEES'; }
+                            const amountInWords = numberToWords(totalAmountDisplay || 0)
+                            const arrivalDateParts = guest.checkInDate.split('-')
+                            const formattedArrivalDate = `${arrivalDateParts[2]}-${arrivalDateParts[1]}-${arrivalDateParts[0]}`
+                            const logoUrl = `${window.location.origin}/logo.png`
+                            const billHTML = `<!DOCTYPE html><html><head><title></title><style>@media print{@page{size:A4;margin:5mm}html,body{margin:0;padding:0}.no-print{display:none!important}.charges-table,.signature-row{page-break-inside:avoid}.invoice-container{height:287mm;padding:4mm;box-sizing:border-box;display:flex;flex-direction:column}.content{flex:1 1 auto}.signature-row{margin-top:auto;margin-bottom:3mm}}body{font-family:Arial,sans-serif;margin:0;padding:0;font-size:12px;line-height:1.3}.header{text-align:center;margin-bottom:10px}.hotel-name{font-size:28px;font-weight:bold;margin-bottom:4px}.hotel-details{font-size:11px;color:#444;line-height:1.5}.logo-row{display:flex;justify-content:center;margin-bottom:8px}.logo{max-height:70px;width:auto}.guest-info{display:flex;justify-content:space-between;margin-bottom:12px}.guest-details,.stay-details{width:48%}.section-title{font-weight:bold;margin-bottom:8px;font-size:16px}.info-row{margin-bottom:6px;font-size:13.5px}.charges-table{width:100%;border-collapse:collapse;margin:10px 0;table-layout:fixed}.charges-table th,.charges-table td{border:1px solid #ddd;padding:6px;text-align:left;font-size:12px;word-wrap:break-word}.charges-table th{background-color:#f5f5f5;font-weight:bold}.total-row{font-weight:bold;background-color:#f9f9f9}.bank-details{margin-top:14px}.footer{margin-top:12px;text-align:center;font-size:10px}.print-btn{position:fixed;top:20px;right:20px;padding:10px 20px;color:#fff;border:none;border-radius:5px;cursor:pointer;background:#007bff}.print-btn:hover{background:#0056b3}.editable{border:1px dashed #ccc;padding:2px;min-height:1em}</style></head><body><button class="print-btn no-print" onclick="window.print()">Print Preview</button><div class="invoice-container"><div class="header"><div class="logo-row"><img src="${logoUrl}" alt="Logo" class="logo" /></div><div class="hotel-name">Hotel Diplomat Residency</div><div class="hotel-details">(A Unit of Aronax Enterprises Private Limited)<br>GST No: 09AANCA1929Q1ZY | CIN: U521000L2015PTC274988<br>63 Prakash Tower, Choupla Road Civil Lines, Bareilly - 243001 (Uttar Pradesh) INDIA<br>Mail: diplomatresidency.bly@gmail.com<br>Ph No: +91-9219414284</div></div><div class="guest-info content"><div class="guest-details"><div class="section-title">Billing To:</div><div class="info-row editable" contenteditable="false">Name: ${guest.name}</div><div class="info-row editable" contenteditable="false">Company: </div><div class="info-row editable" contenteditable="false">Designation: </div><div class="info-row editable" contenteditable="false">Address: ${guest.address || 'BAREILLY'}</div><div class="info-row editable" contenteditable="false">Phone No: ${guest.phone}</div><div class="info-row editable" contenteditable="false">Email ID: ${guest.email || ''}</div><div class="info-row editable" contenteditable="false">GST NO: </div></div><div class="stay-details"><div class="section-title">Stay Details:</div><div class="info-row editable" contenteditable="false">Date of Arrival: ${formattedArrivalDate}</div><div class="info-row editable" contenteditable="false">Date of Departure: ${checkoutDetails.actualCheckOutDate}</div><div class="info-row editable" contenteditable="false">ROOM NO: ${guest.roomNumber}</div><div class="info-row editable" contenteditable="false">PAX: ${1 + (guest.secondaryGuest ? 1 : 0) + (guest.extraBeds ? guest.extraBeds.length : 0)}</div><div class="info-row editable" contenteditable="false">Plan: ${guest.plan || 'EP'}</div><div class="info-row editable" contenteditable="false">Check In Time: ${formattedCheckInTime}</div><div class="info-row editable" contenteditable="false">Check Out Time: ${billTime}</div></div></div><table class="charges-table"><thead><tr><th>Room No.</th><th>Name</th><th>No. of Days</th><th>Price/Day</th><th>Taxable Value</th><th>Tax Rate</th><th>CGST</th><th>SGST</th><th>Total Value</th></tr></thead><tbody><tr><td class="editable" contenteditable="false">${guest.roomNumber}</td><td class="editable" contenteditable="false">${guest.name}</td><td class="editable" contenteditable="false">${daysDiff}</td><td class="editable" contenteditable="false">₹${pricePerDay}</td><td class="editable" contenteditable="false">₹${roomRentTaxableValue.toFixed(2)}</td><td>12%</td><td class="editable" contenteditable="false">₹${roomRentCgst.toFixed(2)}</td><td class="editable" contenteditable="false">₹${roomRentSgst.toFixed(2)}</td><td class="editable" contenteditable="false">₹${roomRent}</td></tr>${extraBedCharges > 0 ? `<tr><td colspan="4" class="editable" contenteditable="false">Extra Bed Charges</td><td class="editable" contenteditable="false">₹${extraBedTaxableValue.toFixed(2)}</td><td>12%</td><td class="editable" contenteditable="false">₹${extraBedCgst.toFixed(2)}</td><td class="editable" contenteditable="false">₹${extraBedSgst.toFixed(2)}</td><td class="editable" contenteditable="false">₹${extraBedCharges}</td></tr>` : ''}${addl > 0 ? `<tr><td colspan="4" class="editable" contenteditable="false">Fooding Charges</td><td class="editable" contenteditable="false">₹${foodingTaxableValue.toFixed(2)}</td><td>5%</td><td class="editable" contenteditable="false">₹${foodingCgst.toFixed(2)}</td><td class="editable" contenteditable="false">₹${foodingSgst.toFixed(2)}</td><td class="editable" contenteditable="false">₹${addl}</td></tr>` : ''}${laundry > 0 ? `<tr><td colspan="4" class="editable" contenteditable="false">Laundry Charges</td><td class="editable" contenteditable="false">₹${laundryTaxableValue.toFixed(2)}</td><td>5%</td><td class="editable" contenteditable="false">₹${laundryCgst.toFixed(2)}</td><td class="editable" contenteditable="false">₹${laundrySgst.toFixed(2)}</td><td class="editable" contenteditable="false">₹${laundry}</td></tr>` : ''}${halfDay > 0 ? `<tr><td colspan="4" class="editable" contenteditable="false">Half Day Charges</td><td class="editable" contenteditable="false">₹${halfDayTaxableValue.toFixed(2)}</td><td>12%</td><td class="editable" contenteditable="false">₹${halfDayCgst.toFixed(2)}</td><td class="editable" contenteditable="false">₹${halfDaySgst.toFixed(2)}</td><td class="editable" contenteditable="false">₹${halfDay}</td></tr>` : ''}<tr class="total-row"><td colspan="4">TOTAL</td><td class="editable" contenteditable="false">₹${taxableValue.toFixed(2)}</td><td></td><td class="editable" contenteditable="false">₹${cgst.toFixed(2)}</td><td class="editable" contenteditable="false">₹${sgst.toFixed(2)}</td><td class="editable" contenteditable="false">₹${totalAmountDisplay}</td></tr></tbody></table><div style="text-align:right;font-size:11px;margin-top:4px;"><span>Round Off:</span> <span class="editable" contenteditable="false">₹${(totalAmountDisplay - totalAmount).toFixed(2)}</span></div><div style="margin:10px 0;"><strong>IN WORD:</strong> <span class="editable" contenteditable="false">${amountInWords} ONLY.</span></div><div style="margin:10px 0;"><strong>STAX NO:</strong> AANCA1929QSD001 | <strong>PAN NO:</strong> AANCA1929Q</div><div class="bank-details"><div class="section-title">Bank Account Detail:</div><div class="info-row">Account Holder: Aronax Enterprises Private Limited</div><div class="info-row">Bank Name: HDFC Bank Limited</div><div class="info-row">Account No: 50200011166109</div><div class="info-row">IFSC Code: HDFC0000304</div></div><div class="signature-row"><div class="signature-box"><div class="signature-line">Authorised Signatory</div></div><div class="signature-box"><div class="signature-line">Guest Signature</div></div></div><div class="footer"><div style="margin-bottom:6px;">*Please Deposit your Key to the Receptionists*</div><div>THANK YOU FOR YOUR VISIT, PLEASE VISIT AGAIN !!!!</div></div></div></body></html>`
+                            const billWindow = window.open('', '_blank', 'width=800,height=600')
+                            if (billWindow) { billWindow.document.write(billHTML); billWindow.document.close() }
+                          } catch (e) { console.error('Preview bill error:', e); showNotification('error', 'Failed to preview bill') }
+                        })()
+                      }}
+                      className="btn-secondary flex-1"
+                      title="Preview bill without saving or bill number"
+                    >
+                      Preview Bill
+                    </button>
+                    <button
                       onClick={generateBill}
                       className="btn-secondary flex-1"
                       title="Generate and print professional bill"
@@ -2551,7 +2653,7 @@ const Rooms = () => {
                   </div>
                   <div className="flex space-x-2">
                     <button
-                      onClick={handleCheckoutSubmit}
+                      onClick={() => setShowConfirmCheckout(true)}
                       className="btn-primary flex-1"
                     >
                       Complete Checkout
@@ -2685,6 +2787,31 @@ const Rooms = () => {
         onClose={hideNotification}
         duration={notification.duration}
       />
+      {showConfirmCheckout && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50" onClick={() => setShowConfirmCheckout(false)}>
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
+            <div className="px-5 pt-5">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0">
+                  <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-6 w-6 text-yellow-600">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Confirm Checkout</h3>
+                  <p className="mt-1 text-sm text-gray-600">Are you sure you want to check out? This will finalize the bill.</p>
+                </div>
+              </div>
+            </div>
+            <div className="px-5 pb-5 pt-4 flex justify-end space-x-2">
+              <button className="btn-secondary" onClick={() => setShowConfirmCheckout(false)}>Cancel</button>
+              <button className="btn-primary" onClick={() => { setShowConfirmCheckout(false); handleCheckoutSubmit(); }}>Yes, Check Out</button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Shifted Rooms Modal */}
       {showShiftedRoomsModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center" onClick={() => setShowShiftedRoomsModal(false)}>

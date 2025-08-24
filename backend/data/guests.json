@@ -40,5 +40,38 @@
       "idProof": ""
     },
     "createdAt": "2025-08-14T11:07:53.428Z"
+  },
+  {
+    "id": "1756061069556",
+    "name": "aman",
+    "email": "",
+    "phone": "68168464",
+    "roomNumber": "101",
+    "checkInDate": "2025-08-25",
+    "checkOutDate": "2025-08-25",
+    "status": "checked-out",
+    "totalAmount": 3550,
+    "paidAmount": 3550,
+    "address": "",
+    "idProof": "AADHAR-9846846",
+    "category": "corporate",
+    "plan": "MAP",
+    "complimentary": false,
+    "secondaryGuest": {
+      "name": "akash",
+      "phone": "",
+      "idProof": ""
+    },
+    "extraBeds": [
+      {
+        "name": "deepak",
+        "phone": "",
+        "idProof": "",
+        "charge": 399
+      }
+    ],
+    "createdAt": "2025-08-24T18:44:29.556Z",
+    "updatedAt": "2025-08-24T19:29:51.864Z",
+    "billNumber": "0083"
   }
 ]

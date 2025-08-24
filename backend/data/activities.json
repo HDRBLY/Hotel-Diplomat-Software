@@ -1,5 +1,30 @@
 [
   {
+    "id": "1756063791877",
+    "type": "guest_checked_out",
+    "guestName": "aman",
+    "roomNumber": "101",
+    "time": "Just now",
+    "status": "completed",
+    "additionalPayment": 0
+  },
+  {
+    "id": "1756061069566",
+    "type": "guest_checked_in",
+    "guestName": "aman",
+    "roomNumber": "101",
+    "time": "Just now",
+    "status": "completed"
+  },
+  {
+    "id": "1756045226817",
+    "type": "reservation",
+    "guestName": "test",
+    "roomNumber": "201",
+    "time": "Just now",
+    "status": "pending"
+  },
+  {
     "id": "1755169673438",
     "type": "guest_checked_in",
     "guestName": "aman",

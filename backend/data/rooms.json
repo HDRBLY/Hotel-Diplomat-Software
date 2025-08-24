@@ -3,7 +3,7 @@
     "id": "1",
     "number": "101",
     "type": "STANDARD",
-    "status": "AVAILABLE",
+    "status": "CLEANING",
     "floor": 1,
     "price": 1500,
     "amenities": [
@@ -11,12 +11,14 @@
       "TV",
       "WiFi"
     ],
-    "category": "COUPLE",
+    "category": "CORPORATE",
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
     "lastCleaned": "2025-08-09T11:49:02.646Z",
-    "createdAt": "2025-08-09T11:49:02.646Z"
+    "createdAt": "2025-08-09T11:49:02.646Z",
+    "updatedAt": "2025-08-24T18:44:29.615Z",
+    "notes": "Guest checked out on 25/8/2025. Room needs cleaning."
   },
   {
     "id": "2",
