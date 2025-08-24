@@ -651,6 +651,7 @@ const Guests = () => {
       finalAmount: guest.totalAmount,
       additionalCharges: 0,
       laundryCharges: 0,
+      halfDayCharges: 0,
       paymentMethod: 'CASH',
       notes: ''
     })
@@ -703,6 +704,7 @@ const Guests = () => {
       finalAmount: 0,
       additionalCharges: 0,
       laundryCharges: 0,
+      halfDayCharges: 0,
       paymentMethod: 'CASH',
       notes: ''
     })
@@ -1268,24 +1270,30 @@ const Guests = () => {
 
       const numberToWords = (num: number): string => {
         const ones = ['', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE']
-        const tens = ['', '', 'TWENTY', 'THIRTY', 'FORTY', 'FIFTY', 'SIXTY', 'SEVENTY', 'EIGHTY', 'NINETY']
         const teens = ['TEN', 'ELEVEN', 'TWELVE', 'THIRTEEN', 'FOURTEEN', 'FIFTEEN', 'SIXTEEN', 'SEVENTEEN', 'EIGHTEEN', 'NINETEEN']
-        if (num === 0) return 'ZERO'
-        if (num < 10) return ones[num]
-        if (num < 20) return teens[num - 10]
-        if (num < 100) {
-          if (num % 10 === 0) return tens[Math.floor(num / 10)]
-          return tens[Math.floor(num / 10)] + ' ' + ones[num % 10]
+        const tens = ['', '', 'TWENTY', 'THIRTY', 'FORTY', 'FIFTY', 'SIXTY', 'SEVENTY', 'EIGHTY', 'NINETY']
+        if (!Number.isFinite(num) || num <= 0) return num === 0 ? 'ZERO' : ''
+        const twoDigits = (n: number): string => {
+          if (n < 10) return ones[n]
+          if (n < 20) return teens[n - 10]
+          if (n % 10 === 0) return tens[Math.floor(n / 10)]
+          return tens[Math.floor(n / 10)] + ' ' + ones[n % 10]
         }
-        if (num < 1000) {
-          if (num % 100 === 0) return ones[Math.floor(num / 100)] + ' HUNDRED'
-          return ones[Math.floor(num / 100)] + ' HUNDRED AND ' + numberToWords(num % 100)
+        const threeDigits = (n: number): string => {
+          if (n < 100) return twoDigits(n)
+          const hundred = Math.floor(n / 100); const rest = n % 100
+          if (rest === 0) return ones[hundred] + ' HUNDRED'
+          return ones[hundred] + ' HUNDRED AND ' + twoDigits(rest)
         }
-        if (num < 100000) {
-          if (num % 1000 === 0) return numberToWords(Math.floor(num / 1000)) + ' THOUSAND'
-          return numberToWords(Math.floor(num / 1000)) + ' THOUSAND ' + numberToWords(num % 1000)
-        }
-        return 'RUPEES'
+        let remaining = Math.floor(num)
+        const parts: string[] = []
+        const crore = Math.floor(remaining / 10000000); remaining %= 10000000; if (crore > 0) parts.push(threeDigits(crore), 'CRORE')
+        const lakh = Math.floor(remaining / 100000); remaining %= 100000; if (lakh > 0) parts.push(threeDigits(lakh), 'LAKH')
+        const thousand = Math.floor(remaining / 1000); remaining %= 1000; if (thousand > 0) parts.push(threeDigits(thousand), 'THOUSAND')
+        const hundredPart = Math.floor(remaining / 100); const rest = remaining % 100
+        if (hundredPart > 0) parts.push(ones[hundredPart], 'HUNDRED')
+        if (rest > 0) { if (parts.length) parts.push('AND'); parts.push(twoDigits(rest)) }
+        return parts.join(' ')
       }
 
       const amountInWords = numberToWords(totalAmountDisplay || 0)
