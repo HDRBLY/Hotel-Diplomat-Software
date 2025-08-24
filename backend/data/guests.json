@@ -1,0 +1,44 @@
+[
+  {
+    "id": "1754917452759",
+    "name": "aman",
+    "email": "",
+    "phone": "984984",
+    "roomNumber": "210",
+    "checkInDate": "2025-08-11",
+    "checkOutDate": "2025-08-14",
+    "status": "checked-out",
+    "totalAmount": 1500,
+    "paidAmount": 1500,
+    "address": "",
+    "idProof": "AADHAR-9879861684",
+    "category": "couple",
+    "plan": "EP",
+    "complimentary": false,
+    "createdAt": "2025-08-11T13:04:12.759Z",
+    "updatedAt": "2025-08-14T10:43:23.110Z"
+  },
+  {
+    "id": "1755169673428",
+    "name": "aman",
+    "email": "",
+    "phone": "81684684",
+    "roomNumber": "216",
+    "checkInDate": "2025-08-14",
+    "checkOutDate": "2025-08-14",
+    "status": "checked-in",
+    "totalAmount": 2000,
+    "paidAmount": 2000,
+    "address": "",
+    "idProof": "AADHAR-84684346834",
+    "category": "couple",
+    "plan": "AP",
+    "complimentary": false,
+    "secondaryGuest": {
+      "name": "muskan",
+      "phone": "",
+      "idProof": ""
+    },
+    "createdAt": "2025-08-14T11:07:53.428Z"
+  }
+]

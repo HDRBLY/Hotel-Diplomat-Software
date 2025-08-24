@@ -1,0 +1,51 @@
+{
+  "name": "hotel-diplomat-residency-software",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Hotel Diplomat Residency (HDR) Front Desk Management System",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "vite --host"
+  },
+  "dependencies": {
+    "@headlessui/react": "^2.2.4",
+    "clsx": "^1.2.1",
+    "date-fns": "^2.29.3",
+    "lucide-react": "^0.263.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.8.1",
+    "recharts": "^2.5.0",
+    "socket.io-client": "^4.8.1",
+    "tailwind-merge": "^1.14.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@typescript-eslint/eslint-plugin": "^8.36.0",
+    "@typescript-eslint/parser": "^8.36.0",
+    "@vitejs/plugin-react": "^3.1.0",
+    "autoprefixer": "^10.4.14",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "postcss": "^8.4.21",
+    "tailwindcss": "^3.2.7",
+    "typescript": "^5.4.5",
+    "vite": "^4.5.14"
+  },
+  "keywords": [
+    "hotel",
+    "management",
+    "front-desk",
+    "reservation",
+    "booking"
+  ],
+  "author": "Hotel Diplomat Residency (HDR)",
+  "license": "MIT"
+}
