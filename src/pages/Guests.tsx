@@ -1051,7 +1051,7 @@ const Guests = () => {
               ` : ''}
               ${checkoutDetails.halfDayCharges > 0 ? `
               <tr>
-                <td colspan="4" class="editable" contenteditable="false">Half Day Charges</td>
+                <td colspan="4" class="editable" contenteditable="false">Late Checkout Charges</td>
                 <td class="editable" contenteditable="false">₹${halfDayTaxableValue.toFixed(2)}</td>
                 <td>12%</td>
                 <td class="editable" contenteditable="false">₹${halfDayCgst.toFixed(2)}</td>
@@ -1450,7 +1450,7 @@ const Guests = () => {
               ` : ''}
               ${halfDay > 0 ? `
               <tr>
-                <td colspan="4" class="editable" contenteditable="false">Half Day Charges</td>
+                <td colspan="4" class="editable" contenteditable="false">Late Checkout Charges</td>
                 <td class="editable" contenteditable="false">₹${halfDayTaxableValue.toFixed(2)}</td>
                 <td>12%</td>
                 <td class="editable" contenteditable="false">₹${halfDayCgst.toFixed(2)}</td>
@@ -2960,7 +2960,7 @@ const Guests = () => {
                       <span>₹{checkoutDetails.laundryCharges || 0}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Half Day Charges:</span>
+                      <span>Late Checkout Charges:</span>
                       <span>₹{checkoutDetails.halfDayCharges || 0}</span>
                     </div>
                     <div className="border-t pt-1 flex justify-between font-medium">
@@ -3009,7 +3009,7 @@ const Guests = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Half Day Charges (₹)</label>
+                  <label className="block text-sm font-medium text-gray-700">Late Checkout Charges (₹)</label>
                   <input
                     type="number"
                     value={checkoutDetails.halfDayCharges || ''}
