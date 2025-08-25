@@ -73,5 +73,79 @@
     "createdAt": "2025-08-24T18:44:29.556Z",
     "updatedAt": "2025-08-24T19:29:51.864Z",
     "billNumber": "0083"
+  },
+  {
+    "id": "1756107528667",
+    "name": "aman",
+    "email": "",
+    "phone": "987468467",
+    "roomNumber": "103",
+    "checkInDate": "2025-08-25",
+    "checkOutDate": "2025-08-25",
+    "status": "checked-in",
+    "totalAmount": 1800,
+    "paidAmount": 1800,
+    "address": "",
+    "idProof": "",
+    "category": "solo",
+    "plan": "EP",
+    "complimentary": false,
+    "createdAt": "2025-08-25T07:38:48.667Z"
+  },
+  {
+    "id": "1756117550534",
+    "name": "aman",
+    "email": "",
+    "phone": "654684",
+    "roomNumber": "102",
+    "checkInDate": "2025-08-25",
+    "checkOutDate": "2025-08-25",
+    "status": "checked-in",
+    "totalAmount": 1800,
+    "paidAmount": 1800,
+    "address": "",
+    "idProof": "",
+    "idProofType": "AADHAR",
+    "category": "couple",
+    "plan": "EP",
+    "complimentary": false,
+    "secondaryGuest": {
+      "name": "akash"
+    },
+    "extraBeds": [
+      {
+        "name": "deepak",
+        "charge": 500
+      }
+    ],
+    "createdAt": "2025-08-25T10:25:50.534Z"
+  },
+  {
+    "id": "1756118032947",
+    "name": "test",
+    "email": "",
+    "phone": "64687948",
+    "roomNumber": "223",
+    "checkInDate": "2025-08-25",
+    "checkOutDate": "2025-08-25",
+    "status": "checked-in",
+    "totalAmount": 2500,
+    "paidAmount": 2000,
+    "address": "",
+    "idProof": "",
+    "idProofType": "AADHAR",
+    "category": "solo",
+    "plan": "EP",
+    "complimentary": false,
+    "secondaryGuest": {
+      "name": "sdg"
+    },
+    "extraBeds": [
+      {
+        "name": "dgrg",
+        "charge": 500
+      }
+    ],
+    "createdAt": "2025-08-25T10:33:52.947Z"
   }
 ]

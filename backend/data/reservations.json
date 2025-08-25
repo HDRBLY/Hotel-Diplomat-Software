@@ -1,20 +1,36 @@
 [
   {
-    "id": "1756045226816",
+    "id": "1756118018369",
     "guestName": "test",
     "email": "",
-    "phone": "9874986168",
-    "roomNumber": "201",
+    "phone": "64687948",
+    "roomNumber": "223",
     "roomType": "Standard",
-    "checkInDate": "2025-08-24",
+    "category": "solo",
+    "checkInDate": "2025-08-25",
     "checkOutDate": "2025-08-25",
     "numberOfGuests": 1,
-    "totalAmount": 0,
-    "depositAmount": 0,
+    "totalAmount": 2000,
+    "depositAmount": 2000,
     "specialRequests": "",
     "paymentMethod": "UPI",
-    "status": "PENDING",
-    "bookingDate": "2025-08-24T14:20:26.816Z",
-    "createdAt": "2025-08-24T14:20:26.816Z"
+    "secondaryGuest": {
+      "name": "sdg"
+    },
+    "extraBeds": [
+      {
+        "name": "dgrg",
+        "charge": 500
+      }
+    ],
+    "address": "",
+    "idProof": "",
+    "idProofType": "AADHAR",
+    "plan": "EP",
+    "complimentary": false,
+    "status": "CHECKED-IN",
+    "bookingDate": "2025-08-25T10:33:38.369Z",
+    "createdAt": "2025-08-25T10:33:38.369Z",
+    "updatedAt": "2025-08-25T10:33:52.946Z"
   }
 ]

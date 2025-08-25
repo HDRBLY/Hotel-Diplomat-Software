@@ -33,6 +33,66 @@ interface Reservation {
   specialRequests: string
   bookingDate: string
   paymentMethod: string
+  category?: 'couple' | 'corporate' | 'solo' | 'family'
+  address?: string
+  idProof?: string
+  idProofType?: string
+  plan?: 'EP' | 'CP' | 'MAP' | 'AP'
+  complimentary?: boolean
+  secondaryGuest?: {
+    name: string
+    phone?: string
+    idProof?: string
+    idProofType?: string
+  }
+  extraBeds?: Array<{
+    name: string
+    phone?: string
+    idProof?: string
+    idProofType?: string
+    charge: number
+  }>
+}
+
+type NewReservationForm = {
+  guestName: string
+  email: string
+  phone: string
+  roomNumber: string
+  roomType: string
+  category?: 'couple' | 'corporate' | 'solo' | 'family'
+  checkInDate: string
+  checkOutDate: string
+  numberOfGuests: number
+  totalAmount: string
+  depositAmount: string
+  specialRequests: string
+  paymentMethod: string
+  secondaryGuest?: {
+    name: string
+    phone?: string
+    idProof?: string
+    idProofType?: string
+  }
+  extraBeds?: Array<{
+    name: string
+    phone?: string
+    idProof?: string
+    idProofType?: string
+    charge: number
+  }>
+  address?: string
+  idProof?: string
+  idProofType?: string
+  plan?: 'EP' | 'CP' | 'MAP' | 'AP'
+  complimentary?: boolean
+}
+
+type RoomSummary = {
+  id: string
+  number: string
+  type: string
+  status: string
 }
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
@@ -44,21 +104,33 @@ const Reservations = () => {
   const [dateFilter, setDateFilter] = useState('all')
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null)
   const [showAddReservation, setShowAddReservation] = useState(false)
+  const [editReservation, setEditReservation] = useState<Reservation | null>(null)
   const { notification, showNotification, hideNotification } = useNotification()
-  const [newReservation, setNewReservation] = useState({
+  const [newReservation, setNewReservation] = useState<NewReservationForm>({
     guestName: '',
     email: '',
     phone: '',
     roomNumber: '',
     roomType: 'Standard',
+    category: 'couple',
     checkInDate: '',
     checkOutDate: '',
     numberOfGuests: 1,
-    totalAmount: 0,
-    depositAmount: 0,
+    totalAmount: '',
+    depositAmount: '',
     specialRequests: '',
-    paymentMethod: 'UPI'
+    paymentMethod: 'UPI',
+    secondaryGuest: undefined,
+    extraBeds: [],
+    address: '',
+    idProof: '',
+    idProofType: 'AADHAR',
+    plan: 'EP',
+    complimentary: false
   })
+
+  const [availableRooms, setAvailableRooms] = useState<RoomSummary[]>([])
+  const [showSecondaryGuest, setShowSecondaryGuest] = useState(false)
 
   // Available room types
   const roomTypes = ['Standard', 'Deluxe', 'Suite', 'Presidential']
@@ -88,6 +160,23 @@ const Reservations = () => {
     fetchReservations()
   }, [])
 
+  // Load available rooms for selection (only AVAILABLE)
+  useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/rooms`)
+        if (!res.ok) return
+        const data = await res.json()
+        const rooms: RoomSummary[] = (data.data || [])
+          .filter((r: any) => (r.status || '').toLowerCase() === 'available')
+          .map((r: any) => ({ id: String(r.id), number: String(r.number), type: String(r.type || ''), status: String(r.status || '') }))
+          .sort((a: RoomSummary, b: RoomSummary) => a.number.localeCompare(b.number, undefined, { numeric: true }))
+        setAvailableRooms(rooms)
+      } catch {}
+    }
+    fetchRooms()
+  }, [])
+
   const filteredReservations = reservations.filter(reservation => {
     const matchesSearch = reservation.guestName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          reservation.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -98,7 +187,11 @@ const Reservations = () => {
                        (dateFilter === 'past' && new Date(reservation.checkOutDate) < new Date()) ||
                        (dateFilter === 'current' && new Date(reservation.checkInDate) <= new Date() && new Date(reservation.checkOutDate) >= new Date())
     return matchesSearch && matchesStatus && matchesDate
-  }).sort((a, b) => new Date(b.bookingDate).getTime() - new Date(a.bookingDate).getTime()) // Sort by most recent first
+  }).sort((a, b) => {
+    const aDate = a.bookingDate ? new Date(a.bookingDate).getTime() : new Date(a.checkInDate).getTime();
+    const bDate = b.bookingDate ? new Date(b.bookingDate).getTime() : new Date(b.checkInDate).getTime();
+    return bDate - aDate;
+  }) // Sort by most recent first
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -130,12 +223,20 @@ const Reservations = () => {
     }
   }
 
-  const handleStatusChange = (reservationId: string, newStatus: Reservation['status']) => {
-    setReservations(reservations.map(reservation => 
+  const handleStatusChange = async (reservationId: string, newStatus: Reservation['status']) => {
+    // Optimistic UI
+    setReservations(prev => prev.map(reservation => 
       reservation.id === reservationId 
         ? { ...reservation, status: newStatus }
         : reservation
     ))
+    try {
+      await fetch(`${BACKEND_URL}/api/reservations/${reservationId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      })
+    } catch {}
   }
 
   const handleDeleteReservation = async (reservationId: string) => {
@@ -155,8 +256,8 @@ const Reservations = () => {
       return
     }
 
-    // Check if check-out date is after check-in date
-    if (new Date(newReservation.checkOutDate) <= new Date(newReservation.checkInDate)) {
+    // Allow same-day checkout; only block if checkout is before checkin
+    if (new Date(newReservation.checkOutDate) < new Date(newReservation.checkInDate)) {
       showNotification('error', 'Check-out date must be after check-in date')
       return
     }
@@ -172,13 +273,24 @@ const Reservations = () => {
           phone: newReservation.phone,
           roomNumber: newReservation.roomNumber,
           roomType: newReservation.roomType,
+          category: newReservation.category || 'couple',
           checkInDate: newReservation.checkInDate,
           checkOutDate: newReservation.checkOutDate,
           numberOfGuests: newReservation.numberOfGuests,
-          totalAmount: newReservation.totalAmount,
-          depositAmount: newReservation.depositAmount,
+          totalAmount: Number(newReservation.totalAmount) || 0,
+          depositAmount: Number(newReservation.depositAmount) || 0,
           specialRequests: newReservation.specialRequests,
-          paymentMethod: newReservation.paymentMethod
+          paymentMethod: newReservation.paymentMethod,
+          secondaryGuest: newReservation.secondaryGuest,
+          extraBeds: (newReservation.extraBeds || []).map(b => ({
+            ...b,
+            charge: Number(b.charge) || 0
+          })),
+          address: newReservation.address || '',
+          idProof: newReservation.idProof || '',
+          idProofType: newReservation.idProofType || 'AADHAR',
+          plan: newReservation.plan || 'EP',
+          complimentary: !!newReservation.complimentary
         })
       })
       if (!res.ok) throw new Error('Failed to create reservation')
@@ -199,17 +311,48 @@ const Reservations = () => {
       phone: '',
       roomNumber: '',
       roomType: 'Standard',
+      category: 'couple',
       checkInDate: '',
       checkOutDate: '',
       numberOfGuests: 1,
-      totalAmount: 0,
-      depositAmount: 0,
+      totalAmount: '',
+      depositAmount: '',
       specialRequests: '',
-      paymentMethod: 'UPI'
+      paymentMethod: 'UPI',
+      secondaryGuest: undefined,
+      extraBeds: [],
+      address: '',
+      idProof: '',
+      idProofType: 'AADHAR',
+      plan: 'EP',
+      complimentary: false
     })
     
     setShowAddReservation(false)
     showNotification('success', 'Reservation added successfully!')
+  }
+
+  const computeExtraBedsTotal = (extraBeds?: Array<{ charge: number }>) =>
+    (extraBeds || []).reduce((sum, bed) => sum + (Number(bed.charge) || 0), 0)
+
+  const handleUpdateReservation = async () => {
+    if (!editReservation) return
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/reservations/${editReservation.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editReservation)
+      })
+      if (!res.ok) throw new Error('Failed to update reservation')
+      const data = await res.json()
+      if (data.success) {
+        setReservations(prev => prev.map(r => r.id === editReservation.id ? { ...editReservation } as any : r))
+        setEditReservation(null)
+        showNotification('success', 'Reservation updated successfully!')
+      }
+    } catch (e) {
+      showNotification('error', 'Failed to update reservation. Please try again.')
+    }
   }
 
   return (
@@ -314,7 +457,13 @@ const Reservations = () => {
                         </div>
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{reservation.guestName}</div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {reservation.guestName}
+                          {reservation.secondaryGuest?.name ? ` + ${reservation.secondaryGuest.name}` : ''}
+                          {Array.isArray(reservation.extraBeds) && reservation.extraBeds.length > 0
+                            ? reservation.extraBeds.map(b => b.name ? ` + ${b.name}` : '').join('')
+                            : ''}
+                        </div>
                         <div className="text-sm text-gray-500">{reservation.email}</div>
                         <div className="text-sm text-gray-500">{reservation.phone}</div>
                       </div>
@@ -375,13 +524,16 @@ const Reservations = () => {
                       >
                         View
                       </button>
-                      <button 
-                        className="text-gray-400 hover:text-gray-600"
-                        title="Edit reservation"
-                        aria-label="Edit reservation"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </button>
+                      {reservation.status !== 'checked-in' && (
+                        <button 
+                          onClick={() => setEditReservation(reservation)}
+                          className="text-gray-400 hover:text-gray-600"
+                          title="Edit reservation"
+                          aria-label="Edit reservation"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                      )}
                       <button 
                         onClick={() => handleDeleteReservation(reservation.id)}
                         className="text-red-400 hover:text-red-600"
@@ -401,8 +553,8 @@ const Reservations = () => {
 
       {/* Reservation Details Modal */}
       {selectedReservation && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" onClick={() => setSelectedReservation(null)}>
+          <div className="relative top-20 mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white" onClick={(e) => e.stopPropagation()}>
             <div className="mt-3">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-medium text-gray-900">Reservation Details</h3>
@@ -416,18 +568,47 @@ const Reservations = () => {
                 </button>
               </div>
               <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Guest Name</label>
-                  <p className="mt-1 text-sm text-gray-900">{selectedReservation.guestName}</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Primary Guest</label>
+                    <p className="mt-1 text-sm text-gray-900">{selectedReservation.guestName}</p>
+                    <p className="text-xs text-gray-500">{selectedReservation.phone}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Guest Type</label>
+                    <p className="mt-1 text-sm text-gray-900">{(selectedReservation.category || '').toString()}</p>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Email</label>
-                  <p className="mt-1 text-sm text-gray-900">{selectedReservation.email}</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Address</label>
+                    <p className="mt-1 text-sm text-gray-900">{selectedReservation.address || '-'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">ID Proof</label>
+                    <p className="mt-1 text-sm text-gray-900">{`${selectedReservation.idProofType || ''}${selectedReservation.idProof ? '-' + selectedReservation.idProof : ''}` || '-'}</p>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Phone</label>
-                  <p className="mt-1 text-sm text-gray-900">{selectedReservation.phone}</p>
-                </div>
+                {selectedReservation.secondaryGuest?.name && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Secondary Guest</label>
+                    <p className="mt-1 text-sm text-gray-900">{selectedReservation.secondaryGuest.name}</p>
+                  </div>
+                )}
+                {Array.isArray(selectedReservation.extraBeds) && selectedReservation.extraBeds.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Extra Beds ({selectedReservation.extraBeds.length})</label>
+                    <div className="mt-2 space-y-2">
+                      {selectedReservation.extraBeds.map((bed, i) => (
+                        <div key={i} className="border rounded p-2">
+                          <div className="text-sm text-gray-900 font-medium">Extra Bed {i + 1}</div>
+                          <div className="text-sm text-gray-700">Name: {bed.name || '-'}</div>
+                          <div className="text-sm text-gray-700">Charge: ₹{Number(bed.charge) || 0}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Room Number</label>
@@ -440,17 +621,37 @@ const Reservations = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Check-in</label>
+                    <label className="block text-sm font-medium text-gray-700">Plan</label>
+                    <p className="mt-1 text-sm text-gray-900">{selectedReservation.plan || 'EP'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Guests</label>
+                    <p className="mt-1 text-sm text-gray-900">{selectedReservation.numberOfGuests}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Check-in Date</label>
                     <p className="mt-1 text-sm text-gray-900">{selectedReservation.checkInDate}</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Check-out</label>
+                    <label className="block text-sm font-medium text-gray-700">Check-out Date</label>
                     <p className="mt-1 text-sm text-gray-900">{selectedReservation.checkOutDate}</p>
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Number of Guests</label>
-                  <p className="mt-1 text-sm text-gray-900">{selectedReservation.numberOfGuests}</p>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Total</label>
+                    <p className="mt-1 text-sm text-gray-900">₹{(Number(selectedReservation.totalAmount) || 0) + computeExtraBedsTotal(selectedReservation.extraBeds)}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Paid</label>
+                    <p className="mt-1 text-sm text-gray-900">₹{selectedReservation.depositAmount}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Balance</label>
+                    <p className="mt-1 text-sm text-gray-900">₹{Math.max(0, ((Number(selectedReservation.totalAmount) || 0) + computeExtraBedsTotal(selectedReservation.extraBeds)) - (Number(selectedReservation.depositAmount) || 0))}</p>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Status</label>
@@ -458,30 +659,12 @@ const Reservations = () => {
                     {selectedReservation.status.replace('-', ' ')}
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Total Amount</label>
-                    <p className="mt-1 text-sm text-gray-900">₹{selectedReservation.totalAmount}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Deposit</label>
-                    <p className="mt-1 text-sm text-gray-900">₹{selectedReservation.depositAmount}</p>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Payment Method</label>
-                  <p className="mt-1 text-sm text-gray-900">{selectedReservation.paymentMethod}</p>
-                </div>
                 {selectedReservation.specialRequests && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Special Requests</label>
                     <p className="mt-1 text-sm text-gray-900">{selectedReservation.specialRequests}</p>
                   </div>
                 )}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Booking Date</label>
-                  <p className="mt-1 text-sm text-gray-900">{selectedReservation.bookingDate}</p>
-                </div>
               </div>
             </div>
           </div>
@@ -489,9 +672,88 @@ const Reservations = () => {
       )}
 
       {/* Add Reservation Modal */}
+      {/* Edit Reservation Modal - only extra bed charges editable */}
+      {editReservation && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" onClick={() => setEditReservation(null)}>
+          <div className="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white" onClick={(e) => e.stopPropagation()}>
+            <div className="mt-3">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Edit Reservation</h3>
+                <button
+                  onClick={() => setEditReservation(null)}
+                  className="text-gray-400 hover:text-gray-600"
+                  title="Close edit reservation"
+                  aria-label="Close edit reservation"
+                >
+                  <XCircle className="h-6 w-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="text-sm text-gray-600">Paid Amount and Balance are not editable here.</div>
+
+                {/* Show read-only primary details */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500">Primary Guest</label>
+                    <div className="mt-1 text-sm text-gray-900">{editReservation.guestName}</div>
+                    <div className="text-xs text-gray-500">{editReservation.phone}</div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500">ID Proof</label>
+                    <div className="mt-1 text-sm text-gray-900">{`${editReservation.idProofType || ''}${editReservation.idProof ? '-' + editReservation.idProof : ''}` || '-'}</div>
+                  </div>
+                </div>
+
+                {/* Editable extra bed charges only */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Extra Beds</label>
+                  <div className="mt-2 space-y-2">
+                    {(editReservation.extraBeds || []).map((bed, i) => (
+                      <div key={i} className="grid grid-cols-4 gap-4 items-end">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500">Name</label>
+                          <input type="text" value={bed.name || ''} readOnly className="input-field mt-1" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500">ID</label>
+                          <input type="text" value={bed.idProof || ''} readOnly className="input-field mt-1" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500">ID Type</label>
+                          <input type="text" value={bed.idProofType || ''} readOnly className="input-field mt-1" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500">Charge (₹)</label>
+                          <input
+                            type="number"
+                            value={Number(bed.charge) || 0}
+                            onChange={(e) => {
+                              const list = [...(editReservation.extraBeds || [])]
+                              list[i] = { ...list[i], charge: Number(e.target.value) || 0 }
+                              setEditReservation({ ...editReservation, extraBeds: list })
+                            }}
+                            className="input-field mt-1"
+                            min={0}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex space-x-2 pt-2">
+                  <button onClick={handleUpdateReservation} className="btn-primary flex-1">Save</button>
+                  <button onClick={() => setEditReservation(null)} className="btn-secondary flex-1">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {showAddReservation && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" onClick={() => setShowAddReservation(false)}>
+          <div className="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white" onClick={(e) => e.stopPropagation()}>
             <div className="mt-3">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-medium text-gray-900">New Reservation</h3>
@@ -551,21 +813,50 @@ const Reservations = () => {
                   />
                 </div>
 
+                {/* Primary Guest ID */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">ID Proof Type</label>
+                    <input
+                      type="text"
+                      value={newReservation.idProofType || 'AADHAR'}
+                      onChange={(e) => setNewReservation({ ...newReservation, idProofType: e.target.value })}
+                      className="input-field mt-1"
+                      placeholder="AADHAR / PASSPORT"
+                      aria-label="Primary ID proof type"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">ID Proof Number</label>
+                    <input
+                      type="text"
+                      value={newReservation.idProof || ''}
+                      onChange={(e) => setNewReservation({ ...newReservation, idProof: e.target.value })}
+                      className="input-field mt-1"
+                      placeholder="Enter ID number"
+                      aria-label="Primary ID proof number"
+                    />
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="roomNumber" className="block text-sm font-medium text-gray-700">
                       Room Number <span className="text-red-500">*</span>
                     </label>
-                    <input
+                    <select
                       id="roomNumber"
-                      type="text"
                       value={newReservation.roomNumber}
                       onChange={(e) => setNewReservation({...newReservation, roomNumber: e.target.value})}
                       className="input-field mt-1"
-                      placeholder="e.g., 101, 205"
                       required
                       aria-label="Room number"
-                    />
+                    >
+                      <option value="">Select available room</option>
+                      {availableRooms.map(r => (
+                        <option key={r.id} value={r.number}>Room {r.number} ({r.type})</option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label htmlFor="roomType" className="block text-sm font-medium text-gray-700">Room Type</label>
@@ -581,6 +872,23 @@ const Reservations = () => {
                       ))}
                     </select>
                   </div>
+                </div>
+
+                <div>
+                  <label htmlFor="category" className="block text-sm font-medium text-gray-700">Guest Type</label>
+                  <select
+                    id="category"
+                    value={newReservation.category}
+                    onChange={(e) => setNewReservation({ ...newReservation, category: e.target.value as any })}
+                    className="input-field mt-1"
+                    aria-label="Guest type"
+                    title="Select guest category (solo, couple, family, corporate)"
+                  >
+                    <option value="couple">Couple</option>
+                    <option value="corporate">Corporate</option>
+                    <option value="solo">Solo</option>
+                    <option value="family">Family</option>
+                  </select>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -615,6 +923,209 @@ const Reservations = () => {
                   </div>
                 </div>
 
+                {/* Secondary Guest */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-sm font-medium text-gray-700">Secondary Guest</label>
+                    <button
+                      type="button"
+                      className="text-primary-600 text-sm"
+                      onClick={() => setShowSecondaryGuest(!showSecondaryGuest)}
+                      aria-label="Toggle secondary guest"
+                    >
+                      {showSecondaryGuest ? 'Remove' : 'Add'}
+                    </button>
+                  </div>
+                  {showSecondaryGuest && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Name</label>
+                        <input
+                          type="text"
+                          value={newReservation.secondaryGuest?.name || ''}
+                          onChange={(e) => setNewReservation({
+                            ...newReservation,
+                            secondaryGuest: { ...(newReservation.secondaryGuest || { name: '' }), name: e.target.value }
+                          })}
+                          className="input-field mt-1"
+                          placeholder="Secondary guest name"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Phone</label>
+                        <input
+                          type="tel"
+                          value={newReservation.secondaryGuest?.phone || ''}
+                          onChange={(e) => setNewReservation({
+                            ...newReservation,
+                            secondaryGuest: { ...(newReservation.secondaryGuest || { name: '' }), phone: e.target.value }
+                          })}
+                          className="input-field mt-1"
+                          placeholder="Phone"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">ID Proof</label>
+                        <input
+                          type="text"
+                          value={newReservation.secondaryGuest?.idProof || ''}
+                          onChange={(e) => setNewReservation({
+                            ...newReservation,
+                            secondaryGuest: { ...(newReservation.secondaryGuest || { name: '' }), idProof: e.target.value }
+                          })}
+                          className="input-field mt-1"
+                          placeholder="ID number"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">ID Proof Type</label>
+                        <input
+                          type="text"
+                          value={newReservation.secondaryGuest?.idProofType || ''}
+                          onChange={(e) => setNewReservation({
+                            ...newReservation,
+                            secondaryGuest: { ...(newReservation.secondaryGuest || { name: '' }), idProofType: e.target.value }
+                          })}
+                          className="input-field mt-1"
+                          placeholder="AADHAR / PASSPORT"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Extra Beds */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-sm font-medium text-gray-700">Extra Beds</label>
+                    <button
+                      type="button"
+                      className="text-primary-600 text-sm"
+                      onClick={() => setNewReservation({
+                        ...newReservation,
+                        extraBeds: [...(newReservation.extraBeds || []), { name: '', charge: 0 }]
+                      })}
+                      aria-label="Add extra bed"
+                    >
+                      Add Bed
+                    </button>
+                  </div>
+                  {(newReservation.extraBeds || []).map((bed, idx) => (
+                    <div key={idx} className="grid grid-cols-4 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Name</label>
+                        <input
+                          type="text"
+                          value={bed.name}
+                          onChange={(e) => {
+                            const list = [...(newReservation.extraBeds || [])]
+                            list[idx] = { ...list[idx], name: e.target.value }
+                            setNewReservation({ ...newReservation, extraBeds: list })
+                          }}
+                          className="input-field mt-1"
+                          placeholder="Guest name"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Charge (₹)</label>
+                        <input
+                          type="number"
+                          value={Number(bed.charge) || 0}
+                          onChange={(e) => {
+                            const list = [...(newReservation.extraBeds || [])]
+                            list[idx] = { ...list[idx], charge: Number(e.target.value) || 0 }
+                            setNewReservation({ ...newReservation, extraBeds: list })
+                          }}
+                          className="input-field mt-1"
+                          min="0"
+                          placeholder="0"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">ID Proof</label>
+                        <input
+                          type="text"
+                          value={bed.idProof || ''}
+                          onChange={(e) => {
+                            const list = [...(newReservation.extraBeds || [])]
+                            list[idx] = { ...list[idx], idProof: e.target.value }
+                            setNewReservation({ ...newReservation, extraBeds: list })
+                          }}
+                          className="input-field mt-1"
+                          placeholder="ID number"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">ID Proof Type</label>
+                        <input
+                          type="text"
+                          value={bed.idProofType || ''}
+                          onChange={(e) => {
+                            const list = [...(newReservation.extraBeds || [])]
+                            list[idx] = { ...list[idx], idProofType: e.target.value }
+                            setNewReservation({ ...newReservation, extraBeds: list })
+                          }}
+                          className="input-field mt-1"
+                          placeholder="AADHAR / PASSPORT"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  {(newReservation.extraBeds || []).length > 0 && (
+                    <div className="text-right">
+                      <button
+                        type="button"
+                        className="text-red-600 text-sm"
+                        onClick={() => setNewReservation({
+                          ...newReservation,
+                          extraBeds: (newReservation.extraBeds || []).slice(0, -1)
+                        })}
+                        aria-label="Remove last extra bed"
+                      >
+                        Remove Last Bed
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Address */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Address</label>
+                    <input
+                      type="text"
+                      value={newReservation.address || ''}
+                      onChange={(e) => setNewReservation({ ...newReservation, address: e.target.value })}
+                      className="input-field mt-1"
+                      placeholder="Guest address"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Plan</label>
+                    <select
+                      value={newReservation.plan || 'EP'}
+                      onChange={(e) => setNewReservation({ ...newReservation, plan: e.target.value as any })}
+                      className="input-field mt-1"
+                    >
+                      <option value="EP">EP</option>
+                      <option value="CP">CP</option>
+                      <option value="MAP">MAP</option>
+                      <option value="AP">AP</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    id="complimentary"
+                    type="checkbox"
+                    checked={!!newReservation.complimentary}
+                    onChange={(e) => setNewReservation({ ...newReservation, complimentary: e.target.checked })}
+                  />
+                  <label htmlFor="complimentary" className="text-sm text-gray-700">Complimentary</label>
+                </div>
+
                 <div>
                   <label htmlFor="numberOfGuests" className="block text-sm font-medium text-gray-700">Number of Guests</label>
                   <input
@@ -636,9 +1147,10 @@ const Reservations = () => {
                       id="totalAmount"
                       type="number"
                       value={newReservation.totalAmount}
-                      onChange={(e) => setNewReservation({...newReservation, totalAmount: parseInt(e.target.value) || 0})}
+                      onChange={(e) => setNewReservation({...newReservation, totalAmount: e.target.value})}
                       className="input-field mt-1"
                       min="0"
+                      placeholder=""
                       aria-label="Total amount"
                     />
                   </div>
@@ -648,9 +1160,10 @@ const Reservations = () => {
                       id="depositAmount"
                       type="number"
                       value={newReservation.depositAmount}
-                      onChange={(e) => setNewReservation({...newReservation, depositAmount: parseInt(e.target.value) || 0})}
+                      onChange={(e) => setNewReservation({...newReservation, depositAmount: e.target.value})}
                       className="input-field mt-1"
                       min="0"
+                      placeholder=""
                       aria-label="Deposit amount"
                     />
                   </div>

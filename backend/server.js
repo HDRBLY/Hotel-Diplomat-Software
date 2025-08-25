@@ -1566,6 +1566,153 @@ app.post('/api/reservations', (req, res) => {
   res.json({ success: true, data: newReservation });
 });
 
+// Update reservation (e.g., status)
+app.patch('/api/reservations/:id', (req, res) => {
+  const { id } = req.params;
+  const update = req.body || {};
+  const reservations = readData('reservations.json');
+  const rooms = readData('rooms.json');
+  const guests = readData('guests.json');
+
+  const index = reservations.findIndex(r => r.id === id);
+  if (index === -1) {
+    return res.status(404).json({ success: false, message: 'Reservation not found' });
+  }
+
+  const current = reservations[index];
+  const updatedReservation = {
+    ...current,
+    ...update,
+    // Normalize status to uppercase in storage
+    status: update.status ? String(update.status).toUpperCase() : current.status,
+    updatedAt: new Date().toISOString()
+  };
+
+  reservations[index] = updatedReservation;
+  writeData('reservations.json', reservations);
+
+  // Side effects:
+  // 1) On CONFIRMED -> mark room as RESERVED with reservation details
+  if (updatedReservation.status === 'CONFIRMED' && updatedReservation.roomNumber) {
+    const roomIndex = rooms.findIndex(room => room.number === updatedReservation.roomNumber);
+    if (roomIndex !== -1) {
+      rooms[roomIndex].status = 'RESERVED';
+      rooms[roomIndex].currentGuest = updatedReservation.guestName || 'Reserved';
+      rooms[roomIndex].checkInDate = updatedReservation.checkInDate || null;
+      rooms[roomIndex].checkOutDate = updatedReservation.checkOutDate || null;
+      rooms[roomIndex].category = (updatedReservation.category || rooms[roomIndex].category || 'COUPLE').toUpperCase();
+      writeData('rooms.json', rooms);
+
+      const updatedRoom = {
+        ...rooms[roomIndex],
+        type: rooms[roomIndex].type.toLowerCase(),
+        status: rooms[roomIndex].status.toLowerCase(),
+        category: rooms[roomIndex].category.toLowerCase(),
+        amenities: rooms[roomIndex].amenities.map(amenity => amenity.toLowerCase())
+      };
+      broadcastUpdate('room_updated', updatedRoom);
+    }
+  }
+
+  // 2) On CHECKED-IN -> create guest and mark room OCCUPIED
+  if (updatedReservation.status === 'CHECKED-IN' && updatedReservation.roomNumber) {
+    const extraBedsSum = (updatedReservation.extraBeds || []).reduce((sum, bed) => sum + (Number(bed.charge) || 0), 0);
+    const computedTotal = Math.max(0, Math.round((Number(updatedReservation.totalAmount) || 0) + extraBedsSum));
+    const newGuest = {
+      id: Date.now().toString(),
+      name: updatedReservation.guestName,
+      email: updatedReservation.email || '',
+      phone: updatedReservation.phone,
+      roomNumber: updatedReservation.roomNumber,
+      checkInDate: updatedReservation.checkInDate || new Date().toISOString().split('T')[0],
+      checkOutDate: updatedReservation.checkOutDate || '',
+      status: 'checked-in',
+      totalAmount: computedTotal,
+      paidAmount: updatedReservation.depositAmount || 0,
+      address: updatedReservation.address || '',
+      idProof: updatedReservation.idProof || '',
+      idProofType: updatedReservation.idProofType || 'AADHAR',
+      category: (updatedReservation.category || 'couple'),
+      plan: updatedReservation.plan || 'EP',
+      complimentary: !!updatedReservation.complimentary,
+      secondaryGuest: updatedReservation.secondaryGuest,
+      extraBeds: updatedReservation.extraBeds,
+      createdAt: new Date().toISOString()
+    };
+    guests.push(newGuest);
+    writeData('guests.json', guests);
+
+    const roomIndex = rooms.findIndex(room => room.number === updatedReservation.roomNumber);
+    if (roomIndex !== -1) {
+      rooms[roomIndex].status = 'OCCUPIED';
+      rooms[roomIndex].currentGuest = newGuest.name;
+      rooms[roomIndex].checkInDate = newGuest.checkInDate;
+      rooms[roomIndex].checkOutDate = newGuest.checkOutDate;
+      rooms[roomIndex].category = (newGuest.category || 'couple').toUpperCase();
+      writeData('rooms.json', rooms);
+
+      const updatedRoom = {
+        ...rooms[roomIndex],
+        type: rooms[roomIndex].type.toLowerCase(),
+        status: rooms[roomIndex].status.toLowerCase(),
+        category: rooms[roomIndex].category.toLowerCase(),
+        amenities: rooms[roomIndex].amenities.map(amenity => amenity.toLowerCase())
+      };
+      broadcastUpdate('room_updated', updatedRoom);
+    }
+
+    // Activity
+    const activities = readData('activities.json');
+    activities.unshift({
+      id: Date.now().toString(),
+      type: 'guest_checked_in',
+      guestName: newGuest.name,
+      roomNumber: newGuest.roomNumber,
+      time: 'Just now',
+      status: 'completed'
+    });
+    writeData('activities.json', activities);
+    broadcastUpdate('guest_checked_in', newGuest);
+    broadcastUpdate('activity_updated', activities[0]);
+  }
+
+  // Broadcast
+  broadcastUpdate('reservation_updated', updatedReservation);
+
+  res.json({ success: true, data: updatedReservation });
+});
+
+// Delete reservation
+app.delete('/api/reservations/:id', (req, res) => {
+  const { id } = req.params;
+  const reservations = readData('reservations.json');
+  const index = reservations.findIndex(r => r.id === id);
+  if (index === -1) {
+    return res.status(404).json({ success: false, message: 'Reservation not found' });
+  }
+
+  const [deleted] = reservations.splice(index, 1);
+  writeData('reservations.json', reservations);
+
+  // Activity log
+  const activities = readData('activities.json');
+  activities.unshift({
+    id: Date.now().toString(),
+    type: 'reservation_deleted',
+    guestName: deleted.guestName || 'Unknown',
+    roomNumber: deleted.roomNumber || 'N/A',
+    time: 'Just now',
+    status: 'deleted'
+  });
+  writeData('activities.json', activities);
+
+  // Broadcast
+  broadcastUpdate('reservation_deleted', { id });
+  broadcastUpdate('activity_updated', activities[0]);
+
+  res.json({ success: true, message: 'Reservation deleted successfully' });
+});
+
 // Activities API
 app.get('/api/activities', (req, res) => {
   const activities = readData('activities.json');
