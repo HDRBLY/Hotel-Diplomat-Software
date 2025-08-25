@@ -3,7 +3,7 @@
     "id": "1",
     "number": "101",
     "type": "STANDARD",
-    "status": "CLEANING",
+    "status": "AVAILABLE",
     "floor": 1,
     "price": 1500,
     "amenities": [
@@ -11,14 +11,12 @@
       "TV",
       "WiFi"
     ],
-    "category": "CORPORATE",
+    "category": "COUPLE",
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.646Z",
-    "createdAt": "2025-08-09T11:49:02.646Z",
-    "updatedAt": "2025-08-24T18:44:29.615Z",
-    "notes": "Guest checked out on 25/8/2025. Room needs cleaning."
+    "lastCleaned": "2025-08-25T11:30:19.583Z",
+    "createdAt": "2025-08-25T11:30:19.583Z"
   },
   {
     "id": "2",
@@ -32,18 +30,19 @@
       "TV",
       "WiFi"
     ],
-    "category": "COUPLE",
+    "category": "CORPORATE",
     "currentGuest": "aman",
     "checkInDate": "2025-08-25",
-    "checkOutDate": "2025-08-25",
-    "lastCleaned": "2025-08-09T11:49:02.646Z",
-    "createdAt": "2025-08-09T11:49:02.646Z"
+    "checkOutDate": "2025-08-26",
+    "lastCleaned": "2025-08-25T11:30:19.583Z",
+    "createdAt": "2025-08-25T11:30:19.583Z",
+    "updatedAt": "2025-08-25T11:32:48.786Z"
   },
   {
     "id": "3",
     "number": "103",
     "type": "STANDARD",
-    "status": "OCCUPIED",
+    "status": "AVAILABLE",
     "floor": 1,
     "price": 1500,
     "amenities": [
@@ -51,12 +50,12 @@
       "TV",
       "WiFi"
     ],
-    "category": "SOLO",
-    "currentGuest": "aman",
-    "checkInDate": "2025-08-25",
-    "checkOutDate": "2025-08-25",
-    "lastCleaned": "2025-08-09T11:49:02.646Z",
-    "createdAt": "2025-08-09T11:49:02.646Z"
+    "category": "CORPORATE",
+    "currentGuest": null,
+    "checkInDate": null,
+    "checkOutDate": null,
+    "lastCleaned": "2025-08-25T11:30:19.583Z",
+    "createdAt": "2025-08-25T11:30:19.583Z"
   },
   {
     "id": "4",
@@ -74,8 +73,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.646Z",
-    "createdAt": "2025-08-09T11:49:02.646Z"
+    "lastCleaned": "2025-08-25T11:30:19.583Z",
+    "createdAt": "2025-08-25T11:30:19.583Z"
   },
   {
     "id": "5",
@@ -95,8 +94,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.646Z",
-    "createdAt": "2025-08-09T11:49:02.646Z"
+    "lastCleaned": "2025-08-25T11:30:19.583Z",
+    "createdAt": "2025-08-25T11:30:19.583Z"
   },
   {
     "id": "6",
@@ -117,8 +116,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.646Z",
-    "createdAt": "2025-08-09T11:49:02.646Z"
+    "lastCleaned": "2025-08-25T11:30:19.583Z",
+    "createdAt": "2025-08-25T11:30:19.583Z"
   },
   {
     "id": "7",
@@ -138,8 +137,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.646Z",
-    "createdAt": "2025-08-09T11:49:02.646Z"
+    "lastCleaned": "2025-08-25T11:30:19.583Z",
+    "createdAt": "2025-08-25T11:30:19.583Z"
   },
   {
     "id": "8",
@@ -159,8 +158,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.646Z",
-    "createdAt": "2025-08-09T11:49:02.646Z"
+    "lastCleaned": "2025-08-25T11:30:19.583Z",
+    "createdAt": "2025-08-25T11:30:19.583Z"
   },
   {
     "id": "9",
@@ -180,8 +179,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.646Z",
-    "createdAt": "2025-08-09T11:49:02.646Z"
+    "lastCleaned": "2025-08-25T11:30:19.583Z",
+    "createdAt": "2025-08-25T11:30:19.583Z"
   },
   {
     "id": "10",
@@ -201,14 +200,14 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.646Z",
-    "createdAt": "2025-08-09T11:49:02.646Z"
+    "lastCleaned": "2025-08-25T11:30:19.583Z",
+    "createdAt": "2025-08-25T11:30:19.583Z"
   },
   {
     "id": "11",
     "number": "210",
     "type": "DELUXE",
-    "status": "CLEANING",
+    "status": "AVAILABLE",
     "floor": 2,
     "price": 2500,
     "amenities": [
@@ -218,14 +217,12 @@
       "Coffee",
       "Balcony"
     ],
-    "category": "COUPLE",
+    "category": "SOLO",
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.646Z",
-    "createdAt": "2025-08-09T11:49:02.646Z",
-    "updatedAt": "2025-08-11T13:04:12.816Z",
-    "notes": "Guest checked out on 14/8/2025. Room needs cleaning."
+    "lastCleaned": "2025-08-25T11:30:19.583Z",
+    "createdAt": "2025-08-25T11:30:19.583Z"
   },
   {
     "id": "12",
@@ -245,8 +242,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.646Z",
-    "createdAt": "2025-08-09T11:49:02.646Z"
+    "lastCleaned": "2025-08-25T11:30:19.583Z",
+    "createdAt": "2025-08-25T11:30:19.583Z"
   },
   {
     "id": "13",
@@ -266,14 +263,14 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.646Z",
-    "createdAt": "2025-08-09T11:49:02.646Z"
+    "lastCleaned": "2025-08-25T11:30:19.583Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "14",
     "number": "216",
     "type": "SUITE",
-    "status": "OCCUPIED",
+    "status": "AVAILABLE",
     "floor": 2,
     "price": 4000,
     "amenities": [
@@ -284,13 +281,12 @@
       "Balcony",
       "Jacuzzi"
     ],
-    "category": "COUPLE",
-    "currentGuest": "aman",
-    "checkInDate": "2025-08-14",
-    "checkOutDate": "2025-08-14",
-    "lastCleaned": "2025-08-09T11:49:02.646Z",
-    "createdAt": "2025-08-09T11:49:02.646Z",
-    "updatedAt": "2025-08-14T11:07:53.475Z"
+    "category": "SOLO",
+    "currentGuest": null,
+    "checkInDate": null,
+    "checkOutDate": null,
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "15",
@@ -311,8 +307,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.646Z",
-    "createdAt": "2025-08-09T11:49:02.646Z"
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "16",
@@ -332,8 +328,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.646Z",
-    "createdAt": "2025-08-09T11:49:02.646Z"
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "17",
@@ -353,14 +349,14 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.646Z",
-    "createdAt": "2025-08-09T11:49:02.646Z"
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "18",
     "number": "221",
     "type": "DELUXE",
-    "status": "RESERVED",
+    "status": "AVAILABLE",
     "floor": 2,
     "price": 2500,
     "amenities": [
@@ -370,12 +366,12 @@
       "Coffee",
       "Balcony"
     ],
-    "category": "COUPLE",
-    "currentGuest": "wafr",
-    "checkInDate": "2025-08-25",
-    "checkOutDate": "2025-08-25",
-    "lastCleaned": "2025-08-09T11:49:02.646Z",
-    "createdAt": "2025-08-09T11:49:02.646Z"
+    "category": "CORPORATE",
+    "currentGuest": null,
+    "checkInDate": null,
+    "checkOutDate": null,
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "19",
@@ -395,14 +391,14 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.646Z",
-    "createdAt": "2025-08-09T11:49:02.646Z"
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "20",
     "number": "223",
     "type": "DELUXE",
-    "status": "OCCUPIED",
+    "status": "AVAILABLE",
     "floor": 2,
     "price": 2500,
     "amenities": [
@@ -413,11 +409,11 @@
       "Balcony"
     ],
     "category": "SOLO",
-    "currentGuest": "test",
-    "checkInDate": "2025-08-25",
-    "checkOutDate": "2025-08-25",
-    "lastCleaned": "2025-08-09T11:49:02.646Z",
-    "createdAt": "2025-08-09T11:49:02.646Z"
+    "currentGuest": null,
+    "checkInDate": null,
+    "checkOutDate": null,
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "21",
@@ -437,8 +433,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.646Z",
-    "createdAt": "2025-08-09T11:49:02.646Z"
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "22",
@@ -458,8 +454,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.646Z",
-    "createdAt": "2025-08-09T11:49:02.646Z"
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "23",
@@ -479,8 +475,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.646Z",
-    "createdAt": "2025-08-09T11:49:02.646Z"
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "24",
@@ -498,8 +494,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.646Z",
-    "createdAt": "2025-08-09T11:49:02.646Z"
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "25",
@@ -517,8 +513,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.647Z",
-    "createdAt": "2025-08-09T11:49:02.647Z"
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "26",
@@ -536,8 +532,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.647Z",
-    "createdAt": "2025-08-09T11:49:02.647Z"
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "27",
@@ -555,8 +551,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.647Z",
-    "createdAt": "2025-08-09T11:49:02.647Z"
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "28",
@@ -574,8 +570,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.647Z",
-    "createdAt": "2025-08-09T11:49:02.647Z"
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "29",
@@ -593,8 +589,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.647Z",
-    "createdAt": "2025-08-09T11:49:02.647Z"
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "30",
@@ -612,8 +608,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.647Z",
-    "createdAt": "2025-08-09T11:49:02.647Z"
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "31",
@@ -631,8 +627,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.647Z",
-    "createdAt": "2025-08-09T11:49:02.647Z"
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "32",
@@ -650,8 +646,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.647Z",
-    "createdAt": "2025-08-09T11:49:02.647Z"
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "33",
@@ -669,8 +665,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.647Z",
-    "createdAt": "2025-08-09T11:49:02.647Z"
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "34",
@@ -688,8 +684,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.647Z",
-    "createdAt": "2025-08-09T11:49:02.647Z"
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "35",
@@ -711,8 +707,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.647Z",
-    "createdAt": "2025-08-09T11:49:02.647Z"
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "36",
@@ -734,8 +730,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.647Z",
-    "createdAt": "2025-08-09T11:49:02.647Z"
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "37",
@@ -757,8 +753,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.647Z",
-    "createdAt": "2025-08-09T11:49:02.647Z"
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "38",
@@ -780,8 +776,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.647Z",
-    "createdAt": "2025-08-09T11:49:02.647Z"
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "39",
@@ -803,8 +799,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.647Z",
-    "createdAt": "2025-08-09T11:49:02.647Z"
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "40",
@@ -826,8 +822,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.647Z",
-    "createdAt": "2025-08-09T11:49:02.647Z"
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "41",
@@ -849,8 +845,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.647Z",
-    "createdAt": "2025-08-09T11:49:02.647Z"
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "42",
@@ -872,8 +868,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.647Z",
-    "createdAt": "2025-08-09T11:49:02.647Z"
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "43",
@@ -895,8 +891,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.647Z",
-    "createdAt": "2025-08-09T11:49:02.647Z"
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "44",
@@ -918,8 +914,8 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.647Z",
-    "createdAt": "2025-08-09T11:49:02.647Z"
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   },
   {
     "id": "45",
@@ -941,7 +937,7 @@
     "currentGuest": null,
     "checkInDate": null,
     "checkOutDate": null,
-    "lastCleaned": "2025-08-09T11:49:02.647Z",
-    "createdAt": "2025-08-09T11:49:02.647Z"
+    "lastCleaned": "2025-08-25T11:30:19.584Z",
+    "createdAt": "2025-08-25T11:30:19.584Z"
   }
 ]

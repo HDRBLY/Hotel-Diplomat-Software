@@ -89,7 +89,7 @@ const writeData = (filename, data) => {
 };
 
 // Initialize default data if empty
-const initializeDefaultData = () => {
+const initializeDefaultData = (forceSeedRooms = false) => {
   // Initialize users if empty
   let users = readData('users.json');
   if (users.length === 0) {
@@ -144,9 +144,9 @@ const initializeDefaultData = () => {
     writeData('users.json', users);
   }
 
-  // Initialize rooms if empty (toggle via SEED_ROOMS, default true)
+  // Initialize rooms if empty (toggle via SEED_ROOMS, default true). If forceSeedRooms is true, seed regardless of env.
   let rooms = readData('rooms.json');
-  const shouldSeedRooms = (process.env.SEED_ROOMS || 'true').toLowerCase() === 'true'
+  const shouldSeedRooms = forceSeedRooms || (process.env.SEED_ROOMS || 'true').toLowerCase() === 'true'
   if (rooms.length === 0 && shouldSeedRooms) {
     rooms = [
       {
@@ -2343,8 +2343,8 @@ app.post('/api/reports/clear-data', (req, res) => {
       // Continue even if bill counter reset fails; main clear operation should not be blocked
     }
     
-    // Reinitialize with default data
-    initializeDefaultData();
+    // Reinitialize with default data, forcing room seeding so rooms always reappear
+    initializeDefaultData(true);
     
     // Broadcast data cleared event
     broadcastUpdate('data_cleared', { message: 'All data has been cleared' });
