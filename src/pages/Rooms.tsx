@@ -2653,7 +2653,39 @@ const Rooms = () => {
                             const sgst = roomRentSgst + extraBedSgst + foodingSgst + laundrySgst + halfDaySgst
                             const totalAmount = (Number(roomRent) || 0) + (Number(extraBedCharges) || 0) + addl + laundry + halfDay
                             const totalAmountDisplay = Math.round(totalAmount)
-                            const numberToWords = (num: number): string => { const o=['','ONE','TWO','THREE','FOUR','FIVE','SIX','SEVEN','EIGHT','NINE']; const t=['','', 'TWENTY','THIRTY','FORTY','FIFTY','SIXTY','SEVENTY','EIGHTY','NINETY']; const e=['TEN','ELEVEN','TWELVE','THIRTEEN','FOURTEEN','FIFTEEN','SIXTEEN','SEVENTEEN','EIGHTEEN','NINETEEN']; if(num===0) return 'ZERO'; if(num<10) return o[num]; if(num<20) return e[num-10]; if(num<100){ if(num%10===0) return t[Math.floor(num/10)]; return t[Math.floor(num/10)]+' '+o[num%10]; } if(num<1000){ if(num%100===0) return o[Math.floor(num/100)]+' HUNDRED'; return o[Math.floor(num/100)]+' HUNDRED AND '+numberToWords(num%100);} if(num<100000){ if(num%1000===0) return numberToWords(Math.floor(num/1000))+' THOUSAND'; return numberToWords(Math.floor(num/1000))+' THOUSAND '+numberToWords(num%1000);} return 'RUPEES'; }
+                            const numberToWords = (num: number): string => {
+                              const ones = ['', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE']
+                              const tens = ['', '', 'TWENTY', 'THIRTY', 'FORTY', 'FIFTY', 'SIXTY', 'SEVENTY', 'EIGHTY', 'NINETY']
+                              const teens = ['TEN', 'ELEVEN', 'TWELVE', 'THIRTEEN', 'FOURTEEN', 'FIFTEEN', 'SIXTEEN', 'SEVENTEEN', 'EIGHTEEN', 'NINETEEN']
+                              if (num === 0) return 'ZERO'
+                              const toWordsBelowHundred = (n: number): string => {
+                                if (n < 10) return ones[n]
+                                if (n < 20) return teens[n - 10]
+                                if (n % 10 === 0) return tens[Math.floor(n / 10)]
+                                return `${tens[Math.floor(n / 10)]} ${ones[n % 10]}`
+                              }
+                              const toWordsBelowThousand = (n: number): string => {
+                                if (n < 100) return toWordsBelowHundred(n)
+                                if (n % 100 === 0) return `${ones[Math.floor(n / 100)]} HUNDRED`
+                                return `${ones[Math.floor(n / 100)]} HUNDRED AND ${toWordsBelowHundred(n % 100)}`
+                              }
+                              if (num < 1000) return toWordsBelowThousand(num)
+                              if (num < 100000) {
+                                const thousands = Math.floor(num / 1000)
+                                const remainder = num % 1000
+                                return `${toWordsBelowThousand(thousands)} THOUSAND${remainder ? ' ' + toWordsBelowThousand(remainder) : ''}`
+                              }
+                              if (num < 10000000) {
+                                const lakhs = Math.floor(num / 100000)
+                                const remainder = num % 100000
+                                const lakhsPart = lakhs < 100 ? toWordsBelowHundred(lakhs) : toWordsBelowThousand(lakhs)
+                                return `${lakhsPart} LAKH${remainder ? ' ' + numberToWords(remainder) : ''}`
+                              }
+                              const crores = Math.floor(num / 10000000)
+                              const remainder = num % 10000000
+                              const croresPart = crores < 100 ? toWordsBelowHundred(crores) : toWordsBelowThousand(crores)
+                              return `${croresPart} CRORE${remainder ? ' ' + numberToWords(remainder) : ''}`
+                            }
                             const amountInWords = numberToWords(totalAmountDisplay || 0)
                             const arrivalDateParts = guest.checkInDate.split('-')
                             const formattedArrivalDate = `${arrivalDateParts[2]}-${arrivalDateParts[1]}-${arrivalDateParts[0]}`

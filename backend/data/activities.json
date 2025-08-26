@@ -1,9 +1,34 @@
 [
   {
-    "id": "1756121568760",
+    "id": "1756202866284",
+    "type": "guest_checked_out",
+    "guestName": "faizan warsi",
+    "roomNumber": "208",
+    "time": "Just now",
+    "status": "completed",
+    "additionalPayment": 0
+  },
+  {
+    "id": "1756202845597",
     "type": "guest_checked_in",
-    "guestName": "aman",
-    "roomNumber": "102",
+    "guestName": "faizan warsi",
+    "roomNumber": "208",
+    "time": "Just now",
+    "status": "completed"
+  },
+  {
+    "id": "1756202732685",
+    "type": "guest_checked_in",
+    "guestName": "Gazi",
+    "roomNumber": "210",
+    "time": "Just now",
+    "status": "completed"
+  },
+  {
+    "id": "1756202688110",
+    "type": "guest_checked_in",
+    "guestName": "RAM BABU",
+    "roomNumber": "206",
     "time": "Just now",
     "status": "completed"
   }

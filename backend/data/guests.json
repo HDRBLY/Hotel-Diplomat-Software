@@ -1,33 +1,73 @@
 [
   {
-    "id": "1756121568758",
-    "name": "aman",
+    "id": "1756202688107",
+    "name": "RAM BABU",
     "email": "",
-    "phone": "5468746846",
-    "roomNumber": "102",
-    "checkInDate": "2025-08-25",
-    "checkOutDate": "2025-08-26",
+    "phone": "516576656",
+    "roomNumber": "206",
+    "checkInDate": "2025-08-26",
+    "checkOutDate": "2025-08-27",
     "status": "checked-in",
-    "totalAmount": 2400,
+    "totalAmount": 2000,
     "paidAmount": 2000,
     "address": "",
-    "idProof": "AADHAR-654687468",
-    "category": "corporate",
-    "plan": "MAP",
+    "idProof": "AADHAR-98746846846",
+    "category": "couple",
+    "plan": "EP",
     "complimentary": false,
     "secondaryGuest": {
-      "name": "akash",
+      "name": "Rekha",
       "phone": "",
       "idProof": ""
     },
-    "extraBeds": [
-      {
-        "name": "deepak",
-        "phone": "",
-        "idProof": "",
-        "charge": 400
-      }
-    ],
-    "createdAt": "2025-08-25T11:32:48.758Z"
+    "createdAt": "2025-08-26T10:04:48.107Z"
+  },
+  {
+    "id": "1756202732683",
+    "name": "Gazi",
+    "email": "",
+    "phone": "697864948",
+    "roomNumber": "210",
+    "checkInDate": "2025-08-26",
+    "checkOutDate": "2025-08-27",
+    "status": "checked-in",
+    "totalAmount": 1800,
+    "paidAmount": 1000,
+    "address": "",
+    "idProof": "AADHAR-9874986164",
+    "category": "couple",
+    "plan": "EP",
+    "complimentary": false,
+    "secondaryGuest": {
+      "name": "Hina Bee",
+      "phone": "",
+      "idProof": ""
+    },
+    "createdAt": "2025-08-26T10:05:32.683Z"
+  },
+  {
+    "id": "1756202845594",
+    "name": "faizan warsi",
+    "email": "",
+    "phone": "9879461651",
+    "roomNumber": "208",
+    "checkInDate": "2025-08-26",
+    "checkOutDate": "2025-08-26",
+    "status": "checked-out",
+    "totalAmount": 2000,
+    "paidAmount": 2000,
+    "address": "",
+    "idProof": "AADHAR-987654651",
+    "category": "couple",
+    "plan": "EP",
+    "complimentary": false,
+    "secondaryGuest": {
+      "name": "arfa",
+      "phone": "",
+      "idProof": ""
+    },
+    "createdAt": "2025-08-26T10:07:25.594Z",
+    "updatedAt": "2025-08-26T10:07:46.279Z",
+    "billNumber": "0002"
   }
 ]

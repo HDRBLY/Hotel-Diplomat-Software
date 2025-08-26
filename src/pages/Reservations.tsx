@@ -151,7 +151,7 @@ const Reservations = () => {
           }))
           setReservations(normalized)
         } else {
-          setReservations([])
+    setReservations([])
         }
       } catch (e) {
         setReservations([])
@@ -268,18 +268,18 @@ const Reservations = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          guestName: newReservation.guestName,
-          email: newReservation.email,
-          phone: newReservation.phone,
-          roomNumber: newReservation.roomNumber,
-          roomType: newReservation.roomType,
+      guestName: newReservation.guestName,
+      email: newReservation.email,
+      phone: newReservation.phone,
+      roomNumber: newReservation.roomNumber,
+      roomType: newReservation.roomType,
           category: newReservation.category || 'couple',
-          checkInDate: newReservation.checkInDate,
-          checkOutDate: newReservation.checkOutDate,
-          numberOfGuests: newReservation.numberOfGuests,
+      checkInDate: newReservation.checkInDate,
+      checkOutDate: newReservation.checkOutDate,
+      numberOfGuests: newReservation.numberOfGuests,
           totalAmount: Number(newReservation.totalAmount) || 0,
           depositAmount: Number(newReservation.depositAmount) || 0,
-          specialRequests: newReservation.specialRequests,
+      specialRequests: newReservation.specialRequests,
           paymentMethod: newReservation.paymentMethod,
           secondaryGuest: newReservation.secondaryGuest,
           extraBeds: (newReservation.extraBeds || []).map(b => ({
@@ -525,14 +525,14 @@ const Reservations = () => {
                         View
                       </button>
                       {reservation.status !== 'checked-in' && (
-                        <button 
+                      <button 
                           onClick={() => setEditReservation(reservation)}
-                          className="text-gray-400 hover:text-gray-600"
-                          title="Edit reservation"
-                          aria-label="Edit reservation"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </button>
+                        className="text-gray-400 hover:text-gray-600"
+                        title="Edit reservation"
+                        aria-label="Edit reservation"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
                       )}
                       <button 
                         onClick={() => handleDeleteReservation(reservation.id)}
@@ -569,21 +569,21 @@ const Reservations = () => {
               </div>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
+                <div>
                     <label className="block text-sm font-medium text-gray-700">Primary Guest</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedReservation.guestName}</p>
+                  <p className="mt-1 text-sm text-gray-900">{selectedReservation.guestName}</p>
                     <p className="text-xs text-gray-500">{selectedReservation.phone}</p>
-                  </div>
-                  <div>
+                </div>
+                <div>
                     <label className="block text-sm font-medium text-gray-700">Guest Type</label>
                     <p className="mt-1 text-sm text-gray-900">{(selectedReservation.category || '').toString()}</p>
-                  </div>
+                </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
+                <div>
                     <label className="block text-sm font-medium text-gray-700">Address</label>
                     <p className="mt-1 text-sm text-gray-900">{selectedReservation.address || '-'}</p>
-                  </div>
+                </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">ID Proof</label>
                     <p className="mt-1 text-sm text-gray-900">{`${selectedReservation.idProofType || ''}${selectedReservation.idProof ? '-' + selectedReservation.idProof : ''}` || '-'}</p>
@@ -640,7 +640,7 @@ const Reservations = () => {
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
-                  <div>
+                <div>
                     <label className="block text-sm font-medium text-gray-700">Total</label>
                     <p className="mt-1 text-sm text-gray-900">₹{(Number(selectedReservation.totalAmount) || 0) + computeExtraBedsTotal(selectedReservation.extraBeds)}</p>
                   </div>
@@ -714,15 +714,15 @@ const Reservations = () => {
                         <div>
                           <label className="block text-xs font-medium text-gray-500">Name</label>
                           <input type="text" value={bed.name || ''} readOnly className="input-field mt-1" />
-                        </div>
-                        <div>
+                </div>
+                  <div>
                           <label className="block text-xs font-medium text-gray-500">ID</label>
                           <input type="text" value={bed.idProof || ''} readOnly className="input-field mt-1" />
-                        </div>
-                        <div>
+                  </div>
+                <div>
                           <label className="block text-xs font-medium text-gray-500">ID Type</label>
                           <input type="text" value={bed.idProofType || ''} readOnly className="input-field mt-1" />
-                        </div>
+                </div>
                         <div>
                           <label className="block text-xs font-medium text-gray-500">Charge (₹)</label>
                           <input
@@ -736,11 +736,11 @@ const Reservations = () => {
                             className="input-field mt-1"
                             min={0}
                           />
-                        </div>
-                      </div>
+              </div>
+            </div>
                     ))}
-                  </div>
-                </div>
+          </div>
+        </div>
 
                 <div className="flex space-x-2 pt-2">
                   <button onClick={handleUpdateReservation} className="btn-primary flex-1">Save</button>
