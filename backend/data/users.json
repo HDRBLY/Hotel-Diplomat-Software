@@ -13,34 +13,34 @@
   {
     "id": "2",
     "username": "manager",
-    "password": "$2a$10$YupNOrDM3aPfO7ldH5aIdOQZeTiSEwvtNbnqe7uLSSnsmnRFdhx7e",
+    "password": "$2a$10$9TFlYB/O0OrSOQxWL9..uuj0iUkHl/5a6/dpVuQ4IAbLdfRqMalia",
     "name": "Hotel Manager",
     "role": "manager",
     "email": "manager@hoteldiplomat.com",
     "isActive": true,
     "createdAt": "2025-08-02T07:04:54.237Z",
-    "lastLogin": "2025-08-02T07:20:58.181Z"
+    "lastLogin": "2025-08-26T11:35:16.391Z"
   },
   {
     "id": "3",
     "username": "staff",
-    "password": "$2a$10$i11d1nys3es3U9oINKHFPuESCBImFcT4nuUpVy0zMhyJfcFcttGky",
+    "password": "$2a$10$EuPbaSFJkNXEWI2/BWGRdumtCoCy41vt22vEw6VIiXc1LMlZz3pRS",
     "name": "Front Desk Staff",
     "role": "staff",
     "email": "staff@hoteldiplomat.com",
     "isActive": true,
     "createdAt": "2025-08-02T07:04:54.237Z",
-    "lastLogin": "2025-08-02T07:21:21.450Z"
+    "lastLogin": "2025-08-26T11:34:59.702Z"
   },
   {
     "id": "4",
     "username": "accounts",
-    "password": "$2a$10$bNHRanR3G1D/Y343YWTi8.KtpRY97jbvCVuXdr48KY.A7/17h77HG",
+    "password": "$2a$10$wZwKJwEJ8ubK7ez7yrXeJeDKcY9aJUqIgh1NzsbgktJVltcfwa2zK",
     "name": "Accounts User",
     "role": "accounts",
     "email": "accounts@hoteldiplomat.com",
     "isActive": true,
     "createdAt": "2025-08-02T07:04:54.237Z",
-    "lastLogin": "2025-08-02T07:21:11.602Z"
+    "lastLogin": "2025-08-26T11:34:47.512Z"
   }
 ]
