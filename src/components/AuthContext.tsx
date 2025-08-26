@@ -107,8 +107,8 @@ const permissions = {
     // Only room viewing permission
   ],
   accounts: [
-    'reports:view'
-    // Only reports viewing permission
+    'reports:view',
+    'rooms:view'
   ]
 }
 

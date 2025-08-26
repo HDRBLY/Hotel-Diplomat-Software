@@ -186,7 +186,7 @@
     "id": "10",
     "number": "208",
     "type": "DELUXE",
-    "status": "CLEANING",
+    "status": "cleaning",
     "floor": 2,
     "price": 2500,
     "amenities": [
@@ -202,7 +202,7 @@
     "checkOutDate": null,
     "lastCleaned": "2025-08-26T10:02:06.569Z",
     "createdAt": "2025-08-26T10:02:06.569Z",
-    "updatedAt": "2025-08-26T10:07:25.625Z",
+    "updatedAt": "2025-08-26T11:32:59.935Z",
     "notes": "Guest checked out on 26/8/2025. Room needs cleaning."
   },
   {

@@ -11,6 +11,7 @@ import {
   Trash2,
   FileText
 } from 'lucide-react'
+import { useAuth } from '../components/AuthContext'
 import { 
   BarChart, 
   Bar, 
@@ -38,6 +39,7 @@ interface ReportData {
 }
 
 const Reports = () => {
+  const { user } = useAuth()
   const { notification, showNotification, hideNotification } = useNotification()
   const [reportData, setReportData] = useState<ReportData>({
     occupancyRate: 0,
@@ -1066,14 +1068,16 @@ const Reports = () => {
               <Download className="h-4 w-4 mr-2" />
               Export PDF
             </button>
-            <button 
-              onClick={handleClearData}
-              disabled={isClearing}
-              className="btn-danger flex items-center"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              {isClearing ? 'Clearing...' : 'Clear All Data'}
-            </button>
+            {user?.role === 'admin' ? (
+              <button 
+                onClick={handleClearData}
+                disabled={isClearing}
+                className="btn-danger flex items-center"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                {isClearing ? 'Clearing...' : 'Clear All Data'}
+              </button>
+            ) : null}
           </div>
         </div>
       </div>
