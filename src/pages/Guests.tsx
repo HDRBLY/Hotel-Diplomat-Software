@@ -990,6 +990,7 @@ const Guests = () => {
               <div class="info-row editable" contenteditable="false">Plan: ${guestForBill.plan || 'EP'}</div>
               <div class="info-row editable" contenteditable="false">Check In Time: ${formattedCheckInTime}</div>
               <div class="info-row editable" contenteditable="false">Check Out Time: ${billTime}</div>
+              <div class="info-row editable" contenteditable="false">Payment Method: ${checkoutDetails.paymentMethod === 'CASH' ? 'Cash' : checkoutDetails.paymentMethod === 'CARD' ? 'Card' : checkoutDetails.paymentMethod === 'UPI' ? 'UPI' : 'Bank Transfer'}</div>
               </div>
             </div>
 
@@ -1389,6 +1390,7 @@ const Guests = () => {
               <div class="info-row editable" contenteditable="false">Plan: ${guestForBill.plan || 'EP'}</div>
               <div class="info-row editable" contenteditable="false">Check In Time: ${formattedCheckInTime}</div>
               <div class="info-row editable" contenteditable="false">Check Out Time: ${billTime}</div>
+              <div class="info-row editable" contenteditable="false">Payment Method: ${checkoutDetails.paymentMethod === 'CASH' ? 'Cash' : checkoutDetails.paymentMethod === 'CARD' ? 'Card' : checkoutDetails.paymentMethod === 'UPI' ? 'UPI' : 'Bank Transfer'}</div>
             </div>
           </div>
 
