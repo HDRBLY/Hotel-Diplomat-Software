@@ -1210,12 +1210,12 @@ app.post('/api/rooms/:id/shift', (req, res) => {
   
   const destinationRoom = rooms[destinationRoomIndex];
   
-  // Validate shift
-  if (sourceRoom.status !== 'OCCUPIED') {
+  // Validate shift (normalize status to handle legacy lowercase values in production)
+  if ((sourceRoom.status || '').toUpperCase() !== 'OCCUPIED') {
     return res.status(400).json({ success: false, message: 'Source room is not occupied' });
   }
   
-  if (destinationRoom.status !== 'AVAILABLE') {
+  if ((destinationRoom.status || '').toUpperCase() !== 'AVAILABLE') {
     return res.status(400).json({ success: false, message: 'Destination room is not available' });
   }
   
