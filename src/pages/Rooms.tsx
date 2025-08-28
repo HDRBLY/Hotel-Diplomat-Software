@@ -77,6 +77,7 @@ const Rooms = () => {
     laundryCharges: 0,
     halfDayCharges: 0,
     paymentMethod: 'CASH',
+    payments: [] as { method: string, amount: number }[],
     notes: '',
     guestTotalAmount: 0,
     guestPaidAmount: 0,
@@ -668,6 +669,7 @@ const Rooms = () => {
         laundryCharges: 0,
         halfDayCharges: 0,
         paymentMethod: 'CASH',
+        payments: [{ method: 'CASH', amount: baseAmount }],
         notes: '',
         guestTotalAmount: guest.totalAmount,
         guestPaidAmount: guest.paidAmount,
@@ -950,7 +952,11 @@ const Rooms = () => {
                 <div class="info-row editable" contenteditable="false">Plan: ${guest.plan || 'EP'}</div>
                 <div class="info-row editable" contenteditable="false">Check In Time: ${formattedCheckInTime}</div>
                 <div class="info-row editable" contenteditable="false">Check Out Time: ${billTime}</div>
-                <div class="info-row editable" contenteditable="false">Payment Method: ${checkoutDetails.paymentMethod === 'CASH' ? 'Cash' : checkoutDetails.paymentMethod === 'CARD' ? 'Card' : checkoutDetails.paymentMethod === 'UPI' ? 'UPI' : 'Bank Transfer'}</div>
+                <div class="info-row editable" contenteditable="false">Payment Method: ${
+                  (checkoutDetails.payments && checkoutDetails.payments.length > 0)
+                    ? checkoutDetails.payments.map(p => `${p.method.replace('_',' ')} ₹${(p.amount || 0).toFixed(2)}`).join('<br>Payment Method: ')
+                    : (checkoutDetails.paymentMethod === 'CASH' ? 'Cash' : checkoutDetails.paymentMethod === 'CARD' ? 'Card' : checkoutDetails.paymentMethod === 'UPI' ? 'UPI' : 'Bank Transfer')
+                }</div>
               </div>
             </div>
 
@@ -1234,7 +1240,8 @@ const Rooms = () => {
           status: 'checked-out',
           checkOutDate: checkoutDetails.actualCheckOutDate,
           totalAmount: checkoutDetails.finalAmount,
-          paidAmount: checkoutDetails.finalAmount,
+          paidAmount: (checkoutDetails.payments || []).reduce((s, p) => s + (p.amount || 0), 0),
+          payments: (checkoutDetails.payments || []).map(p => ({ method: p.method, amount: p.amount })),
           notes: checkoutDetails.notes
         })
       })
@@ -1254,6 +1261,7 @@ const Rooms = () => {
         laundryCharges: 0,
         halfDayCharges: 0,
         paymentMethod: 'CASH',
+        payments: [],
         notes: '',
         guestTotalAmount: 0,
         guestPaidAmount: 0,
@@ -2563,17 +2571,62 @@ const Rooms = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Payment Method</label>
-                  <select
-                    value={checkoutDetails.paymentMethod}
-                    onChange={(e) => setCheckoutDetails({...checkoutDetails, paymentMethod: e.target.value})}
-                    className="input-field mt-1"
-                    title="Select payment method"
-                  >
-                    <option value="CASH">Cash</option>
-                    <option value="CARD">Card</option>
-                    <option value="UPI">UPI</option>
-                    <option value="BANK_TRANSFER">Bank Transfer</option>
-                  </select>
+                  <div className="flex items-center space-x-2">
+                    <select
+                      value={checkoutDetails.paymentMethod}
+                      onChange={(e) => setCheckoutDetails({...checkoutDetails, paymentMethod: e.target.value})}
+                      className="input-field mt-1 flex-1"
+                      title="Select payment method"
+                    >
+                      <option value="CASH">Cash</option>
+                      <option value="CARD">Card</option>
+                      <option value="UPI">UPI</option>
+                      <option value="BANK_TRANSFER">Bank Transfer</option>
+                    </select>
+                    <button
+                      type="button"
+                      className="btn-secondary mt-1"
+                      title="Add another payment entry"
+                      onClick={() => {
+                        const remaining = Math.max(0, (checkoutDetails.finalAmount || 0) - (checkoutDetails.payments?.reduce((s, p) => s + (p.amount || 0), 0) || 0))
+                        const amountToAdd = remaining
+                        setCheckoutDetails({
+                          ...checkoutDetails,
+                          payments: [...(checkoutDetails.payments || []), { method: checkoutDetails.paymentMethod, amount: amountToAdd }]
+                        })
+                      }}
+                    >Add Payment</button>
+                  </div>
+                  {checkoutDetails.payments && checkoutDetails.payments.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {checkoutDetails.payments.map((p, idx) => (
+                        <div key={idx} className="flex items-center text-sm justify-between">
+                          <span className="text-gray-700">{p.method}:</span>
+                          <input type="number" className="input-field ml-2 w-28" value={p.amount} min={0}
+                            onChange={(e) => {
+                              const val = e.target.value ? parseInt(e.target.value) : 0
+                              const newPayments = [...(checkoutDetails.payments || [])]
+                              newPayments[idx] = { ...newPayments[idx], amount: val }
+                              setCheckoutDetails({ ...checkoutDetails, payments: newPayments })
+                            }}
+                          />
+                          <button type="button" className="ml-2 text-xs text-red-600"
+                            onClick={() => {
+                              const newPayments = (checkoutDetails.payments || []).filter((_, i) => i !== idx)
+                              setCheckoutDetails({ ...checkoutDetails, payments: newPayments })
+                            }}>Remove</button>
+                        </div>
+                      ))}
+                      <div className="text-xs text-gray-600 flex justify-between border-t pt-1">
+                        <span>Total Paid (entered):</span>
+                        <span>₹{(checkoutDetails.payments || []).reduce((s, p) => s + (p.amount || 0), 0)}</span>
+                      </div>
+                      <div className="text-xs font-medium flex justify-between">
+                        <span>Balance to collect:</span>
+                        <span>₹{Math.max(0, (checkoutDetails.finalAmount || 0) - (checkoutDetails.payments || []).reduce((s, p) => s + (p.amount || 0), 0))}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div>

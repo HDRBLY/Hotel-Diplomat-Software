@@ -1394,6 +1394,22 @@ app.put('/api/guests/:id', (req, res) => {
   // Store old status for comparison
   const oldStatus = guests[guestIndex].status;
   
+  // Normalize and persist split payments if provided
+  let normalizedPayments = Array.isArray(updateData.payments)
+    ? updateData.payments
+        .filter(p => p && typeof p.method === 'string')
+        .map(p => ({ method: String(p.method).toUpperCase(), amount: Number(p.amount) || 0 }))
+    : undefined;
+
+  // If payments were provided, derive paidAmount from them unless explicitly set
+  if (normalizedPayments && normalizedPayments.length > 0) {
+    const paidFromSplits = normalizedPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+    if (typeof updateData.paidAmount !== 'number') {
+      updateData.paidAmount = paidFromSplits;
+    }
+    updateData.payments = normalizedPayments;
+  }
+
   guests[guestIndex] = { ...guests[guestIndex], ...updateData, updatedAt: new Date().toISOString() };
   writeData('guests.json', guests);
 
@@ -1475,7 +1491,8 @@ app.put('/api/guests/:id', (req, res) => {
       roomNumber: guests[guestIndex].roomNumber || 'N/A',
       time: 'Just now',
       status: 'completed',
-      additionalPayment: additionalPayment > 0 ? additionalPayment : 0
+      additionalPayment: additionalPayment > 0 ? additionalPayment : 0,
+      payments: guests[guestIndex].payments || []
     });
     writeData('activities.json', activities);
     writeData('guests.json', guests);
@@ -1950,13 +1967,16 @@ app.get('/api/reports/guests', (req, res) => {
     checkOutDate: guest.checkOutDate || 'N/A',
     status: guest.status === 'checked-in' ? 'Checked-in' : 
             guest.status === 'checked-out' ? 'Checked-out' : 'Reserved',
-    amount: guest.paidAmount || 0,
+    amount: guest.paidAmount || 0, // kept for backward-compat in UI tables
+    paidAmount: guest.paidAmount || 0,
+    totalAmount: guest.totalAmount || guest.paidAmount || 0,
     address: guest.address || '',
     idProof: guest.idProof || '',
     category: guest.category || 'couple',
     plan: guest.plan || 'EP',
     complimentary: guest.complimentary || false,
-    billNumber: guest.billNumber || ''
+    billNumber: guest.billNumber || '',
+    payments: Array.isArray(guest.payments) ? guest.payments : []
   }));
   
   res.json({ success: true, data: guestData });

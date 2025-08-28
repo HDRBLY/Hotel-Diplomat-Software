@@ -138,6 +138,10 @@ const Reports = () => {
       })
 
       // Generate bill HTML
+      const paymentLines = Array.isArray(guest.payments) && guest.payments.length > 0
+        ? guest.payments.map((p: any) => `Payment Method: ${(p.method || '').replace('_',' ')} ₹${Number(p.amount||0).toFixed(2)}`).join('<br>')
+        : ''
+
       const billHTML = `
         <!DOCTYPE html>
         <html>
@@ -248,6 +252,7 @@ const Reports = () => {
               <div class="info-row editable" contenteditable="false">Plan: ${guest.plan || 'EP'}</div>
               <div class="info-row editable" contenteditable="false">Check In Time: 12:00</div>
               <div class="info-row editable" contenteditable="false">Check Out Time: ${billTime}</div>
+              ${paymentLines ? `<div class="info-row">${paymentLines}</div>` : ''}
               </div>
             </div>
 
