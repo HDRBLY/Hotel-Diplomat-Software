@@ -1333,13 +1333,15 @@ const Rooms = () => {
     }
 
     try {
+      // Normalize destination input to avoid whitespace issues in production
+      const payload = { ...shiftDetails, toRoomNumber: (shiftDetails.toRoomNumber || '').trim() }
       // Call the API to shift the room
       const response = await fetch(`${BACKEND_URL}/api/rooms/${shiftFromRoom.id}/shift`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(shiftDetails)
+        body: JSON.stringify(payload)
       })
 
       if (!response.ok) {

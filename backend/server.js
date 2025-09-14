@@ -1249,8 +1249,9 @@ app.post('/api/rooms/:id/shift', (req, res) => {
   
   const sourceRoom = rooms[sourceRoomIndex];
   
-  // Find destination room
-  const destinationRoomIndex = rooms.findIndex(room => room.number === shiftData.toRoomNumber);
+  // Find destination room (normalize input)
+  const toRoomNumber = (shiftData.toRoomNumber || '').toString().trim();
+  const destinationRoomIndex = rooms.findIndex(room => room.number === toRoomNumber);
   if (destinationRoomIndex === -1) {
     return res.status(404).json({ success: false, message: 'Destination room not found' });
   }
