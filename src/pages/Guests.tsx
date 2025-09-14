@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { guestsAPI, roomsAPI, billingAPI } from '../services/api'
 import { io, Socket } from 'socket.io-client'
 import { 
   Plus, 
@@ -175,6 +176,52 @@ const Guests = () => {
     }
   }
 
+  // Format currency as per Indian locale
+  const formatINR = (amount: number): string => {
+    try {
+      return (Number(amount) || 0).toLocaleString('en-IN')
+    } catch {
+      return String(amount || 0)
+    }
+  }
+
+  // Convert number to words using Indian numbering (Lakh/Crore)
+  const numberToIndianWords = (amount: number): string => {
+    const ones = ['', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE', 'TEN', 'ELEVEN', 'TWELVE', 'THIRTEEN', 'FOURTEEN', 'FIFTEEN', 'SIXTEEN', 'SEVENTEEN', 'EIGHTEEN', 'NINETEEN']
+    const tens = ['', '', 'TWENTY', 'THIRTY', 'FORTY', 'FIFTY', 'SIXTY', 'SEVENTY', 'EIGHTY', 'NINETY']
+
+    const toWordsBelowThousand = (num: number): string => {
+      let str = ''
+      if (num >= 100) {
+        str += ones[Math.floor(num / 100)] + ' HUNDRED'
+        num = num % 100
+        if (num > 0) str += ' AND '
+      }
+      if (num >= 20) {
+        str += tens[Math.floor(num / 10)]
+        if (num % 10) str += ' ' + ones[num % 10]
+      } else if (num > 0) {
+        str += ones[num]
+      }
+      return str
+    }
+
+    const n = Math.round(Number(amount) || 0)
+    if (n === 0) return 'ZERO'
+
+    const crore = Math.floor(n / 10000000)
+    const lakh = Math.floor((n % 10000000) / 100000)
+    const thousand = Math.floor((n % 100000) / 1000)
+    const hundredBelow = n % 1000
+
+    let words = ''
+    if (crore) words += toWordsBelowThousand(crore) + ' CRORE '
+    if (lakh) words += toWordsBelowThousand(lakh) + ' LAKH '
+    if (thousand) words += toWordsBelowThousand(thousand) + ' THOUSAND '
+    if (hundredBelow) words += toWordsBelowThousand(hundredBelow)
+    return words.trim()
+  }
+
   const handleEditExtraBedChange = (index: number, field: string, value: string) => {
     setEditForm(prev => {
       const updated = { ...prev }
@@ -208,10 +255,7 @@ const Guests = () => {
     const { totalAmount } = recalculateTotals(baseRoomAmount, editForm.extraBeds || [])
 
     try {
-      const response = await fetch(`${BACKEND_URL}/api/guests/${editGuest.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const response = await guestsAPI.updateGuest(editGuest.id, {
           name: editForm.name,
           email: editForm.email,
           phone: editForm.phone,
@@ -221,17 +265,14 @@ const Guests = () => {
           secondaryGuest: editForm.secondaryGuest,
           extraBeds: editForm.extraBeds,
           totalAmount: totalAmount
-        })
       })
 
-      const data = await response.json()
-      if (data.success) {
+      if (response.success) {
         showNotification('success', 'Guest details updated successfully!')
         setEditGuest(null)
         // Refresh list
-        const guestsRes = await fetch(`${BACKEND_URL}/api/guests`)
-        const guestsData = await guestsRes.json()
-        if (guestsData.success) setGuests(guestsData.data)
+        const guestsRes = await guestsAPI.getAllGuests()
+        if (guestsRes.success) setGuests(guestsRes.data || [])
       } else {
         showNotification('error', 'Failed to update guest. Please try again.')
       }
@@ -248,28 +289,14 @@ const Guests = () => {
       setError(null)
       try {
         // Fetch guests
-        const guestsResponse = await fetch(`${BACKEND_URL}/api/guests`)
-        if (!guestsResponse.ok) {
-          throw new Error(`Failed to fetch guests: ${guestsResponse.status}`)
-        }
-        const guestsData = await guestsResponse.json()
-        if (guestsData.success) {
-          setGuests(guestsData.data)
-        } else {
-          throw new Error('Failed to fetch guests data')
-        }
+        const guestsRes = await guestsAPI.getAllGuests()
+        if (!guestsRes.success) throw new Error('Failed to fetch guests data')
+        setGuests(guestsRes.data || [])
 
         // Fetch rooms
-        const roomsResponse = await fetch(`${BACKEND_URL}/api/rooms`)
-        if (!roomsResponse.ok) {
-          throw new Error(`Failed to fetch rooms: ${roomsResponse.status}`)
-        }
-        const roomsData = await roomsResponse.json()
-        if (roomsData.success) {
-          setRooms(roomsData.data)
-        } else {
-          throw new Error('Failed to fetch rooms data')
-        }
+        const roomsRes = await roomsAPI.getAllRooms()
+        if (!roomsRes.success) throw new Error('Failed to fetch rooms data')
+        setRooms(roomsRes.data || [])
       } catch (error) {
         console.error('Error fetching data:', error)
         const errorMessage = error instanceof Error ? error.message : 'Failed to fetch data'
@@ -606,19 +633,8 @@ const Guests = () => {
     }
 
     try {
-      const response = await fetch(`${BACKEND_URL}/api/guests/${guestId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          status: 'checked-in'
-        }),
-      })
-
-      const data = await response.json()
-      
-      if (data.success) {
+      const response = await guestsAPI.updateGuest(guestId, { status: 'checked-in' })
+      if (response.success) {
     showNotification('success', 'Guest checked in successfully!')
       } else {
         showNotification('error', 'Failed to check in guest. Please try again.')
@@ -651,6 +667,7 @@ const Guests = () => {
       finalAmount: guest.totalAmount,
       additionalCharges: 0,
       laundryCharges: 0,
+      halfDayCharges: 0,
       paymentMethod: 'CASH',
       notes: ''
     })
@@ -678,23 +695,14 @@ const Guests = () => {
 
 
     try {
-      // Update guest status via backend API
-      const response = await fetch(`${BACKEND_URL}/api/guests/${checkoutGuest.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const response = await guestsAPI.updateGuest(checkoutGuest.id, {
           status: 'checked-out',
             totalAmount: checkoutDetails.finalAmount,
             paidAmount: checkoutDetails.finalAmount,
           checkOutDate: convertDateToBackendFormat(checkoutDetails.actualCheckOutDate)
-        }),
       })
 
-      const data = await response.json()
-      
-      if (data.success) {
+      if (response.success) {
     // Close modal and show success
     setShowCheckoutModal(false)
     setCheckoutGuest(null)
@@ -703,6 +711,7 @@ const Guests = () => {
       finalAmount: 0,
       additionalCharges: 0,
       laundryCharges: 0,
+      halfDayCharges: 0,
       paymentMethod: 'CASH',
       notes: ''
     })
@@ -726,10 +735,10 @@ const Guests = () => {
     console.log('Guest plan:', checkoutGuest.plan)
 
     try {
-      // Fetch fresh guest data from backend to ensure we have the latest data including plan
-      const guestsResponse = await fetch(`${BACKEND_URL}/api/guests`)
-      const guestsData = await guestsResponse.json()
-      const freshGuestData = guestsData.data.find((g: any) => g.id === checkoutGuest?.id)
+      // Fetch fresh guest data from backend using service layer
+      const guestsResp = await guestsAPI.getAllGuests()
+      const guestsDataList = guestsResp.success ? (guestsResp.data as any[]) || [] : []
+      const freshGuestData = guestsDataList.find((g: any) => g.id === checkoutGuest?.id)
       
       // Use fresh guest data if available, otherwise use checkoutGuest
       const guestForBill = freshGuestData || checkoutGuest
@@ -738,10 +747,9 @@ const Guests = () => {
         console.log('Fresh guest data:', freshGuestData)
         console.log('Fresh guest plan:', freshGuestData.plan)
       }
-      // Get bill number from backend
-      const billResponse = await fetch(`${BACKEND_URL}/api/bill-number`)
-      const billData = await billResponse.json()
-      const billNumber = billData.success ? billData.billNumber : '0001'
+      // Get bill number from backend via API service
+      const billResp = await billingAPI.getBillNumber()
+      const billNumber = billResp.success && (billResp as any).billNumber ? (billResp as any).billNumber : (billResp.data?.billNumber || '0001')
 
 
 
@@ -779,9 +787,9 @@ const Guests = () => {
       }
 
       // Get room price (per-day base rate) from rooms data
-      const roomsResponse = await fetch(`${BACKEND_URL}/api/rooms`)
-      const roomsData = await roomsResponse.json()
-      const room = roomsData.data.find((r: any) => r.number === guestForBill.roomNumber)
+      const roomsResp = await roomsAPI.getAllRooms()
+      const roomList = roomsResp.success ? (roomsResp.data as any[]) || [] : []
+      const room = roomList.find((r: any) => r.number === guestForBill.roomNumber)
       const roomBasePricePerDay: number = room && typeof room.price === 'number' ? room.price : 0
 
       // Prefer per-day amount as shown in checkout modal: "Room Rent (including extra bed)"
@@ -854,7 +862,7 @@ const Guests = () => {
       const totalAmountDisplay = Math.round(totalAmount)
 
       // Now compute amount in words based on the grand total
-      amountInWords = numberToWords(totalAmountDisplay || 0)
+      amountInWords = numberToIndianWords(totalAmountDisplay || 0)
 
       // Format arrival date properly (convert yyyy-mm-dd to dd-mm-yyyy)
       const arrivalDateParts = checkoutGuest.checkInDate.split('-')
@@ -1049,7 +1057,7 @@ const Guests = () => {
               ` : ''}
               ${checkoutDetails.halfDayCharges > 0 ? `
               <tr>
-                <td colspan="4" class="editable" contenteditable="false">Half Day Charges</td>
+                <td colspan="4" class="editable" contenteditable="false">Late Checkout Charges</td>
                 <td class="editable" contenteditable="false">₹${halfDayTaxableValue.toFixed(2)}</td>
                 <td>12%</td>
                 <td class="editable" contenteditable="false">₹${halfDayCgst.toFixed(2)}</td>
@@ -1183,10 +1191,10 @@ const Guests = () => {
     if (!checkoutGuest) return
 
     try {
-      // Fetch latest guest data
-      const guestsResponse = await fetch(`${BACKEND_URL}/api/guests`)
-      const guestsData = await guestsResponse.json()
-      const freshGuestData = guestsData.data.find((g: any) => g.id === checkoutGuest?.id)
+      // Fetch latest guest data via API service
+      const guestsResp = await guestsAPI.getAllGuests()
+      const guestsDataList = guestsResp.success ? (guestsResp.data as any[]) || [] : []
+      const freshGuestData = guestsDataList.find((g: any) => g.id === checkoutGuest?.id)
       const guestForBill = freshGuestData || checkoutGuest
 
       // Times
@@ -1208,9 +1216,9 @@ const Guests = () => {
       }
 
       // Room base and per-day from checkout
-      const roomsResponse = await fetch(`${BACKEND_URL}/api/rooms`)
-      const roomsData = await roomsResponse.json()
-      const room = roomsData.data.find((r: any) => r.number === guestForBill.roomNumber)
+      const roomsResp = await roomsAPI.getAllRooms()
+      const roomList = roomsResp.success ? (roomsResp.data as any[]) || [] : []
+      const room = roomList.find((r: any) => r.number === guestForBill.roomNumber)
       const roomBasePricePerDay: number = room && typeof room.price === 'number' ? room.price : 0
 
       const perDayFromCheckout = Math.max(0,
@@ -1266,29 +1274,7 @@ const Guests = () => {
       const totalAmount = (Number(roomRent) || 0) + (Number(extraBedCharges) || 0) + addl + laundry + halfDay
       const totalAmountDisplay = Math.round(totalAmount)
 
-      const numberToWords = (num: number): string => {
-        const ones = ['', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE']
-        const tens = ['', '', 'TWENTY', 'THIRTY', 'FORTY', 'FIFTY', 'SIXTY', 'SEVENTY', 'EIGHTY', 'NINETY']
-        const teens = ['TEN', 'ELEVEN', 'TWELVE', 'THIRTEEN', 'FOURTEEN', 'FIFTEEN', 'SIXTEEN', 'SEVENTEEN', 'EIGHTEEN', 'NINETEEN']
-        if (num === 0) return 'ZERO'
-        if (num < 10) return ones[num]
-        if (num < 20) return teens[num - 10]
-        if (num < 100) {
-          if (num % 10 === 0) return tens[Math.floor(num / 10)]
-          return tens[Math.floor(num / 10)] + ' ' + ones[num % 10]
-        }
-        if (num < 1000) {
-          if (num % 100 === 0) return ones[Math.floor(num / 100)] + ' HUNDRED'
-          return ones[Math.floor(num / 100)] + ' HUNDRED AND ' + numberToWords(num % 100)
-        }
-        if (num < 100000) {
-          if (num % 1000 === 0) return numberToWords(Math.floor(num / 1000)) + ' THOUSAND'
-          return numberToWords(Math.floor(num / 1000)) + ' THOUSAND ' + numberToWords(num % 1000)
-        }
-        return 'RUPEES'
-      }
-
-      const amountInWords = numberToWords(totalAmountDisplay || 0)
+      const amountInWords = numberToIndianWords(totalAmountDisplay || 0)
 
       const arrivalDateParts = checkoutGuest.checkInDate.split('-')
       const formattedArrivalDate = `${arrivalDateParts[2]}-${arrivalDateParts[1]}-${arrivalDateParts[0]}`
@@ -1442,7 +1428,7 @@ const Guests = () => {
               ` : ''}
               ${halfDay > 0 ? `
               <tr>
-                <td colspan="4" class="editable" contenteditable="false">Half Day Charges</td>
+                <td colspan="4" class="editable" contenteditable="false">Late Checkout Charges</td>
                 <td class="editable" contenteditable="false">₹${halfDayTaxableValue.toFixed(2)}</td>
                 <td>12%</td>
                 <td class="editable" contenteditable="false">₹${halfDayCgst.toFixed(2)}</td>
@@ -1634,46 +1620,27 @@ const Guests = () => {
       })) : undefined
     }
 
-      const response = await fetch(`${BACKEND_URL}/api/guests`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(guestData),
-      })
-
-      const data = await response.json()
+      const response = await guestsAPI.createGuest(guestData)
       
-      if (data.success) {
+      if (response.success && response.data) {
         // Update room status to occupied
-        const roomResponse = await fetch(`${BACKEND_URL}/api/rooms`, {
-          method: 'GET',
-        })
-        const roomsData = await roomResponse.json()
-        
-        if (roomsData.success) {
-          const room = roomsData.data.find((r: any) => r.number === newGuest.roomNumber)
+        const roomsRes = await roomsAPI.getAllRooms()
+        if (roomsRes.success) {
+          const room = (roomsRes.data as any[]).find((r: any) => r.number === newGuest.roomNumber)
           if (room) {
-            await fetch(`${BACKEND_URL}/api/rooms/${room.id}`, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
+            await roomsAPI.updateRoom(room.id, {
                 status: 'OCCUPIED',
                 currentGuest: newGuest.name,
                 checkInDate: guestData.checkInDate,
                 checkOutDate: guestData.checkOutDate
-              }),
             })
           }
         }
 
         // Refresh guests list
-        const refreshResponse = await fetch(`${BACKEND_URL}/api/guests`)
-        const refreshData = await refreshResponse.json()
-        if (refreshData.success) {
-          setGuests(refreshData.data)
+        const refreshRes = await guestsAPI.getAllGuests()
+        if (refreshRes.success) {
+          setGuests(refreshRes.data || [])
         }
     
     // Reset form
@@ -2952,7 +2919,7 @@ const Guests = () => {
                       <span>₹{checkoutDetails.laundryCharges || 0}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Half Day Charges:</span>
+                      <span>Late Checkout Charges:</span>
                       <span>₹{checkoutDetails.halfDayCharges || 0}</span>
                     </div>
                     <div className="border-t pt-1 flex justify-between font-medium">
@@ -3001,7 +2968,7 @@ const Guests = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Half Day Charges (₹)</label>
+                  <label className="block text-sm font-medium text-gray-700">Late Checkout Charges (₹)</label>
                   <input
                     type="number"
                     value={checkoutDetails.halfDayCharges || ''}

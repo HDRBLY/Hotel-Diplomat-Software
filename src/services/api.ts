@@ -482,6 +482,13 @@ export const uploadAPI = {
   },
 }
 
+// Billing / Utility API
+export const billingAPI = {
+  getBillNumber: async (): Promise<ApiResponse<{ billNumber: string }>> => {
+    return apiRequest('/bill-number')
+  },
+}
+
 // WebSocket connection for real-time updates
 export class WebSocketService {
   private ws: WebSocket | null = null
@@ -565,5 +572,6 @@ export default {
   reports: reportsAPI,
   settings: settingsAPI,
   upload: uploadAPI,
+  billing: billingAPI,
   ws: wsService,
 } 

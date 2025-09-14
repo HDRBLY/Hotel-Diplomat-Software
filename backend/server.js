@@ -511,7 +511,7 @@ const initializeDefaultData = () => {
       },
       {
         id: '25',
-        number: '303',
+        number: '302',
         type: 'STANDARD',
         status: 'AVAILABLE',
         floor: 3,
@@ -526,7 +526,7 @@ const initializeDefaultData = () => {
       },
       {
         id: '26',
-        number: '304',
+        number: '303',
         type: 'STANDARD',
         status: 'AVAILABLE',
         floor: 3,
@@ -541,7 +541,7 @@ const initializeDefaultData = () => {
       },
       {
         id: '27',
-        number: '305',
+        number: '304',
         type: 'STANDARD',
         status: 'AVAILABLE',
         floor: 3,
@@ -556,7 +556,7 @@ const initializeDefaultData = () => {
       },
       {
         id: '28',
-        number: '306',
+        number: '305',
         type: 'STANDARD',
         status: 'AVAILABLE',
         floor: 3,
@@ -571,7 +571,7 @@ const initializeDefaultData = () => {
       },
       {
         id: '29',
-        number: '307',
+        number: '306',
         type: 'STANDARD',
         status: 'AVAILABLE',
         floor: 3,
@@ -586,7 +586,7 @@ const initializeDefaultData = () => {
       },
       {
         id: '30',
-        number: '308',
+        number: '307',
         type: 'STANDARD',
         status: 'AVAILABLE',
         floor: 3,
@@ -601,7 +601,7 @@ const initializeDefaultData = () => {
       },
       {
         id: '31',
-        number: '309',
+        number: '308',
         type: 'STANDARD',
         status: 'AVAILABLE',
         floor: 3,
@@ -616,7 +616,7 @@ const initializeDefaultData = () => {
       },
       {
         id: '32',
-        number: '310',
+        number: '309',
         type: 'STANDARD',
         status: 'AVAILABLE',
         floor: 3,
@@ -631,7 +631,7 @@ const initializeDefaultData = () => {
       },
       {
         id: '33',
-        number: '311',
+        number: '310',
         type: 'STANDARD',
         status: 'AVAILABLE',
         floor: 3,
@@ -646,7 +646,7 @@ const initializeDefaultData = () => {
       },
       {
         id: '34',
-        number: '312',
+        number: '311',
         type: 'STANDARD',
         status: 'AVAILABLE',
         floor: 3,
@@ -661,6 +661,36 @@ const initializeDefaultData = () => {
       },
       {
         id: '35',
+        number: '312',
+        type: 'STANDARD',
+        status: 'AVAILABLE',
+        floor: 3,
+        price: 1500,
+        amenities: ['AC', 'TV', 'WiFi'],
+        category: 'SOLO',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '36',
+        number: '316',
+        type: 'STANDARD',
+        status: 'AVAILABLE',
+        floor: 3,
+        price: 1500,
+        amenities: ['AC', 'TV', 'WiFi'],
+        category: 'SOLO',
+        currentGuest: null,
+        checkInDate: null,
+        checkOutDate: null,
+        lastCleaned: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '37',
         number: '401',
         type: 'PRESIDENTIAL',
         status: 'AVAILABLE',
@@ -675,7 +705,7 @@ const initializeDefaultData = () => {
         createdAt: new Date().toISOString()
       },
       {
-        id: '36',
+        id: '38',
         number: '402',
         type: 'PRESIDENTIAL',
         status: 'AVAILABLE',
@@ -690,7 +720,7 @@ const initializeDefaultData = () => {
         createdAt: new Date().toISOString()
       },
       {
-        id: '37',
+        id: '39',
         number: '403',
         type: 'PRESIDENTIAL',
         status: 'AVAILABLE',
@@ -705,7 +735,7 @@ const initializeDefaultData = () => {
         createdAt: new Date().toISOString()
       },
       {
-        id: '38',
+        id: '40',
         number: '404',
         type: 'PRESIDENTIAL',
         status: 'AVAILABLE',
@@ -720,7 +750,7 @@ const initializeDefaultData = () => {
         createdAt: new Date().toISOString()
       },
       {
-        id: '39',
+        id: '41',
         number: '405',
         type: 'PRESIDENTIAL',
         status: 'AVAILABLE',
@@ -735,7 +765,7 @@ const initializeDefaultData = () => {
         createdAt: new Date().toISOString()
       },
       {
-        id: '40',
+        id: '42',
         number: '406',
         type: 'PRESIDENTIAL',
         status: 'AVAILABLE',
@@ -750,7 +780,7 @@ const initializeDefaultData = () => {
         createdAt: new Date().toISOString()
       },
       {
-        id: '41',
+        id: '43',
         number: '407',
         type: 'PRESIDENTIAL',
         status: 'AVAILABLE',
@@ -765,7 +795,7 @@ const initializeDefaultData = () => {
         createdAt: new Date().toISOString()
       },
       {
-        id: '42',
+        id: '44',
         number: '408',
         type: 'PRESIDENTIAL',
         status: 'AVAILABLE',
@@ -780,7 +810,7 @@ const initializeDefaultData = () => {
         createdAt: new Date().toISOString()
       },
       {
-        id: '43',
+        id: '45',
         number: '409',
         type: 'PRESIDENTIAL',
         status: 'AVAILABLE',
@@ -795,7 +825,7 @@ const initializeDefaultData = () => {
         createdAt: new Date().toISOString()
       },
       {
-        id: '44',
+        id: '46',
         number: '410',
         type: 'PRESIDENTIAL',
         status: 'AVAILABLE',
@@ -810,7 +840,7 @@ const initializeDefaultData = () => {
         createdAt: new Date().toISOString()
       },
       {
-        id: '45',
+        id: '47',
         number: '411',
         type: 'PRESIDENTIAL',
         status: 'AVAILABLE',
@@ -1477,13 +1507,28 @@ app.put('/api/guests/:id', (req, res) => {
     const originalPaidAmount = guests[guestIndex].paidAmount || 0;
     const finalAmount = updateData.totalAmount || guests[guestIndex].totalAmount || 0;
     const additionalPayment = finalAmount - originalPaidAmount;
-    
-    // Get the current bill number for this guest
-    const billCounter = readData('billCounter.json');
-    const currentBillNumber = billCounter.currentBillNumber || 1;
-    
-    // Store the bill number with the guest data
-    guests[guestIndex].billNumber = currentBillNumber.toString().padStart(4, '0');
+
+    // Safely get and increment the bill number atomically
+    try {
+      const billCounterPath = path.join(dataDir, 'billCounter.json');
+      let billCounter = { currentBillNumber: 1 };
+      if (fs.existsSync(billCounterPath)) {
+        try {
+          billCounter = JSON.parse(fs.readFileSync(billCounterPath, 'utf8')) || { currentBillNumber: 1 };
+        } catch {
+          billCounter = { currentBillNumber: 1 };
+        }
+      }
+      const currentBillNumber = billCounter.currentBillNumber || 1;
+      guests[guestIndex].billNumber = currentBillNumber.toString().padStart(4, '0');
+      billCounter.currentBillNumber = currentBillNumber + 1;
+      fs.writeFileSync(billCounterPath, JSON.stringify(billCounter, null, 2));
+    } catch (err) {
+      console.error('Error updating bill counter:', err);
+      // Fallback: still assign a temporary bill number without incrementing to avoid breaking checkout
+      const fallbackNumber = Date.now().toString().slice(-4);
+      guests[guestIndex].billNumber = guests[guestIndex].billNumber || fallbackNumber;
+    }
     
     activities.unshift({
       id: Date.now().toString(),
