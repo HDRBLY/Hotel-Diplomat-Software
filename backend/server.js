@@ -1083,59 +1083,27 @@ app.get('/api/reports/dashboard', (req, res) => {
   guests.forEach(guest => {
     // Only count checked-in guests for total guests
     if (guest.status === 'checked-in') {
-      console.log(`Guest: ${guest.name}, Status: ${guest.status}, Room: ${guest.roomNumber}`);
-      
       // Count primary guest
       totalGuests += 1;
-      
       // Count secondary guest if exists
       if (guest.secondaryGuest) {
         totalGuests += 1;
-        console.log(`  + Secondary guest: ${guest.secondaryGuest.name}`);
       }
-      
       // Count extra bed guests if exists
       if (guest.extraBeds && guest.extraBeds.length > 0) {
         totalGuests += guest.extraBeds.length;
-        console.log(`  + Extra bed guests: ${guest.extraBeds.length}`);
-      }
-      
-      // Calculate revenue from checked-in guests (use paid amount, not total amount)
-      if (!guest.complimentary) {
-        todayRevenue += guest.paidAmount || 0;
-        console.log(`  + Revenue (paid): ${guest.paidAmount || 0}`);
       }
     }
   });
   
   // Note: Do not add paidAmount again for checkouts today; additionalPayment is already counted above
   
-  // Calculate today's occupancy rate based on room usage frequency today
-  let todayRoomUsage = {}; // Track how many times each room was used today
+  // Calculate today's occupancy rate as the percentage of rooms currently occupied
+  const occupancyRate = totalRooms > 0
+    ? ((occupiedRooms / totalRooms) * 100).toFixed(1)
+    : 0;
   
-  // Add currently occupied rooms
-  rooms.forEach(room => {
-    if (room.status === 'OCCUPIED') {
-      todayRoomUsage[room.number] = (todayRoomUsage[room.number] || 0) + 1;
-    }
-  });
-  
-  // Add rooms that were checked out today
-  guests.forEach(guest => {
-    if (guest.status === 'checked-out' && guest.checkOutDate) {
-      const checkoutDate = new Date(guest.checkOutDate).toISOString().split('T')[0];
-      if (checkoutDate === today && guest.roomNumber) {
-        todayRoomUsage[guest.roomNumber] = (todayRoomUsage[guest.roomNumber] || 0) + 1;
-      }
-    }
-  });
-  
-  // Count total room usages today
-  const todayOccupiedCount = Object.values(todayRoomUsage).reduce((sum, count) => sum + count, 0);
-  const occupancyRate = totalRooms > 0 ? ((todayOccupiedCount / totalRooms) * 100).toFixed(1) : 0;
-  
-  console.log(`Final calculation - Total guests: ${totalGuests}, Revenue: ${todayRevenue}, Today room usages: ${todayOccupiedCount}/${totalRooms}, Occupancy rate: ${occupancyRate}%`);
-  console.log(`Room usage details:`, todayRoomUsage);
+  console.log(`Final calculation - Total guests: ${totalGuests}, Revenue: ${todayRevenue}, Occupied rooms: ${occupiedRooms}/${totalRooms}, Occupancy rate: ${occupancyRate}%`);
 
   res.json({
     success: true,
@@ -1721,7 +1689,7 @@ app.get('/api/reports/revenue', (req, res) => {
     
     const totalDayRevenue = checkinRevenue + checkoutRevenue;
     const bookings = dayCheckins.length;
-    const averageRate = bookings > 0 ? Math.round(totalDayRevenue / bookings) : 0;
+    const averageRate = bookings > 0 ? Math.round(checkinRevenue / bookings) : 0;
     
     revenueData.push({
       date: dateStr,
@@ -2041,7 +2009,7 @@ app.get('/api/reports/overview', (req, res) => {
     return ci && ci >= start && ci <= end;
   }).length;
   
-  const averageRoomRate = totalGuests > 0 ? Math.round(totalRevenue / totalGuests) : 0;
+  const averageRoomRate = totalBookings > 0 ? Math.round(totalRevenue / totalBookings) : 0;
   
   // Calculate cancellation rate from actual reservations in the date range
   // Define reservation window using bookingDate; fallback to reservation's checkInDate if provided
