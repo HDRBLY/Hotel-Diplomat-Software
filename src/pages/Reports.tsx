@@ -109,16 +109,20 @@ const Reports = () => {
       const daysDiff = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
       const days = daysDiff > 0 ? daysDiff : 1
 
+      // Complimentary handling
+      const isComplimentary = !!guest.complimentary
+      const billAmount = isComplimentary ? 0 : (guest.amount || 0)
+
       // Calculate price per day
-      const pricePerDay = Math.round(guest.amount / days)
+      const pricePerDay = Math.round((billAmount) / days)
 
       // Calculate tax components (assuming 12% GST)
-      const roomRentTaxableValue = guest.amount / 1.12
+      const roomRentTaxableValue = billAmount / 1.12
       const roomRentCgst = roomRentTaxableValue * 0.06
       const roomRentSgst = roomRentTaxableValue * 0.06
 
       // Convert amount to words
-      const amountInWords = numberToWords(guest.amount)
+      const amountInWords = numberToWords(billAmount)
 
       // Format dates properly (convert yyyy-mm-dd to dd-mm-yyyy)
       const checkInDateParts = guest.checkInDate.split('-')
@@ -224,6 +228,7 @@ const Reports = () => {
           </div>
 
           <div class="invoice-title">TAX INVOICE</div>
+          ${isComplimentary ? '<div style="text-align:center;margin-top:4px;color:#16a34a;font-weight:600;">COMPLIMENTARY STAY - NO CHARGE</div>' : ''}
 
                       <div class="guest-info content">
               <div class="guest-details">

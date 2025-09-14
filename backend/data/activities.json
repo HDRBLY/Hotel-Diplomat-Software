@@ -1,1 +1,34 @@
-[]
+[
+  {
+    "id": "1757847238635",
+    "type": "guest_checked_in",
+    "guestName": "setdhgt",
+    "roomNumber": "101",
+    "time": "Just now",
+    "status": "completed"
+  },
+  {
+    "id": "1757844963872",
+    "type": "guest_checked_in",
+    "guestName": "er5yer",
+    "roomNumber": "103",
+    "time": "Just now",
+    "status": "completed"
+  },
+  {
+    "id": "1757844343618",
+    "type": "guest_checked_in",
+    "guestName": "comp",
+    "roomNumber": "212",
+    "time": "Just now",
+    "status": "completed"
+  },
+  {
+    "id": "1757843065417",
+    "type": "guest_checked_in",
+    "guestName": "aman",
+    "roomNumber": "104",
+    "time": "Just now",
+    "status": "completed"
+  }
+]

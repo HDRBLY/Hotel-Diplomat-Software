@@ -3,7 +3,7 @@
     "id": "1",
     "number": "101",
     "type": "STANDARD",
-    "status": "AVAILABLE",
+    "status": "OCCUPIED",
     "floor": 1,
     "price": 1500,
     "amenities": [
@@ -12,11 +12,12 @@
       "WiFi"
     ],
     "category": "COUPLE",
-    "currentGuest": null,
-    "checkInDate": null,
-    "checkOutDate": null,
+    "currentGuest": "setdhgt",
+    "checkInDate": "2025-09-14",
+    "checkOutDate": "2025-09-14",
     "lastCleaned": "2025-09-14T09:27:38.894Z",
-    "createdAt": "2025-09-14T09:27:38.894Z"
+    "createdAt": "2025-09-14T09:27:38.894Z",
+    "updatedAt": "2025-09-14T10:53:58.773Z"
   },
   {
     "id": "2",
@@ -41,7 +42,7 @@
     "id": "3",
     "number": "103",
     "type": "STANDARD",
-    "status": "AVAILABLE",
+    "status": "OCCUPIED",
     "floor": 1,
     "price": 1500,
     "amenities": [
@@ -49,18 +50,19 @@
       "TV",
       "WiFi"
     ],
-    "category": "CORPORATE",
-    "currentGuest": null,
-    "checkInDate": null,
-    "checkOutDate": null,
+    "category": "COUPLE",
+    "currentGuest": "er5yer",
+    "checkInDate": "2025-09-14",
+    "checkOutDate": "2025-09-14",
     "lastCleaned": "2025-09-14T09:27:38.894Z",
-    "createdAt": "2025-09-14T09:27:38.894Z"
+    "createdAt": "2025-09-14T09:27:38.894Z",
+    "updatedAt": "2025-09-14T10:16:04.019Z"
   },
   {
     "id": "4",
     "number": "104",
     "type": "STANDARD",
-    "status": "AVAILABLE",
+    "status": "OCCUPIED",
     "floor": 1,
     "price": 1500,
     "amenities": [
@@ -68,12 +70,13 @@
       "TV",
       "WiFi"
     ],
-    "category": "FAMILY",
-    "currentGuest": null,
-    "checkInDate": null,
-    "checkOutDate": null,
+    "category": "COUPLE",
+    "currentGuest": "aman",
+    "checkInDate": "2025-09-14",
+    "checkOutDate": "2025-09-15",
     "lastCleaned": "2025-09-14T09:27:38.894Z",
-    "createdAt": "2025-09-14T09:27:38.894Z"
+    "createdAt": "2025-09-14T09:27:38.894Z",
+    "updatedAt": "2025-09-14T09:44:25.469Z"
   },
   {
     "id": "5",
@@ -227,7 +230,7 @@
     "id": "12",
     "number": "212",
     "type": "DELUXE",
-    "status": "AVAILABLE",
+    "status": "OCCUPIED",
     "floor": 2,
     "price": 2500,
     "amenities": [
@@ -238,11 +241,12 @@
       "Balcony"
     ],
     "category": "SOLO",
-    "currentGuest": null,
-    "checkInDate": null,
-    "checkOutDate": null,
+    "currentGuest": "comp",
+    "checkInDate": "2025-09-14",
+    "checkOutDate": "2025-09-14",
     "lastCleaned": "2025-09-14T09:27:38.895Z",
-    "createdAt": "2025-09-14T09:27:38.895Z"
+    "createdAt": "2025-09-14T09:27:38.895Z",
+    "updatedAt": "2025-09-14T10:05:43.670Z"
   },
   {
     "id": "13",

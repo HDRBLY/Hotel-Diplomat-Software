@@ -816,6 +816,14 @@ const Guests = () => {
         extraBedCharges = fallbackExtra
       }
 
+      // Complimentary stays: only room rent and extra bed are waived (add-ons remain billable)
+      const isComplimentary = (guestForBill.complimentary === true) || (String(guestForBill.complimentary).toLowerCase() === 'true') ||
+        ((checkoutGuest as any)?.complimentary === true) || (String((checkoutGuest as any)?.complimentary).toLowerCase() === 'true')
+      if (isComplimentary) {
+        pricePerDay = 0
+        extraBedCharges = 0
+      }
+
       // Room rent for the stay is per-day base multiplied by number of days
       const roomRent = pricePerDay * daysDiff
       const totalRoomCharges = roomRent + extraBedCharges
@@ -831,6 +839,7 @@ const Guests = () => {
       const extraBedSgst = extraBedTaxableValue * 0.06
 
       // Normalize optional charges to numbers to avoid NaN
+      // Complimentary stays: only room rent and extra bed are waived; add-ons remain billable
       const addl = Number(checkoutDetails.additionalCharges) || 0
       const laundry = Number(checkoutDetails.laundryCharges) || 0
       const halfDay = Number(checkoutDetails.halfDayCharges) || 0
@@ -870,6 +879,13 @@ const Guests = () => {
 
       // Compute logo URL (served from public/logo.png)
       const logoUrl = `${window.location.origin}/logo.png`
+
+      // Display-safe values for complimentary stays (room/extra bed waived; add-ons billed)
+      const displayPricePerDay = isComplimentary ? 0 : pricePerDay
+      const displayRoomRent = isComplimentary ? 0 : roomRent
+      const displayRoomRentTaxableValue = isComplimentary ? 0 : roomRentTaxableValue
+      const displayRoomRentCgst = isComplimentary ? 0 : roomRentCgst
+      const displayRoomRentSgst = isComplimentary ? 0 : roomRentSgst
 
       // Create bill HTML
       const billHTML = `
@@ -1018,12 +1034,12 @@ const Guests = () => {
                 <td class="editable" contenteditable="false">${guestForBill.roomNumber}</td>
                 <td class="editable" contenteditable="false">${guestForBill.name}</td>
                 <td class="editable" contenteditable="false">${daysDiff}</td>
-                <td class="editable" contenteditable="false">₹${pricePerDay}</td>
-                <td class="editable" contenteditable="false">₹${roomRentTaxableValue.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${displayPricePerDay}</td>
+                <td class="editable" contenteditable="false">₹${displayRoomRentTaxableValue.toFixed(2)}</td>
                 <td>12%</td>
-                <td class="editable" contenteditable="false">₹${roomRentCgst.toFixed(2)}</td>
-                <td class="editable" contenteditable="false">₹${roomRentSgst.toFixed(2)}</td>
-                <td class="editable" contenteditable="false">₹${roomRent}</td>
+                <td class="editable" contenteditable="false">₹${displayRoomRentCgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${displayRoomRentSgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${displayRoomRent}</td>
               </tr>
               ${extraBedCharges > 0 ? `
               <tr>
@@ -1238,6 +1254,13 @@ const Guests = () => {
         const derivedPerDay = Math.round(Math.max(0, (guestForBill.totalAmount - fallbackExtra)) / Math.max(1, daysDiff))
         pricePerDay = roomBasePricePerDay > 0 ? roomBasePricePerDay : derivedPerDay
         extraBedCharges = fallbackExtra
+      }
+
+      // Complimentary stays: force zero pricing and zero add-ons
+      const isComplimentary = !!guestForBill.complimentary
+      if (isComplimentary) {
+        pricePerDay = 0
+        extraBedCharges = 0
       }
 
       const roomRent = pricePerDay * daysDiff
