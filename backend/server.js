@@ -30,7 +30,7 @@ if (!fs.existsSync(dataDir)) {
 }
 
 // Initialize data files if they don't exist
-const dataFiles = ['users.json', 'rooms.json', 'guests.json', 'reservations.json', 'activities.json'];
+const dataFiles = ['users.json', 'rooms.json', 'guests.json', 'reservations.json', 'activities.json', 'banquets.json', 'banquetBookings.json'];
 dataFiles.forEach(file => {
   const filePath = path.join(dataDir, file);
   if (!fs.existsSync(filePath)) {
@@ -871,6 +871,77 @@ const initializeDefaultData = () => {
     activities = [];
     writeData('activities.json', activities);
   }
+
+  // Initialize banquets (halls) if empty
+  let banquets = readData('banquets.json');
+  if (banquets.length === 0) {
+    banquets = [
+      {
+        id: '1',
+        name: 'Royal Grand Hall',
+        capacity: 500,
+        status: 'AVAILABLE',
+        type: 'WEDDING',
+        floor: 1,
+        price: 50000,
+        amenities: ['ac', 'sound', 'stage', 'dance', 'catering', 'parking', 'decoration', 'lighting'],
+        description: 'Our largest and most elegant banquet hall, perfect for grand weddings and corporate events. Features a spacious dance floor and professional lighting.',
+        image: '/images/banquets/royal-grand-hall.jpg',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: '2',
+        name: 'Crystal Ballroom',
+        capacity: 300,
+        status: 'AVAILABLE',
+        type: 'CORPORATE',
+        floor: 2,
+        price: 35000,
+        amenities: ['ac', 'sound', 'projector', 'stage', 'catering', 'parking', 'security', 'photography'],
+        description: 'A sophisticated venue ideal for corporate meetings, conferences, and elegant parties. Equipped with modern AV facilities.',
+        image: '/images/banquets/crystal-ballroom.jpg',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: '3',
+        name: 'Garden Pavilion',
+        capacity: 200,
+        status: 'AVAILABLE',
+        type: 'PARTY',
+        floor: 0,
+        price: 25000,
+        amenities: ['sound', 'dance', 'catering', 'parking', 'decoration', 'lighting', 'photography', 'valet'],
+        description: 'An outdoor venue with beautiful garden views, perfect for intimate celebrations and outdoor parties.',
+        image: '/images/banquets/garden-pavilion.jpg',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: '4',
+        name: 'Executive Conference Room',
+        capacity: 100,
+        status: 'AVAILABLE',
+        type: 'CONFERENCE',
+        floor: 3,
+        price: 15000,
+        amenities: ['ac', 'sound', 'projector', 'catering', 'parking', 'security'],
+        description: 'A modern conference room with state-of-the-art facilities, ideal for business meetings and small corporate events.',
+        image: '/images/banquets/executive-conference.jpg',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ];
+    writeData('banquets.json', banquets);
+  }
+
+  // Initialize banquet bookings if empty
+  let banquetBookings = readData('banquetBookings.json');
+  if (banquetBookings.length === 0) {
+    banquetBookings = [];
+    writeData('banquetBookings.json', banquetBookings);
+  }
 };
 
 // Initialize default data
@@ -1598,6 +1669,204 @@ app.post('/api/reservations', (req, res) => {
 app.get('/api/activities', (req, res) => {
   const activities = readData('activities.json');
   res.json({ success: true, data: activities });
+});
+
+// Banquets (Halls) API
+app.get('/api/banquets', (req, res) => {
+  const banquets = readData('banquets.json');
+  // Convert to frontend format (lowercase enums)
+  const data = banquets.map(h => ({
+    ...h,
+    status: (h.status || 'AVAILABLE').toLowerCase(),
+    type: (h.type || 'WEDDING').toLowerCase()
+  }));
+  res.json({ success: true, data });
+});
+
+app.post('/api/banquets', (req, res) => {
+  const halls = readData('banquets.json');
+  const payload = req.body || {};
+  const newHall = {
+    id: Date.now().toString(),
+    name: payload.name || 'New Hall',
+    capacity: Number(payload.capacity) || 0,
+    status: (payload.status || 'available').toString().toUpperCase(),
+    type: (payload.type || 'wedding').toString().toUpperCase(),
+    floor: Number(payload.floor) || 0,
+    price: Number(payload.price) || 0,
+    amenities: Array.isArray(payload.amenities) ? payload.amenities : [],
+    description: payload.description || '',
+    image: payload.image || '',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  halls.push(newHall);
+  writeData('banquets.json', halls);
+  broadcastUpdate('banquet_hall_updated', newHall);
+  res.json({ success: true, data: { ...newHall, status: newHall.status.toLowerCase(), type: newHall.type.toLowerCase() } });
+});
+
+app.put('/api/banquets/:id', (req, res) => {
+  const { id } = req.params;
+  const halls = readData('banquets.json');
+  const idx = halls.findIndex(h => h.id === id);
+  if (idx === -1) {
+    return res.status(404).json({ success: false, message: 'Hall not found' });
+  }
+  const update = { ...req.body };
+  if (typeof update.status === 'string') update.status = update.status.toUpperCase();
+  if (typeof update.type === 'string') update.type = update.type.toUpperCase();
+  halls[idx] = { ...halls[idx], ...update, updatedAt: new Date().toISOString() };
+  writeData('banquets.json', halls);
+  broadcastUpdate('banquet_hall_updated', halls[idx]);
+  const payload = { ...halls[idx], status: halls[idx].status.toLowerCase(), type: halls[idx].type.toLowerCase() };
+  res.json({ success: true, data: payload });
+});
+
+app.delete('/api/banquets/:id', (req, res) => {
+  const { id } = req.params;
+  const halls = readData('banquets.json');
+  const idx = halls.findIndex(h => h.id === id);
+  if (idx === -1) {
+    return res.status(404).json({ success: false, message: 'Hall not found' });
+  }
+  const hall = halls[idx];
+  halls.splice(idx, 1);
+  writeData('banquets.json', halls);
+  broadcastUpdate('banquet_hall_updated', { id, deleted: true });
+  res.json({ success: true, message: 'Hall deleted successfully' });
+});
+
+// Banquet Bookings API
+const normalizeYYYYMMDD = (dateStr) => {
+  try {
+    if (!dateStr) return null;
+    const parts = dateStr.split('-');
+    if (parts[0].length === 4) return dateStr; // yyyy-mm-dd
+    if (parts[0].length === 2) return `${parts[2]}-${parts[1]}-${parts[0]}`; // dd-mm-yyyy
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+const isOverlap = (s1, e1, s2, e2) => {
+  const aStart = new Date(s1);
+  const aEnd = new Date(e1);
+  const bStart = new Date(s2);
+  const bEnd = new Date(e2);
+  return aStart <= bEnd && bStart <= aEnd;
+};
+
+app.get('/api/banquet-bookings', (req, res) => {
+  let bookings = readData('banquetBookings.json');
+  const { hallId, startDate, endDate } = req.query;
+  if (hallId) bookings = bookings.filter(b => b.hallId === hallId);
+  if (startDate || endDate) {
+    const s = startDate ? normalizeYYYYMMDD(startDate) : null;
+    const e = endDate ? normalizeYYYYMMDD(endDate) : null;
+    bookings = bookings.filter(b => {
+      const bs = normalizeYYYYMMDD(b.startDate);
+      const be = normalizeYYYYMMDD(b.endDate);
+      if (s && be < s) return false;
+      if (e && bs > e) return false;
+      return true;
+    });
+  }
+  res.json({ success: true, data: bookings });
+});
+
+app.post('/api/banquet-bookings', (req, res) => {
+  const bookings = readData('banquetBookings.json');
+  const halls = readData('banquets.json');
+  const payload = req.body || {};
+  const hallId = payload.hallId;
+  const hall = halls.find(h => h.id === hallId);
+  if (!hall) {
+    return res.status(400).json({ success: false, message: 'Invalid hallId' });
+  }
+
+  const start = normalizeYYYYMMDD(payload.startDate);
+  const end = normalizeYYYYMMDD(payload.endDate);
+  if (!start || !end) {
+    return res.status(400).json({ success: false, message: 'Invalid start or end date' });
+  }
+  if (new Date(end) < new Date(start)) {
+    return res.status(400).json({ success: false, message: 'End date must be after start date' });
+  }
+
+  // Prevent overlapping bookings for the same hall
+  const conflicts = bookings.some(b => b.hallId === hallId && isOverlap(start, end, normalizeYYYYMMDD(b.startDate), normalizeYYYYMMDD(b.endDate)));
+  if (conflicts) {
+    return res.status(409).json({ success: false, message: 'Selected dates overlap with an existing booking' });
+  }
+
+  const newBooking = {
+    id: Date.now().toString(),
+    hallId,
+    hallName: hall.name,
+    eventName: payload.eventName || '',
+    clientName: payload.clientName || '',
+    clientEmail: payload.clientEmail || '',
+    clientPhone: payload.clientPhone || '',
+    clientAddress: payload.clientAddress || '',
+    eventType: (payload.eventType || 'wedding').toString().toLowerCase(),
+    startDate: start,
+    endDate: end,
+    startTime: payload.startTime || '',
+    endTime: payload.endTime || '',
+    guestCount: Number(payload.guestCount) || Number(payload.expectedGuests) || 0,
+    expectedGuests: Number(payload.expectedGuests) || 0,
+    totalAmount: Number(payload.totalAmount) || hall.price || 0,
+    advanceAmount: Number(payload.advanceAmount) || 0,
+    balanceAmount: Math.max(0, (Number(payload.totalAmount) || hall.price || 0) - (Number(payload.advanceAmount) || 0)),
+    paymentMethod: (payload.paymentMethod || 'cash').toString().toLowerCase(),
+    cateringRequired: !!payload.cateringRequired,
+    decorationRequired: !!payload.decorationRequired,
+    soundSystemRequired: !!payload.soundSystemRequired,
+    photographyRequired: !!payload.photographyRequired,
+    specialRequirements: payload.specialRequirements || '',
+    status: (payload.status || 'confirmed').toString().toLowerCase(),
+    bookingDate: new Date().toISOString(),
+    createdBy: (payload.createdBy || 'System'),
+    notes: payload.notes || ''
+  };
+
+  bookings.unshift(newBooking);
+  writeData('banquetBookings.json', bookings);
+
+  // Broadcast real-time update
+  broadcastUpdate('banquet_booking_created', newBooking);
+
+  // Optionally log activity
+  try {
+    const activities = readData('activities.json');
+    activities.unshift({
+      id: Date.now().toString(),
+      type: 'banquet_booking',
+      guestName: newBooking.clientName || newBooking.hallName,
+      roomNumber: newBooking.hallName,
+      time: 'Just now',
+      status: 'completed'
+    });
+    writeData('activities.json', activities);
+    broadcastUpdate('activity_updated', activities[0]);
+  } catch {}
+
+  res.json({ success: true, data: newBooking });
+});
+
+app.delete('/api/banquet-bookings/:id', (req, res) => {
+  const { id } = req.params;
+  const bookings = readData('banquetBookings.json');
+  const idx = bookings.findIndex(b => b.id === id);
+  if (idx === -1) {
+    return res.status(404).json({ success: false, message: 'Booking not found' });
+  }
+  const removed = bookings.splice(idx, 1)[0];
+  writeData('banquetBookings.json', bookings);
+  broadcastUpdate('banquet_booking_deleted', { id, hallId: removed.hallId });
+  res.json({ success: true, message: 'Booking deleted successfully' });
 });
 
 // Room Shifts API

@@ -562,6 +562,55 @@ export const validateApiResponse = <T>(response: ApiResponse<T>): T => {
   return response.data!
 }
 
+// Banquets API (Halls and Bookings)
+export const banquetsAPI = {
+  getHalls: async (): Promise<ApiResponse<any[]>> => {
+    return apiRequest('/banquets')
+  },
+
+  createHall: async (hallData: any): Promise<ApiResponse<any>> => {
+    return apiRequest('/banquets', {
+      method: 'POST',
+      body: JSON.stringify(hallData),
+    })
+  },
+
+  updateHall: async (hallId: string, hallData: any): Promise<ApiResponse<any>> => {
+    return apiRequest(`/banquets/${hallId}`, {
+      method: 'PUT',
+      body: JSON.stringify(hallData),
+    })
+  },
+
+  deleteHall: async (hallId: string): Promise<ApiResponse> => {
+    return apiRequest(`/banquets/${hallId}`, {
+      method: 'DELETE',
+    })
+  },
+
+  getBookings: async (params?: { hallId?: string; startDate?: string; endDate?: string }): Promise<ApiResponse<any[]>> => {
+    const searchParams = new URLSearchParams()
+    if (params?.hallId) searchParams.append('hallId', params.hallId)
+    if (params?.startDate) searchParams.append('startDate', params.startDate)
+    if (params?.endDate) searchParams.append('endDate', params.endDate)
+    const suffix = searchParams.toString() ? `?${searchParams.toString()}` : ''
+    return apiRequest(`/banquet-bookings${suffix}`)
+  },
+
+  createBooking: async (booking: any): Promise<ApiResponse<any>> => {
+    return apiRequest('/banquet-bookings', {
+      method: 'POST',
+      body: JSON.stringify(booking),
+    })
+  },
+
+  deleteBooking: async (bookingId: string): Promise<ApiResponse> => {
+    return apiRequest(`/banquet-bookings/${bookingId}`, {
+      method: 'DELETE',
+    })
+  },
+}
+
 // Export all APIs
 export default {
   auth: authAPI,
@@ -573,5 +622,6 @@ export default {
   settings: settingsAPI,
   upload: uploadAPI,
   billing: billingAPI,
+  banquets: banquetsAPI,
   ws: wsService,
 } 
