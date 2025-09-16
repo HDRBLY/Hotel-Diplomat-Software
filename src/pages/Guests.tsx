@@ -16,6 +16,7 @@ import {
 import Notification, { useNotification } from '../components/Notification'
 import { useAuth } from '../components/AuthContext'
 import { formatTodayISO, formatToDDMMYYYY, parseFlexibleDate } from '../utils/date'
+import { calculateBill, numberToIndianWords, getDisplaySafeValues, formatBillDates } from '../utils/billing'
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
 
 // Define GuestCategory type for type safety
@@ -727,10 +728,6 @@ const Guests = () => {
   const generateBill = async () => {
     if (!checkoutGuest) return
 
-    // Debug: Log guest data to see plan
-    console.log('Guest data for bill:', checkoutGuest)
-    console.log('Guest plan:', checkoutGuest.plan)
-
     try {
       // Fetch fresh guest data from backend using service layer
       const guestsResp = await guestsAPI.getAllGuests()
@@ -740,18 +737,29 @@ const Guests = () => {
       // Use fresh guest data if available, otherwise use checkoutGuest
       const guestForBill = freshGuestData || checkoutGuest
       
-      if (freshGuestData) {
-        console.log('Fresh guest data:', freshGuestData)
-        console.log('Fresh guest plan:', freshGuestData.plan)
-      }
       // Get bill number from backend via API service
       const billResp = await billingAPI.getBillNumber()
       const billNumber = billResp.success && (billResp as any).billNumber ? (billResp as any).billNumber : (billResp.data?.billNumber || '0001')
 
+      // Get room price (per-day base rate) from rooms data
+      const roomsResp = await roomsAPI.getAllRooms()
+      const roomList = roomsResp.success ? (roomsResp.data as any[]) || [] : []
+      const room = roomList.find((r: any) => r.number === guestForBill.roomNumber)
+      const roomBasePricePerDay: number = room && typeof room.price === 'number' ? room.price : 0
 
+      // Use shared billing calculation
+      const billingInputs = {
+        checkInDate: guestForBill.checkInDate,
+        checkOutDate: checkoutDetails.actualCheckOutDate,
+        roomNumber: guestForBill.roomNumber,
+        guest: guestForBill,
+        checkoutDetails,
+        roomBasePrice: roomBasePricePerDay
+      }
 
-      // Format amount in words (set after computing totalAmount)
-      let amountInWords = ''
+      const breakdown = calculateBill(billingInputs)
+      const displayValues = getDisplaySafeValues(breakdown)
+      const { formattedArrivalDate, formattedDepartureDate } = formatBillDates(guestForBill.checkInDate, checkoutDetails.actualCheckOutDate)
 
       // Get current date and time for checkout
       const now = new Date()
@@ -761,120 +769,11 @@ const Guests = () => {
       const checkInTime = new Date(guestForBill.createdAt || guestForBill.updatedAt || Date.now())
       const formattedCheckInTime = checkInTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
 
-      // Calculate number of days properly
-      // Flexible parsing for both yyyy-mm-dd and dd-mm-yyyy
-      const checkInDate = parseFlexibleDate(guestForBill.checkInDate)
-      const checkOutDate = parseFlexibleDate(checkoutDetails.actualCheckOutDate)
-      
-      // Calculate days difference - if same day, count as 1 day
-      let daysDiff = 1
-      if (checkOutDate.getTime() !== checkInDate.getTime()) {
-        const timeDiff = checkOutDate.getTime() - checkInDate.getTime()
-        daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24))
-        // Ensure minimum 1 day
-        if (daysDiff < 1) daysDiff = 1
-      }
-
-      // Get room price (per-day base rate) from rooms data
-      const roomsResp = await roomsAPI.getAllRooms()
-      const roomList = roomsResp.success ? (roomsResp.data as any[]) || [] : []
-      const room = roomList.find((r: any) => r.number === guestForBill.roomNumber)
-      const roomBasePricePerDay: number = room && typeof room.price === 'number' ? room.price : 0
-
-      // Prefer per-day amount as shown in checkout modal: "Room Rent (including extra bed)"
-      const perDayFromCheckout = Math.max(0,
-        (checkoutDetails.finalAmount || 0)
-        - (checkoutDetails.additionalCharges || 0)
-        - (checkoutDetails.laundryCharges || 0)
-        - (checkoutDetails.halfDayCharges || 0)
-      )
-
-      // Establish pricePerDay and extraBedCharges according to the chosen source
-      let pricePerDay = 0
-      let extraBedCharges = 0
-
-      if (perDayFromCheckout > 0) {
-        // Use the exact per-day room rent (including extra bed) from checkout form
-        pricePerDay = perDayFromCheckout
-        extraBedCharges = 0 // already included in per-day
-      } else {
-        // Fallback to room base price or derived rate from guest totals
-        const fallbackExtra = guestForBill.extraBeds ? guestForBill.extraBeds.reduce((sum: number, bed: any) => sum + bed.charge, 0) : 0
-        const derivedPerDay = Math.round(Math.max(0, (guestForBill.totalAmount - fallbackExtra)) / Math.max(1, daysDiff))
-        pricePerDay = roomBasePricePerDay > 0 ? roomBasePricePerDay : derivedPerDay
-        extraBedCharges = fallbackExtra
-      }
-
-      // Complimentary stays: only room rent and extra bed are waived (add-ons remain billable)
-      const isComplimentary = (guestForBill.complimentary === true) || (String(guestForBill.complimentary).toLowerCase() === 'true') ||
-        ((checkoutGuest as any)?.complimentary === true) || (String((checkoutGuest as any)?.complimentary).toLowerCase() === 'true')
-      if (isComplimentary) {
-        pricePerDay = 0
-        extraBedCharges = 0
-      }
-
-      // Room rent for the stay is per-day base multiplied by number of days
-      const roomRent = pricePerDay * daysDiff
-      const totalRoomCharges = roomRent + extraBedCharges
-
-      // Calculate tax breakdown for room rent (12% GST: 6% CGST + 6% SGST)
-      const roomRentTaxableValue = roomRent / 1.12 // Remove GST to get base amount
-      const roomRentCgst = roomRentTaxableValue * 0.06
-      const roomRentSgst = roomRentTaxableValue * 0.06
-
-      // Calculate tax breakdown for extra bed charges (12% GST: 6% CGST + 6% SGST)
-      const extraBedTaxableValue = extraBedCharges / 1.12
-      const extraBedCgst = extraBedTaxableValue * 0.06
-      const extraBedSgst = extraBedTaxableValue * 0.06
-
-      // Normalize optional charges to numbers to avoid NaN
-      // Complimentary stays: only room rent and extra bed are waived; add-ons remain billable
-      const addl = Number(checkoutDetails.additionalCharges) || 0
-      const laundry = Number(checkoutDetails.laundryCharges) || 0
-      const halfDay = Number(checkoutDetails.halfDayCharges) || 0
-
-      // Calculate tax breakdown for fooding charges (5% GST: 2.5% CGST + 2.5% SGST)
-      const foodingTaxableValue = addl > 0 ? addl / 1.05 : 0
-      const foodingCgst = foodingTaxableValue * 0.025
-      const foodingSgst = foodingTaxableValue * 0.025
-
-      // Calculate tax breakdown for laundry charges (5% GST: 2.5% CGST + 2.5% SGST)
-      const laundryTaxableValue = laundry > 0 ? laundry / 1.05 : 0
-      const laundryCgst = laundryTaxableValue * 0.025
-      const laundrySgst = laundryTaxableValue * 0.025
-
-      // Half-day charges are treated as room rent (12% GST)
-      const halfDayTaxableValue = halfDay > 0 ? halfDay / 1.12 : 0
-      const halfDayCgst = halfDayTaxableValue * 0.06
-      const halfDaySgst = halfDayTaxableValue * 0.06
-
-      // Total tax values
-      const taxableValue = roomRentTaxableValue + extraBedTaxableValue + foodingTaxableValue + laundryTaxableValue + halfDayTaxableValue
-      const cgst = roomRentCgst + extraBedCgst + foodingCgst + laundryCgst + halfDayCgst
-      const sgst = roomRentSgst + extraBedSgst + foodingSgst + laundrySgst + halfDaySgst
-
-      // Calculate total amount (sum of all individual row totals)
-      const totalAmount = (Number(roomRent) || 0) + (Number(extraBedCharges) || 0) + addl + laundry + halfDay
-
-      // Rounded total for display/words
-      const totalAmountDisplay = Math.round(totalAmount)
-
-      // Now compute amount in words based on the grand total
-      amountInWords = numberToIndianWords(totalAmountDisplay || 0)
-
-      // Format arrival date properly (convert yyyy-mm-dd to dd-mm-yyyy)
-      const arrivalDateParts = checkoutGuest.checkInDate.split('-')
-      const formattedArrivalDate = `${arrivalDateParts[2]}-${arrivalDateParts[1]}-${arrivalDateParts[0]}`
+      // Compute amount in words
+      const amountInWords = numberToIndianWords(breakdown.totalAmountDisplay)
 
       // Compute logo URL (served from public/logo.png)
       const logoUrl = `${window.location.origin}/logo.png`
-
-      // Display-safe values for complimentary stays (room/extra bed waived; add-ons billed)
-      const displayPricePerDay = isComplimentary ? 0 : pricePerDay
-      const displayRoomRent = isComplimentary ? 0 : roomRent
-      const displayRoomRentTaxableValue = isComplimentary ? 0 : roomRentTaxableValue
-      const displayRoomRentCgst = isComplimentary ? 0 : roomRentCgst
-      const displayRoomRentSgst = isComplimentary ? 0 : roomRentSgst
 
       // Create bill HTML
       const billHTML = `
@@ -994,7 +893,7 @@ const Guests = () => {
               <div class="stay-details">
                 <div class="section-title">Stay Details:</div>
                               <div class="info-row editable" contenteditable="false">Date of Arrival: ${formattedArrivalDate}</div>
-              <div class="info-row editable" contenteditable="false">Date of Departure: ${formatToDDMMYYYY(checkoutDetails.actualCheckOutDate)}</div>
+              <div class="info-row editable" contenteditable="false">Date of Departure: ${formattedDepartureDate}</div>
               <div class="info-row editable" contenteditable="false">Bill No: ${billNumber}</div>
               <div class="info-row editable" contenteditable="false">ROOM NO: ${guestForBill.roomNumber}</div>
               <div class="info-row editable" contenteditable="false">PAX: ${1 + (guestForBill.secondaryGuest ? 1 : 0) + (guestForBill.extraBeds ? guestForBill.extraBeds.length : 0)}</div>
@@ -1022,67 +921,67 @@ const Guests = () => {
               <tr>
                 <td class="editable" contenteditable="false">${guestForBill.roomNumber}</td>
                 <td class="editable" contenteditable="false">${guestForBill.name}</td>
-                <td class="editable" contenteditable="false">${daysDiff}</td>
-                <td class="editable" contenteditable="false">₹${displayPricePerDay}</td>
-                <td class="editable" contenteditable="false">₹${displayRoomRentTaxableValue.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">${breakdown.daysDiff}</td>
+                <td class="editable" contenteditable="false">₹${displayValues.displayPricePerDay}</td>
+                <td class="editable" contenteditable="false">₹${displayValues.displayRoomRentTaxableValue.toFixed(2)}</td>
                 <td>12%</td>
-                <td class="editable" contenteditable="false">₹${displayRoomRentCgst.toFixed(2)}</td>
-                <td class="editable" contenteditable="false">₹${displayRoomRentSgst.toFixed(2)}</td>
-                <td class="editable" contenteditable="false">₹${displayRoomRent}</td>
+                <td class="editable" contenteditable="false">₹${displayValues.displayRoomRentCgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${displayValues.displayRoomRentSgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${displayValues.displayRoomRent}</td>
               </tr>
-              ${extraBedCharges > 0 ? `
+              ${breakdown.extraBedCharges > 0 ? `
               <tr>
                 <td colspan="4" class="editable" contenteditable="false">Extra Bed Charges</td>
-                <td class="editable" contenteditable="false">₹${extraBedTaxableValue.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.extraBedTaxableValue.toFixed(2)}</td>
                 <td>12%</td>
-                <td class="editable" contenteditable="false">₹${extraBedCgst.toFixed(2)}</td>
-                <td class="editable" contenteditable="false">₹${extraBedSgst.toFixed(2)}</td>
-                <td class="editable" contenteditable="false">₹${extraBedCharges}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.extraBedCgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.extraBedSgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.extraBedCharges}</td>
               </tr>
               ` : ''}
-              ${checkoutDetails.additionalCharges > 0 ? `
+              ${breakdown.additionalCharges > 0 ? `
               <tr>
                 <td colspan="4" class="editable" contenteditable="false">Fooding Charges</td>
-                <td class="editable" contenteditable="false">₹${foodingTaxableValue.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.foodingTaxableValue.toFixed(2)}</td>
                 <td>5%</td>
-                <td class="editable" contenteditable="false">₹${foodingCgst.toFixed(2)}</td>
-                <td class="editable" contenteditable="false">₹${foodingSgst.toFixed(2)}</td>
-                <td class="editable" contenteditable="false">₹${checkoutDetails.additionalCharges}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.foodingCgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.foodingSgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.additionalCharges}</td>
               </tr>
               ` : ''}
-              ${checkoutDetails.laundryCharges > 0 ? `
+              ${breakdown.laundryCharges > 0 ? `
               <tr>
                 <td colspan="4" class="editable" contenteditable="false">Laundry Charges</td>
-                <td class="editable" contenteditable="false">₹${laundryTaxableValue.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.laundryTaxableValue.toFixed(2)}</td>
                 <td>5%</td>
-                <td class="editable" contenteditable="false">₹${laundryCgst.toFixed(2)}</td>
-                <td class="editable" contenteditable="false">₹${laundrySgst.toFixed(2)}</td>
-                <td class="editable" contenteditable="false">₹${checkoutDetails.laundryCharges}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.laundryCgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.laundrySgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.laundryCharges}</td>
               </tr>
               ` : ''}
-              ${checkoutDetails.halfDayCharges > 0 ? `
+              ${breakdown.halfDayCharges > 0 ? `
               <tr>
                 <td colspan="4" class="editable" contenteditable="false">Late Checkout Charges</td>
-                <td class="editable" contenteditable="false">₹${halfDayTaxableValue.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.halfDayTaxableValue.toFixed(2)}</td>
                 <td>12%</td>
-                <td class="editable" contenteditable="false">₹${halfDayCgst.toFixed(2)}</td>
-                <td class="editable" contenteditable="false">₹${halfDaySgst.toFixed(2)}</td>
-                <td class="editable" contenteditable="false">₹${checkoutDetails.halfDayCharges}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.halfDayCgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.halfDaySgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.halfDayCharges}</td>
               </tr>
               ` : ''}
               <tr class="total-row">
                 <td colspan="4">TOTAL</td>
-                <td class="editable" contenteditable="false">₹${taxableValue.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.totalTaxableValue.toFixed(2)}</td>
                 <td></td>
-                <td class="editable" contenteditable="false">₹${cgst.toFixed(2)}</td>
-                <td class="editable" contenteditable="false">₹${sgst.toFixed(2)}</td>
-                <td class="editable" contenteditable="false">₹${totalAmountDisplay}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.totalCgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.totalSgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.totalAmountDisplay}</td>
               </tr>
             </tbody>
           </table>
 
           <div style="text-align: right; font-size: 11px; margin-top: 4px;">
-            <span>Round Off:</span> <span class="editable" contenteditable="false">₹${(totalAmountDisplay - totalAmount).toFixed(2)}</span>
+            <span>Round Off:</span> <span class="editable" contenteditable="false">₹${(breakdown.totalAmountDisplay - breakdown.totalAmount).toFixed(2)}</span>
           </div>
 
           <div style="margin: 10px 0;">
@@ -1202,94 +1101,33 @@ const Guests = () => {
       const freshGuestData = guestsDataList.find((g: any) => g.id === checkoutGuest?.id)
       const guestForBill = freshGuestData || checkoutGuest
 
+      // Get room price (per-day base rate) from rooms data
+      const roomsResp = await roomsAPI.getAllRooms()
+      const roomList = roomsResp.success ? (roomsResp.data as any[]) || [] : []
+      const room = roomList.find((r: any) => r.number === guestForBill.roomNumber)
+      const roomBasePricePerDay: number = room && typeof room.price === 'number' ? room.price : 0
+
+      // Use shared billing calculation
+      const billingInputs = {
+        checkInDate: guestForBill.checkInDate,
+        checkOutDate: checkoutDetails.actualCheckOutDate,
+        roomNumber: guestForBill.roomNumber,
+        guest: guestForBill,
+        checkoutDetails,
+        roomBasePrice: roomBasePricePerDay
+      }
+
+      const breakdown = calculateBill(billingInputs)
+      const displayValues = getDisplaySafeValues(breakdown)
+      const { formattedArrivalDate, formattedDepartureDate } = formatBillDates(guestForBill.checkInDate, checkoutDetails.actualCheckOutDate)
+
       // Times
       const now = new Date()
       const billTime = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
       const checkInTime = new Date(guestForBill.createdAt || guestForBill.updatedAt || Date.now())
       const formattedCheckInTime = checkInTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
 
-      // Days difference
-      const checkInParts = guestForBill.checkInDate.split('-')
-      const checkInDate = new Date(parseInt(checkInParts[0]), parseInt(checkInParts[1]) - 1, parseInt(checkInParts[2]))
-      const outParts = checkoutDetails.actualCheckOutDate.split('-')
-      const checkOutDate = new Date(parseInt(outParts[2]), parseInt(outParts[1]) - 1, parseInt(outParts[0]))
-      let daysDiff = 1
-      if (checkOutDate.getTime() !== checkInDate.getTime()) {
-        const timeDiff = checkOutDate.getTime() - checkInDate.getTime()
-        daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24))
-        if (daysDiff < 1) daysDiff = 1
-      }
-
-      // Room base and per-day from checkout
-      const roomsResp = await roomsAPI.getAllRooms()
-      const roomList = roomsResp.success ? (roomsResp.data as any[]) || [] : []
-      const room = roomList.find((r: any) => r.number === guestForBill.roomNumber)
-      const roomBasePricePerDay: number = room && typeof room.price === 'number' ? room.price : 0
-
-      const perDayFromCheckout = Math.max(0,
-        (checkoutDetails.finalAmount || 0)
-        - (checkoutDetails.additionalCharges || 0)
-        - (checkoutDetails.laundryCharges || 0)
-        - (checkoutDetails.halfDayCharges || 0)
-      )
-
-      let pricePerDay = 0
-      let extraBedCharges = 0
-      if (perDayFromCheckout > 0) {
-        pricePerDay = perDayFromCheckout
-        extraBedCharges = 0
-      } else {
-        const fallbackExtra = guestForBill.extraBeds ? guestForBill.extraBeds.reduce((sum: number, bed: any) => sum + bed.charge, 0) : 0
-        const derivedPerDay = Math.round(Math.max(0, (guestForBill.totalAmount - fallbackExtra)) / Math.max(1, daysDiff))
-        pricePerDay = roomBasePricePerDay > 0 ? roomBasePricePerDay : derivedPerDay
-        extraBedCharges = fallbackExtra
-      }
-
-      // Complimentary stays: force zero pricing and zero add-ons
-      const isComplimentary = !!guestForBill.complimentary
-      if (isComplimentary) {
-        pricePerDay = 0
-        extraBedCharges = 0
-      }
-
-      const roomRent = pricePerDay * daysDiff
-
-      // Taxes
-      const roomRentTaxableValue = roomRent / 1.12
-      const roomRentCgst = roomRentTaxableValue * 0.06
-      const roomRentSgst = roomRentTaxableValue * 0.06
-
-      const extraBedTaxableValue = extraBedCharges / 1.12
-      const extraBedCgst = extraBedTaxableValue * 0.06
-      const extraBedSgst = extraBedTaxableValue * 0.06
-
-      const addl = Number(checkoutDetails.additionalCharges) || 0
-      const laundry = Number(checkoutDetails.laundryCharges) || 0
-      const halfDay = Number(checkoutDetails.halfDayCharges) || 0
-
-      const foodingTaxableValue = addl > 0 ? addl / 1.05 : 0
-      const foodingCgst = foodingTaxableValue * 0.025
-      const foodingSgst = foodingTaxableValue * 0.025
-
-      const laundryTaxableValue = laundry > 0 ? laundry / 1.05 : 0
-      const laundryCgst = laundryTaxableValue * 0.025
-      const laundrySgst = laundryTaxableValue * 0.025
-
-      const halfDayTaxableValue = halfDay > 0 ? halfDay / 1.12 : 0
-      const halfDayCgst = halfDayTaxableValue * 0.06
-      const halfDaySgst = halfDayTaxableValue * 0.06
-
-      const taxableValue = roomRentTaxableValue + extraBedTaxableValue + foodingTaxableValue + laundryTaxableValue + halfDayTaxableValue
-      const cgst = roomRentCgst + extraBedCgst + foodingCgst + laundryCgst + halfDayCgst
-      const sgst = roomRentSgst + extraBedSgst + foodingSgst + laundrySgst + halfDaySgst
-
-      const totalAmount = (Number(roomRent) || 0) + (Number(extraBedCharges) || 0) + addl + laundry + halfDay
-      const totalAmountDisplay = Math.round(totalAmount)
-
-      const amountInWords = numberToIndianWords(totalAmountDisplay || 0)
-
-      const arrivalDateParts = checkoutGuest.checkInDate.split('-')
-      const formattedArrivalDate = `${arrivalDateParts[2]}-${arrivalDateParts[1]}-${arrivalDateParts[0]}`
+      const amountInWords = numberToIndianWords(breakdown.totalAmountDisplay)
 
       const logoUrl = `${window.location.origin}/logo.png`
 
@@ -1373,7 +1211,7 @@ const Guests = () => {
             <div class="stay-details">
               <div class="section-title">Stay Details:</div>
               <div class="info-row editable" contenteditable="false">Date of Arrival: ${formattedArrivalDate}</div>
-              <div class="info-row editable" contenteditable="false">Date of Departure: ${checkoutDetails.actualCheckOutDate}</div>
+              <div class="info-row editable" contenteditable="false">Date of Departure: ${formattedDepartureDate}</div>
               <div class="info-row editable" contenteditable="false">ROOM NO: ${guestForBill.roomNumber}</div>
               <div class="info-row editable" contenteditable="false">PAX: ${1 + (guestForBill.secondaryGuest ? 1 : 0) + (guestForBill.extraBeds ? guestForBill.extraBeds.length : 0)}</div>
               <div class="info-row editable" contenteditable="false">Plan: ${guestForBill.plan || 'EP'}</div>
@@ -1400,67 +1238,67 @@ const Guests = () => {
               <tr>
                 <td class="editable" contenteditable="false">${guestForBill.roomNumber}</td>
                 <td class="editable" contenteditable="false">${guestForBill.name}</td>
-                <td class="editable" contenteditable="false">${daysDiff}</td>
-                <td class="editable" contenteditable="false">₹${pricePerDay}</td>
-                <td class="editable" contenteditable="false">₹${roomRentTaxableValue.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">${breakdown.daysDiff}</td>
+                <td class="editable" contenteditable="false">₹${displayValues.displayPricePerDay}</td>
+                <td class="editable" contenteditable="false">₹${displayValues.displayRoomRentTaxableValue.toFixed(2)}</td>
                 <td>12%</td>
-                <td class="editable" contenteditable="false">₹${roomRentCgst.toFixed(2)}</td>
-                <td class="editable" contenteditable="false">₹${roomRentSgst.toFixed(2)}</td>
-                <td class="editable" contenteditable="false">₹${roomRent}</td>
+                <td class="editable" contenteditable="false">₹${displayValues.displayRoomRentCgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${displayValues.displayRoomRentSgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${displayValues.displayRoomRent}</td>
               </tr>
-              ${extraBedCharges > 0 ? `
+              ${breakdown.extraBedCharges > 0 ? `
               <tr>
                 <td colspan="4" class="editable" contenteditable="false">Extra Bed Charges</td>
-                <td class="editable" contenteditable="false">₹${extraBedTaxableValue.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.extraBedTaxableValue.toFixed(2)}</td>
                 <td>12%</td>
-                <td class="editable" contenteditable="false">₹${extraBedCgst.toFixed(2)}</td>
-                <td class="editable" contenteditable="false">₹${extraBedSgst.toFixed(2)}</td>
-                <td class="editable" contenteditable="false">₹${extraBedCharges}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.extraBedCgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.extraBedSgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.extraBedCharges}</td>
               </tr>
               ` : ''}
-              ${addl > 0 ? `
+              ${breakdown.additionalCharges > 0 ? `
               <tr>
                 <td colspan="4" class="editable" contenteditable="false">Fooding Charges</td>
-                <td class="editable" contenteditable="false">₹${foodingTaxableValue.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.foodingTaxableValue.toFixed(2)}</td>
                 <td>5%</td>
-                <td class="editable" contenteditable="false">₹${foodingCgst.toFixed(2)}</td>
-                <td class="editable" contenteditable="false">₹${foodingSgst.toFixed(2)}</td>
-                <td class="editable" contenteditable="false">₹${addl}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.foodingCgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.foodingSgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.additionalCharges}</td>
               </tr>
               ` : ''}
-              ${laundry > 0 ? `
+              ${breakdown.laundryCharges > 0 ? `
               <tr>
                 <td colspan="4" class="editable" contenteditable="false">Laundry Charges</td>
-                <td class="editable" contenteditable="false">₹${laundryTaxableValue.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.laundryTaxableValue.toFixed(2)}</td>
                 <td>5%</td>
-                <td class="editable" contenteditable="false">₹${laundryCgst.toFixed(2)}</td>
-                <td class="editable" contenteditable="false">₹${laundrySgst.toFixed(2)}</td>
-                <td class="editable" contenteditable="false">₹${laundry}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.laundryCgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.laundrySgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.laundryCharges}</td>
               </tr>
               ` : ''}
-              ${halfDay > 0 ? `
+              ${breakdown.halfDayCharges > 0 ? `
               <tr>
                 <td colspan="4" class="editable" contenteditable="false">Late Checkout Charges</td>
-                <td class="editable" contenteditable="false">₹${halfDayTaxableValue.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.halfDayTaxableValue.toFixed(2)}</td>
                 <td>12%</td>
-                <td class="editable" contenteditable="false">₹${halfDayCgst.toFixed(2)}</td>
-                <td class="editable" contenteditable="false">₹${halfDaySgst.toFixed(2)}</td>
-                <td class="editable" contenteditable="false">₹${halfDay}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.halfDayCgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.halfDaySgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.halfDayCharges}</td>
               </tr>
               ` : ''}
               <tr class="total-row">
                 <td colspan="4">TOTAL</td>
-                <td class="editable" contenteditable="false">₹${taxableValue.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.totalTaxableValue.toFixed(2)}</td>
                 <td></td>
-                <td class="editable" contenteditable="false">₹${cgst.toFixed(2)}</td>
-                <td class="editable" contenteditable="false">₹${sgst.toFixed(2)}</td>
-                <td class="editable" contenteditable="false">₹${totalAmountDisplay}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.totalCgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.totalSgst.toFixed(2)}</td>
+                <td class="editable" contenteditable="false">₹${breakdown.totalAmountDisplay}</td>
               </tr>
             </tbody>
           </table>
 
           <div style="text-align: right; font-size: 11px; margin-top: 4px;">
-            <span>Round Off:</span> <span class="editable" contenteditable="false">₹${(totalAmountDisplay - totalAmount).toFixed(2)}</span>
+            <span>Round Off:</span> <span class="editable" contenteditable="false">₹${(breakdown.totalAmountDisplay - breakdown.totalAmount).toFixed(2)}</span>
           </div>
 
           <div style="margin: 10px 0;">

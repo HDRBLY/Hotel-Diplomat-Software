@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { io, Socket } from 'socket.io-client'
 import { useNotification } from '../components/Notification'
+import { formatToDDMMYYYY } from '../utils/date'
 import { 
   BarChart3, 
   TrendingUp, 
@@ -124,12 +125,9 @@ const Reports = () => {
       // Convert amount to words
       const amountInWords = numberToWords(billAmount)
 
-      // Format dates properly (convert yyyy-mm-dd to dd-mm-yyyy)
-      const checkInDateParts = guest.checkInDate.split('-')
-      const formattedCheckInDate = `${checkInDateParts[2]}-${checkInDateParts[1]}-${checkInDateParts[0]}`
-      
-      const checkOutDateParts = guest.checkOutDate ? guest.checkOutDate.split('-') : new Date().toISOString().split('T')[0].split('-')
-      const formattedCheckOutDate = `${checkOutDateParts[2]}-${checkOutDateParts[1]}-${checkOutDateParts[0]}`
+      // Format dates properly using shared utilities
+      const formattedCheckInDate = formatToDDMMYYYY(guest.checkInDate)
+      const formattedCheckOutDate = formatToDDMMYYYY(guest.checkOutDate || new Date().toISOString().split('T')[0])
 
       // Current time for bill
       const now = new Date()

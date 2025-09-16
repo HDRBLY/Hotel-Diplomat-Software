@@ -33,4 +33,29 @@ export const formatToYYYYMMDD = (dateStr: string): string => {
   return `${yyyy}-${mm}-${dd}`
 }
 
+export const calculateDaysDifference = (checkInDate: Date | null, checkOutDate: Date | null): number => {
+  if (!checkInDate || !checkOutDate) return 1
+  
+  // Calculate days difference - if same day, count as 1 day
+  let daysDiff = 1
+  if (checkOutDate.getTime() !== checkInDate.getTime()) {
+    const timeDiff = checkOutDate.getTime() - checkInDate.getTime()
+    daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24))
+    // Ensure minimum 1 day
+    if (daysDiff < 1) daysDiff = 1
+  }
+  
+  return daysDiff
+}
+
+export const convertDateToBackendFormat = (dateString: string): string => {
+  const date = parseFlexibleDate(dateString)
+  if (!date) return ''
+  return date.toISOString().split('T')[0]
+}
+
+export const validateDate = (dateString: string): boolean => {
+  return parseFlexibleDate(dateString) !== null
+}
+
 

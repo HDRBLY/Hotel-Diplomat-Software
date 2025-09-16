@@ -79,6 +79,10 @@ const permissions = {
     'reservations:create',
     'reservations:edit',
     'reservations:delete',
+    'banquets:view',
+    'banquets:create',
+    'banquets:edit',
+    'banquets:delete',
     'reports:view',
     'reports:export',
     'settings:view',
@@ -98,6 +102,10 @@ const permissions = {
     'reservations:create',
     'reservations:edit',
     'reservations:delete',
+    'banquets:view',
+    'banquets:create',
+    'banquets:edit',
+    'banquets:delete',
     'reports:view',
     'reports:export'
     // No settings permissions

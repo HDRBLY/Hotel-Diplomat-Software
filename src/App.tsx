@@ -8,6 +8,7 @@ import Guests from './pages/Guests'
 import Rooms from './pages/Rooms'
 // import DeleteRooms from './pages/DeleteRooms'
 import Reservations from './pages/Reservations'
+import Banquets from './pages/Banquets'
 import Reports from './pages/Reports'
 // import Settings from './pages/Settings'
 import { Component, ReactNode } from 'react'
@@ -98,6 +99,13 @@ function App() {
               <ProtectedRoute requiredPermission="reservations:view">
                 <Layout>
                   <Reservations />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/banquets" element={
+              <ProtectedRoute requiredPermission="banquets:view">
+                <Layout>
+                  <Banquets />
                 </Layout>
               </ProtectedRoute>
             } />

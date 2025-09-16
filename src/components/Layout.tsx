@@ -95,6 +95,12 @@ const Layout = ({ children }: LayoutProps) => {
       permission: 'reservations:view'
     },
     { 
+      name: 'Banquets', 
+      href: '/banquets', 
+      icon: Building2,
+      permission: 'banquets:view'
+    },
+    { 
       name: 'Reports', 
       href: '/reports', 
       icon: BarChart3,
