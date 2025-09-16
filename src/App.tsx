@@ -90,7 +90,7 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="/room-service" element={
-              <ProtectedRoute requiredPermission="rooms:view">
+              <ProtectedRoute requiredPermission="room-service:view">
                 <Layout>
                   <RoomService />
                 </Layout>

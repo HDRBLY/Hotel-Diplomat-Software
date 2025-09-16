@@ -75,6 +75,10 @@ const permissions = {
     'rooms:create',
     'rooms:edit',
     'rooms:delete',
+    'room-service:view',
+    'room-service:create',
+    'room-service:edit',
+    'room-service:delete',
     'reservations:view',
     'reservations:create',
     'reservations:edit',
@@ -98,6 +102,10 @@ const permissions = {
     'rooms:create',
     'rooms:edit',
     'rooms:delete',
+    'room-service:view',
+    'room-service:create',
+    'room-service:edit',
+    'room-service:delete',
     'reservations:view',
     'reservations:create',
     'reservations:edit',
@@ -111,12 +119,33 @@ const permissions = {
     // No settings permissions
   ],
   staff: [
-    'rooms:view'
-    // Only room viewing permission
+    'dashboard:view',
+    'rooms:view',
+    'room-service:view',
+    'room-service:create',
+    'room-service:edit'
+    // Room service staff can view rooms and manage orders
   ],
   accounts: [
+    'dashboard:view',
     'reports:view'
     // Only reports viewing permission
+  ],
+  banquet: [
+    'dashboard:view',
+    'banquets:view',
+    'banquets:create',
+    'banquets:edit',
+    'banquets:delete'
+    // Only banquet management permissions
+  ],
+  'room-service': [
+    'dashboard:view',
+    'room-service:view',
+    'room-service:create',
+    'room-service:edit',
+    'room-service:delete'
+    // Only room service management permissions
   ]
 }
 

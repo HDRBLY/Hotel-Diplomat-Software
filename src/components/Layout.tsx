@@ -87,7 +87,7 @@ const Layout = ({ children }: LayoutProps) => {
       name: 'Room Service', 
       href: '/room-service', 
       icon: Utensils,
-      permission: 'rooms:view'
+      permission: 'room-service:view'
     },
     // { 
     //   name: 'Delete Rooms', 
@@ -131,6 +131,10 @@ const Layout = ({ children }: LayoutProps) => {
         return 'bg-green-100 text-green-800'
       case 'accounts':
         return 'bg-yellow-100 text-yellow-800'
+      case 'banquet':
+        return 'bg-purple-100 text-purple-800'
+      case 'room-service':
+        return 'bg-orange-100 text-orange-800'
       default:
         return 'bg-gray-100 text-gray-800'
     }
@@ -146,6 +150,10 @@ const Layout = ({ children }: LayoutProps) => {
         return 'Staff'
       case 'accounts':
         return 'Accounts'
+      case 'banquet':
+        return 'Banquet Manager'
+      case 'room-service':
+        return 'Room Service Manager'
       default:
         return 'User'
     }

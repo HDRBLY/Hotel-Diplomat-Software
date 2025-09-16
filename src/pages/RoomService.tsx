@@ -76,6 +76,19 @@ const RoomService = () => {
   const { hasPermission, user } = useAuth()
   const { notification, showNotification, hideNotification } = useNotification()
   
+  // Check if user has room service permissions
+  if (!hasPermission('room-service:view')) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="text-red-500 text-6xl mb-4">🚫</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
+          <p className="text-gray-600">You don't have permission to access Room Service.</p>
+        </div>
+      </div>
+    )
+  }
+  
   const [rooms, setRooms] = useState<Room[]>([])
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [foodOrders, setFoodOrders] = useState<FoodOrder[]>([])
@@ -316,6 +329,11 @@ const RoomService = () => {
 
   // Save food order
   const handleSaveOrder = async () => {
+    if (!hasPermission('room-service:create') && !hasPermission('room-service:edit')) {
+      showNotification('error', 'You do not have permission to manage orders')
+      return
+    }
+
     if (!selectedRoom || orderForm.items.length === 0) {
       showNotification('error', 'Please add at least one item to the order')
       return
