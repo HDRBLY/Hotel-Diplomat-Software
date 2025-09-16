@@ -30,7 +30,7 @@ if (!fs.existsSync(dataDir)) {
 }
 
 // Initialize data files if they don't exist
-const dataFiles = ['users.json', 'rooms.json', 'guests.json', 'reservations.json', 'activities.json'];
+const dataFiles = ['users.json', 'rooms.json', 'guests.json', 'reservations.json', 'banquet-bookings.json', 'room-service-orders.json', 'activities.json'];
 dataFiles.forEach(file => {
   const filePath = path.join(dataDir, file);
   if (!fs.existsSync(filePath)) {
@@ -1594,6 +1594,90 @@ app.post('/api/reservations', (req, res) => {
   res.json({ success: true, data: newReservation });
 });
 
+// Banquet Bookings API
+app.get('/api/banquet-bookings', (req, res) => {
+  const bookings = readData('banquet-bookings.json');
+  res.json({ success: true, data: bookings });
+});
+
+app.post('/api/banquet-bookings', (req, res) => {
+  const bookingData = req.body;
+  const bookings = readData('banquet-bookings.json');
+  
+  const newBooking = {
+    id: Date.now().toString(),
+    ...bookingData,
+    status: 'confirmed',
+    bookingDate: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+
+  bookings.push(newBooking);
+  writeData('banquet-bookings.json', bookings);
+
+  // Add to activities
+  const activities = readData('activities.json');
+  activities.unshift({
+    id: Date.now().toString(),
+    type: 'banquet_booking',
+    guestName: bookingData.clientName || 'Unknown',
+    roomNumber: bookingData.hallName || 'N/A',
+    time: 'Just now',
+    status: 'confirmed',
+    eventName: bookingData.eventName || 'N/A',
+    eventDate: bookingData.startDate || 'N/A'
+  });
+  writeData('activities.json', activities);
+
+  // Broadcast booking update
+  broadcastUpdate('banquet_booking_created', newBooking);
+  broadcastUpdate('activity_updated', activities[0]);
+
+  res.json({ success: true, data: newBooking });
+});
+
+app.put('/api/banquet-bookings/:id', (req, res) => {
+  const { id } = req.params;
+  const updateData = req.body;
+  const bookings = readData('banquet-bookings.json');
+  
+  const bookingIndex = bookings.findIndex(booking => booking.id === id);
+  if (bookingIndex === -1) {
+    return res.status(404).json({ success: false, message: 'Booking not found' });
+  }
+
+  bookings[bookingIndex] = {
+    ...bookings[bookingIndex],
+    ...updateData,
+    updatedAt: new Date().toISOString()
+  };
+  writeData('banquet-bookings.json', bookings);
+
+  // Broadcast booking update
+  broadcastUpdate('banquet_booking_updated', bookings[bookingIndex]);
+
+  res.json({ success: true, data: bookings[bookingIndex] });
+});
+
+app.delete('/api/banquet-bookings/:id', (req, res) => {
+  const { id } = req.params;
+  const bookings = readData('banquet-bookings.json');
+  
+  const bookingIndex = bookings.findIndex(booking => booking.id === id);
+  if (bookingIndex === -1) {
+    return res.status(404).json({ success: false, message: 'Booking not found' });
+  }
+
+  const deletedBooking = bookings.splice(bookingIndex, 1)[0];
+  writeData('banquet-bookings.json', bookings);
+
+  // Broadcast booking deletion
+  broadcastUpdate('banquet_booking_deleted', { id });
+
+  res.json({ success: true, message: 'Booking deleted successfully' });
+});
+
 // Activities API
 app.get('/api/activities', (req, res) => {
   const activities = readData('activities.json');
@@ -2263,6 +2347,88 @@ app.post('/api/reports/clear-data', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3001;
+// Room Service Orders API
+app.get('/api/room-service-orders', (req, res) => {
+  const orders = readData('room-service-orders.json');
+  res.json({ success: true, data: orders });
+});
+
+app.post('/api/room-service-orders', (req, res) => {
+  const orderData = req.body;
+  const orders = readData('room-service-orders.json');
+  
+  const newOrder = {
+    id: Date.now().toString(),
+    ...orderData,
+    orderDate: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+
+  orders.push(newOrder);
+  writeData('room-service-orders.json', orders);
+
+  // Add to activities
+  const activities = readData('activities.json');
+  activities.unshift({
+    id: Date.now().toString(),
+    type: 'room_service_order',
+    guestName: orderData.guestName || 'Unknown',
+    roomNumber: orderData.roomNumber || 'N/A',
+    time: 'Just now',
+    status: orderData.status || 'pending',
+    orderAmount: orderData.finalAmount || 0
+  });
+  writeData('activities.json', activities);
+
+  // Broadcast order update
+  broadcastUpdate('room_service_order_created', newOrder);
+  broadcastUpdate('activity_updated', activities[0]);
+
+  res.json({ success: true, data: newOrder });
+});
+
+app.put('/api/room-service-orders/:id', (req, res) => {
+  const { id } = req.params;
+  const updateData = req.body;
+  const orders = readData('room-service-orders.json');
+  
+  const orderIndex = orders.findIndex(order => order.id === id);
+  if (orderIndex === -1) {
+    return res.status(404).json({ success: false, message: 'Order not found' });
+  }
+
+  orders[orderIndex] = {
+    ...orders[orderIndex],
+    ...updateData,
+    updatedAt: new Date().toISOString()
+  };
+  writeData('room-service-orders.json', orders);
+
+  // Broadcast order update
+  broadcastUpdate('room_service_order_updated', orders[orderIndex]);
+
+  res.json({ success: true, data: orders[orderIndex] });
+});
+
+app.delete('/api/room-service-orders/:id', (req, res) => {
+  const { id } = req.params;
+  const orders = readData('room-service-orders.json');
+  
+  const orderIndex = orders.findIndex(order => order.id === id);
+  if (orderIndex === -1) {
+    return res.status(404).json({ success: false, message: 'Order not found' });
+  }
+
+  const deletedOrder = orders.splice(orderIndex, 1)[0];
+  writeData('room-service-orders.json', orders);
+
+  // Broadcast order deletion
+  broadcastUpdate('room_service_order_deleted', { id });
+
+  res.json({ success: true, message: 'Order deleted successfully' });
+});
+
 server.listen(PORT, () => {
   console.log(`🚀 Hotel Diplomat Backend running on port ${PORT}`);
   console.log(`📡 WebSocket server ready for real-time updates`);

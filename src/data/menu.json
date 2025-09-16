@@ -1,0 +1,162 @@
+[
+  {
+    "id": "breakfast-001",
+    "category": "Breakfast",
+    "name": "Continental Breakfast",
+    "description": "Fresh fruits, bread, butter, jam, tea/coffee",
+    "price": 250,
+    "gstRate": 5,
+    "available": true,
+    "image": "/images/menu/continental-breakfast.jpg"
+  },
+  {
+    "id": "breakfast-002", 
+    "category": "Breakfast",
+    "name": "Indian Breakfast",
+    "description": "Paratha, dal, sabzi, pickle, tea/coffee",
+    "price": 200,
+    "gstRate": 5,
+    "available": true,
+    "image": "/images/menu/indian-breakfast.jpg"
+  },
+  {
+    "id": "breakfast-003",
+    "category": "Breakfast", 
+    "name": "English Breakfast",
+    "description": "Eggs, bacon, sausage, baked beans, toast, tea/coffee",
+    "price": 350,
+    "gstRate": 5,
+    "available": true,
+    "image": "/images/menu/english-breakfast.jpg"
+  },
+  {
+    "id": "lunch-001",
+    "category": "Lunch",
+    "name": "Vegetarian Thali",
+    "description": "Dal, sabzi, rice, roti, pickle, papad, dessert",
+    "price": 300,
+    "gstRate": 5,
+    "available": true,
+    "image": "/images/menu/veg-thali.jpg"
+  },
+  {
+    "id": "lunch-002",
+    "category": "Lunch", 
+    "name": "Non-Vegetarian Thali",
+    "description": "Chicken curry, dal, rice, roti, pickle, papad, dessert",
+    "price": 450,
+    "gstRate": 5,
+    "available": true,
+    "image": "/images/menu/non-veg-thali.jpg"
+  },
+  {
+    "id": "lunch-003",
+    "category": "Lunch",
+    "name": "Chinese Lunch",
+    "description": "Fried rice, noodles, manchurian, soup",
+    "price": 400,
+    "gstRate": 5,
+    "available": true,
+    "image": "/images/menu/chinese-lunch.jpg"
+  },
+  {
+    "id": "dinner-001",
+    "category": "Dinner",
+    "name": "Vegetarian Dinner",
+    "description": "Dal, sabzi, rice, roti, salad, dessert",
+    "price": 350,
+    "gstRate": 5,
+    "available": true,
+    "image": "/images/menu/veg-dinner.jpg"
+  },
+  {
+    "id": "dinner-002",
+    "category": "Dinner",
+    "name": "Non-Vegetarian Dinner", 
+    "description": "Chicken curry, dal, rice, roti, salad, dessert",
+    "price": 500,
+    "gstRate": 5,
+    "available": true,
+    "image": "/images/menu/non-veg-dinner.jpg"
+  },
+  {
+    "id": "snacks-001",
+    "category": "Snacks",
+    "name": "Samosa (2 pieces)",
+    "description": "Crispy samosas with chutney",
+    "price": 50,
+    "gstRate": 5,
+    "available": true,
+    "image": "/images/menu/samosa.jpg"
+  },
+  {
+    "id": "snacks-002",
+    "category": "Snacks",
+    "name": "Pakora (6 pieces)",
+    "description": "Mixed vegetable pakoras",
+    "price": 80,
+    "gstRate": 5,
+    "available": true,
+    "image": "/images/menu/pakora.jpg"
+  },
+  {
+    "id": "snacks-003",
+    "category": "Snacks",
+    "name": "Sandwich",
+    "description": "Grilled sandwich with tea/coffee",
+    "price": 120,
+    "gstRate": 5,
+    "available": true,
+    "image": "/images/menu/sandwich.jpg"
+  },
+  {
+    "id": "beverages-001",
+    "category": "Beverages",
+    "name": "Tea",
+    "description": "Masala chai",
+    "price": 25,
+    "gstRate": 5,
+    "available": true,
+    "image": "/images/menu/tea.jpg"
+  },
+  {
+    "id": "beverages-002",
+    "category": "Beverages",
+    "name": "Coffee",
+    "description": "Filter coffee",
+    "price": 30,
+    "gstRate": 5,
+    "available": true,
+    "image": "/images/menu/coffee.jpg"
+  },
+  {
+    "id": "beverages-003",
+    "category": "Beverages",
+    "name": "Fresh Juice",
+    "description": "Orange/Mango/Apple juice",
+    "price": 80,
+    "gstRate": 5,
+    "available": true,
+    "image": "/images/menu/juice.jpg"
+  },
+  {
+    "id": "desserts-001",
+    "category": "Desserts",
+    "name": "Ice Cream",
+    "description": "Vanilla/Chocolate/Strawberry",
+    "price": 60,
+    "gstRate": 5,
+    "available": true,
+    "image": "/images/menu/ice-cream.jpg"
+  },
+  {
+    "id": "desserts-002",
+    "category": "Desserts",
+    "name": "Gulab Jamun (2 pieces)",
+    "description": "Sweet gulab jamun",
+    "price": 40,
+    "gstRate": 5,
+    "available": true,
+    "image": "/images/menu/gulab-jamun.jpg"
+  }
+]

@@ -10,6 +10,7 @@ import {
   Menu,
   X,
   Building2,
+  Utensils,
   LogOut,
   User,
   ChevronDown,
@@ -80,6 +81,12 @@ const Layout = ({ children }: LayoutProps) => {
       name: 'Rooms', 
       href: '/rooms', 
       icon: Bed,
+      permission: 'rooms:view'
+    },
+    { 
+      name: 'Room Service', 
+      href: '/room-service', 
+      icon: Utensils,
       permission: 'rooms:view'
     },
     // { 

@@ -6,6 +6,7 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Guests from './pages/Guests'
 import Rooms from './pages/Rooms'
+import RoomService from './pages/RoomService'
 // import DeleteRooms from './pages/DeleteRooms'
 import Reservations from './pages/Reservations'
 import Banquets from './pages/Banquets'
@@ -85,6 +86,13 @@ function App() {
               <ProtectedRoute requiredPermission="rooms:view">
                 <Layout>
                   <Rooms />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/room-service" element={
+              <ProtectedRoute requiredPermission="rooms:view">
+                <Layout>
+                  <RoomService />
                 </Layout>
               </ProtectedRoute>
             } />

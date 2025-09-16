@@ -1,0 +1,25 @@
+[
+  {
+    "id": "1758059119685",
+    "roomNumber": "102",
+    "guestName": "aman",
+    "items": [
+      {
+        "menuItemId": "breakfast-002",
+        "name": "Indian Breakfast",
+        "price": 200,
+        "quantity": 1,
+        "gstRate": 5,
+        "total": 200
+      }
+    ],
+    "totalAmount": 200,
+    "gstAmount": 10,
+    "finalAmount": 210,
+    "notes": "",
+    "status": "pending",
+    "orderDate": "2025-09-16T21:45:19.685Z",
+    "createdAt": "2025-09-16T21:45:19.685Z",
+    "updatedAt": "2025-09-16T21:45:19.685Z"
+  }
+]

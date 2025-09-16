@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../components/AuthContext'
 import Notification, { useNotification } from '../components/Notification'
+import { io, Socket } from 'socket.io-client'
+
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
 import { 
   Building2, 
   Plus, 
@@ -18,7 +21,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Check,
-  ArrowRight
+  ArrowRight,
+  Search
 } from 'lucide-react'
 
 interface BanquetHall {
@@ -89,6 +93,7 @@ const Banquets = () => {
   const [editingHall, setEditingHall] = useState<BanquetHall | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [socket, setSocket] = useState<Socket | null>(null)
   
   // Booking related states
   const [showCalendar, setShowCalendar] = useState(false)
@@ -98,20 +103,54 @@ const Banquets = () => {
   const [showBookings, setShowBookings] = useState(false)
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [editingBooking, setEditingBooking] = useState<BanquetBooking | null>(null)
+  const [showEditBooking, setShowEditBooking] = useState(false)
+  const [deletingBooking, setDeletingBooking] = useState<string | null>(null)
+  
+  // Search and filter states for bookings
+  const [bookingSearchTerm, setBookingSearchTerm] = useState('')
+  const [bookingStatusFilter, setBookingStatusFilter] = useState('all')
+  const [bookingDateFilter, setBookingDateFilter] = useState('all')
+  const [bookingHallFilter, setBookingHallFilter] = useState('all')
+  const [showDatePicker, setShowDatePicker] = useState(false)
+  const [selectedFilterDate, setSelectedFilterDate] = useState<Date | null>(null)
+  
+  // Enhanced calendar states
+  const [showMonthPicker, setShowMonthPicker] = useState(false)
+  const [showYearPicker, setShowYearPicker] = useState(false)
+  const [calendarView, setCalendarView] = useState<'calendar' | 'month' | 'year'>('calendar')
   
   // Booking form state
-  const [bookingForm, setBookingForm] = useState({
+  const [bookingForm, setBookingForm] = useState<{
+    eventName: string
+    clientName: string
+    clientEmail: string
+    clientPhone: string
+    clientAddress: string
+    eventType: 'wedding' | 'corporate' | 'party' | 'conference' | 'other'
+    startTime: string
+    endTime: string
+    expectedGuests: number
+    advanceAmount: number
+    paymentMethod: 'cash' | 'upi' | 'card' | 'bank_transfer' | 'pending'
+    cateringRequired: boolean
+    decorationRequired: boolean
+    soundSystemRequired: boolean
+    photographyRequired: boolean
+    specialRequirements: string
+    notes: string
+  }>({
     eventName: '',
     clientName: '',
     clientEmail: '',
     clientPhone: '',
     clientAddress: '',
-    eventType: 'wedding' as const,
+    eventType: 'wedding',
     startTime: '',
     endTime: '',
     expectedGuests: 0,
     advanceAmount: 0,
-    paymentMethod: 'cash' as const,
+    paymentMethod: 'cash',
     cateringRequired: false,
     decorationRequired: false,
     soundSystemRequired: false,
@@ -196,31 +235,69 @@ const Banquets = () => {
     }
   ]
 
-  // Fetch halls from backend (for now using default data)
+  // Fetch halls and bookings from backend
   useEffect(() => {
-    const fetchHalls = async () => {
+    const fetchData = async () => {
       setIsLoading(true)
       setError(null)
       try {
-        // TODO: Replace with actual API call
-        // const response = await fetch(`${BACKEND_URL}/api/banquets`)
-        // const data = await response.json()
-        // setHalls(data.data || [])
-        
-        // For now, use default data
+        // For now, use default halls data (banquet halls API not implemented yet)
         setHalls(defaultHalls)
+        
+        // Fetch banquet bookings
+        const bookingsResponse = await fetch(`${BACKEND_URL}/api/banquet-bookings`)
+        if (bookingsResponse.ok) {
+          const bookingsData = await bookingsResponse.json()
+          if (bookingsData.success) {
+            setBookings(bookingsData.data || [])
+          }
+        }
       } catch (error) {
-        console.error('Error fetching banquet halls:', error)
-        const errorMessage = error instanceof Error ? error.message : 'Failed to fetch banquet halls'
+        console.error('Error fetching data:', error)
+        const errorMessage = error instanceof Error ? error.message : 'Failed to fetch data'
         setError(errorMessage)
         setHalls(defaultHalls) // Fallback to default data
-        showNotification('error', `Failed to fetch banquet halls: ${errorMessage}`)
+        showNotification('error', `Failed to fetch data: ${errorMessage}`)
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchHalls()
+    fetchData()
+
+    // Setup WebSocket connection for real-time updates
+    const newSocket = io(BACKEND_URL)
+    setSocket(newSocket)
+
+    newSocket.on('connect', () => {
+      console.log('Connected to backend for real-time banquet updates')
+    })
+
+    newSocket.on('banquet_booking_created', (newBooking) => {
+      setBookings(prev => [newBooking, ...prev])
+    })
+
+    newSocket.on('banquet_booking_updated', (updatedBooking) => {
+      setBookings(prev => prev.map(booking => 
+        booking.id === updatedBooking.id ? updatedBooking : booking
+      ))
+    })
+
+    newSocket.on('banquet_booking_deleted', (data) => {
+      setBookings(prev => prev.filter(booking => booking.id !== data.id))
+    })
+
+    newSocket.on('activity_updated', (activity) => {
+      // Handle activity updates if needed
+      console.log('Activity updated:', activity)
+    })
+
+    return () => {
+      if (newSocket) {
+        newSocket.disconnect()
+        newSocket.removeAllListeners()
+      }
+    }
   }, [])
 
   // Filter halls based on search and filters
@@ -231,6 +308,51 @@ const Banquets = () => {
     const matchesType = typeFilter === 'all' || hall.type === typeFilter
     
     return matchesSearch && matchesStatus && matchesType
+  })
+
+  // Filter bookings based on search and filters
+  const filteredBookings = bookings.filter(booking => {
+    const matchesSearch = 
+      booking.eventName.toLowerCase().includes(bookingSearchTerm.toLowerCase()) ||
+      booking.clientName.toLowerCase().includes(bookingSearchTerm.toLowerCase()) ||
+      booking.clientPhone.includes(bookingSearchTerm) ||
+      booking.clientEmail.toLowerCase().includes(bookingSearchTerm.toLowerCase()) ||
+      booking.hallName.toLowerCase().includes(bookingSearchTerm.toLowerCase()) ||
+      booking.id.includes(bookingSearchTerm)
+    
+    const matchesStatus = bookingStatusFilter === 'all' || booking.status === bookingStatusFilter
+    const matchesHall = bookingHallFilter === 'all' || booking.hallId === bookingHallFilter
+    
+    let matchesDate = true
+    if (selectedFilterDate) {
+      const bookingDate = new Date(booking.startDate)
+      matchesDate = bookingDate.toDateString() === selectedFilterDate.toDateString()
+    } else if (bookingDateFilter !== 'all') {
+      const today = new Date()
+      const bookingDate = new Date(booking.startDate)
+      
+      switch (bookingDateFilter) {
+        case 'today':
+          matchesDate = bookingDate.toDateString() === today.toDateString()
+          break
+        case 'this_week':
+          const weekStart = new Date(today.setDate(today.getDate() - today.getDay()))
+          const weekEnd = new Date(today.setDate(today.getDate() - today.getDay() + 6))
+          matchesDate = bookingDate >= weekStart && bookingDate <= weekEnd
+          break
+        case 'this_month':
+          matchesDate = bookingDate.getMonth() === today.getMonth() && bookingDate.getFullYear() === today.getFullYear()
+          break
+        case 'upcoming':
+          matchesDate = bookingDate >= today
+          break
+        case 'past':
+          matchesDate = bookingDate < today
+          break
+      }
+    }
+    
+    return matchesSearch && matchesStatus && matchesHall && matchesDate
   })
 
   // Calendar functions
@@ -267,6 +389,42 @@ const Banquets = () => {
     return date <= maxDate && !isDateBooked(date, hallId) && !isDateInPast(date)
   }
 
+  // Enhanced calendar functions
+  const getMonthName = (monthIndex: number) => {
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ]
+    return months[monthIndex]
+  }
+
+  const getYearRange = () => {
+    const currentYear = new Date().getFullYear()
+    const years = []
+    for (let i = currentYear; i <= currentYear + 5; i++) {
+      years.push(i)
+    }
+    return years
+  }
+
+  const handleMonthSelect = (monthIndex: number) => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), monthIndex))
+    setCalendarView('calendar')
+  }
+
+  const handleYearSelect = (year: number) => {
+    setCurrentMonth(new Date(year, currentMonth.getMonth()))
+    setCalendarView('calendar')
+  }
+
+  const handleCalendarHeaderClick = () => {
+    if (calendarView === 'calendar') {
+      setCalendarView('month')
+    } else if (calendarView === 'month') {
+      setCalendarView('year')
+    }
+  }
+
   // Booking handlers
   const handleBookHall = (hall: BanquetHall) => {
     setBookingHall(hall)
@@ -274,6 +432,7 @@ const Banquets = () => {
     setCurrentMonth(new Date())
     setSelectedDate(null)
     setSelectedDates(null)
+    setCalendarView('calendar')
   }
 
   const handleDateSelect = (date: Date) => {
@@ -349,15 +508,22 @@ const Banquets = () => {
     }
     
     try {
-      // TODO: Replace with actual API call
-      // const response = await fetch(`${BACKEND_URL}/api/banquet-bookings`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(newBooking)
-      // })
+      const response = await fetch(`${BACKEND_URL}/api/banquet-bookings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newBooking)
+      })
       
-      // For now, add to local state
-      setBookings(prev => [newBooking, ...prev])
+      if (!response.ok) {
+        throw new Error('Failed to create booking')
+      }
+      
+      const data = await response.json()
+      if (data.success) {
+        setBookings(prev => [data.data, ...prev])
+      } else {
+        throw new Error(data.message || 'Failed to create booking')
+      }
       
       // Reset form
       setBookingForm({
@@ -388,6 +554,169 @@ const Banquets = () => {
     } catch (error) {
       console.error('Error creating booking:', error)
       showNotification('error', 'Failed to create booking. Please try again.')
+    }
+  }
+
+  // Handle edit booking
+  const handleEditBooking = (booking: BanquetBooking) => {
+    setEditingBooking(booking)
+    setBookingForm({
+      eventName: booking.eventName,
+      clientName: booking.clientName,
+      clientEmail: booking.clientEmail,
+      clientPhone: booking.clientPhone,
+      clientAddress: booking.clientAddress,
+      eventType: booking.eventType,
+      startTime: booking.startTime,
+      endTime: booking.endTime,
+      expectedGuests: booking.expectedGuests,
+      advanceAmount: booking.advanceAmount,
+      paymentMethod: booking.paymentMethod,
+      cateringRequired: booking.cateringRequired,
+      decorationRequired: booking.decorationRequired,
+      soundSystemRequired: booking.soundSystemRequired,
+      photographyRequired: booking.photographyRequired,
+      specialRequirements: booking.specialRequirements,
+      notes: booking.notes
+    })
+    setShowEditBooking(true)
+  }
+
+  // Handle update booking
+  const handleUpdateBooking = async () => {
+    if (!editingBooking) return
+
+    const updatedBooking = {
+      ...editingBooking,
+      ...bookingForm,
+      totalAmount: editingBooking.totalAmount, // Keep original total
+      balanceAmount: editingBooking.totalAmount - bookingForm.advanceAmount,
+      updatedAt: new Date().toISOString()
+    }
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/banquet-bookings/${editingBooking.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedBooking)
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update booking')
+      }
+
+      const data = await response.json()
+      if (data.success) {
+        setBookings(prev => prev.map(booking => 
+          booking.id === editingBooking.id ? data.data : booking
+        ))
+        showNotification('success', 'Booking updated successfully!')
+        setShowEditBooking(false)
+        setEditingBooking(null)
+        setBookingForm({
+          eventName: '',
+          clientName: '',
+          clientEmail: '',
+          clientPhone: '',
+          clientAddress: '',
+          eventType: 'wedding',
+          startTime: '',
+          endTime: '',
+          expectedGuests: 0,
+          advanceAmount: 0,
+          paymentMethod: 'cash',
+          cateringRequired: false,
+          decorationRequired: false,
+          soundSystemRequired: false,
+          photographyRequired: false,
+          specialRequirements: '',
+          notes: ''
+        })
+      } else {
+        throw new Error(data.message || 'Failed to update booking')
+      }
+    } catch (error) {
+      console.error('Error updating booking:', error)
+      showNotification('error', 'Failed to update booking. Please try again.')
+    }
+  }
+
+  // Handle delete booking
+  const handleDeleteBooking = async (bookingId: string) => {
+    if (!confirm('Are you sure you want to delete this booking? This action cannot be undone.')) {
+      return
+    }
+
+    setDeletingBooking(bookingId)
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/banquet-bookings/${bookingId}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete booking')
+      }
+
+      const data = await response.json()
+      if (data.success) {
+        setBookings(prev => prev.filter(booking => booking.id !== bookingId))
+        showNotification('success', 'Booking deleted successfully!')
+      } else {
+        throw new Error(data.message || 'Failed to delete booking')
+      }
+    } catch (error) {
+      console.error('Error deleting booking:', error)
+      showNotification('error', 'Failed to delete booking. Please try again.')
+    } finally {
+      setDeletingBooking(null)
+    }
+  }
+
+  // Handle edit hall
+  const handleEditHall = (hall: BanquetHall) => {
+    setEditingHall(hall)
+    setShowEditHall(true)
+  }
+
+  // Handle update hall
+  const handleUpdateHall = async () => {
+    if (!editingHall) return
+
+    try {
+      // For now, update local state (in real app, this would be an API call)
+      setHalls(prev => prev.map(hall => 
+        hall.id === editingHall.id ? editingHall : hall
+      ))
+      
+      showNotification('success', 'Hall updated successfully!')
+      setShowEditHall(false)
+      setEditingHall(null)
+    } catch (error) {
+      console.error('Error updating hall:', error)
+      showNotification('error', 'Failed to update hall. Please try again.')
+    }
+  }
+
+  // Handle delete hall
+  const handleDeleteHall = async (hallId: string) => {
+    if (!confirm('Are you sure you want to delete this hall? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      // Check if hall has any bookings
+      const hallBookings = bookings.filter(booking => booking.hallId === hallId)
+      if (hallBookings.length > 0) {
+        showNotification('error', `Cannot delete hall. It has ${hallBookings.length} active booking(s).`)
+        return
+      }
+
+      // For now, update local state (in real app, this would be an API call)
+      setHalls(prev => prev.filter(hall => hall.id !== hallId))
+      showNotification('success', 'Hall deleted successfully!')
+    } catch (error) {
+      console.error('Error deleting hall:', error)
+      showNotification('error', 'Failed to delete hall. Please try again.')
     }
   }
 
@@ -666,22 +995,18 @@ const Banquets = () => {
                   <div className="flex items-center gap-2">
                     {hasPermission('banquets:edit') && (
                       <button
-                        onClick={() => {
-                          setEditingHall(hall)
-                          setShowEditHall(true)
-                        }}
+                        onClick={() => handleEditHall(hall)}
                         className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                        title="Edit hall"
                       >
                         <Edit className="h-4 w-4" />
                       </button>
                     )}
                     {hasPermission('banquets:delete') && (
                       <button
-                        onClick={() => {
-                          // TODO: Implement delete functionality
-                          showNotification('info', 'Delete functionality will be implemented')
-                        }}
+                        onClick={() => handleDeleteHall(hall.id)}
                         className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                        title="Delete hall"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -755,19 +1080,651 @@ const Banquets = () => {
           </div>
         )}
 
-        {/* Calendar Modal */}
-        {showCalendar && bookingHall && (
+        {/* Edit Hall Modal */}
+        {showEditHall && editingHall && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Select Dates for {bookingHall.name}</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">Edit Hall - {editingHall.name}</h2>
                   <button
                     onClick={() => {
-                      setShowCalendar(false)
-                      setBookingHall(null)
-                      setSelectedDates(null)
+                      setShowEditHall(false)
+                      setEditingHall(null)
                     }}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Basic Information */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Basic Information</h3>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Hall Name *</label>
+                      <input
+                        type="text"
+                        value={editingHall.name}
+                        onChange={(e) => setEditingHall(prev => prev ? { ...prev, name: e.target.value } : null)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter hall name"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+                      <textarea
+                        value={editingHall.description}
+                        onChange={(e) => setEditingHall(prev => prev ? { ...prev, description: e.target.value } : null)}
+                        rows={4}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter hall description"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Capacity *</label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={editingHall.capacity}
+                          onChange={(e) => setEditingHall(prev => prev ? { ...prev, capacity: parseInt(e.target.value) || 0 } : null)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="Enter capacity"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Price per Event *</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={editingHall.price}
+                          onChange={(e) => setEditingHall(prev => prev ? { ...prev, price: parseInt(e.target.value) || 0 } : null)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="Enter price"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Type *</label>
+                        <select
+                          value={editingHall.type}
+                          onChange={(e) => setEditingHall(prev => prev ? { ...prev, type: e.target.value as any } : null)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                          <option value="grand">Grand Hall</option>
+                          <option value="ballroom">Ballroom</option>
+                          <option value="pavilion">Pavilion</option>
+                          <option value="conference">Conference Room</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Floor *</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={editingHall.floor}
+                          onChange={(e) => setEditingHall(prev => prev ? { ...prev, floor: parseInt(e.target.value) || 0 } : null)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          placeholder="Enter floor number"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Amenities */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Amenities</h3>
+                    
+                    <div className="grid grid-cols-2 gap-3">
+                      {availableAmenities.map(amenity => (
+                        <label key={amenity.id} className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            checked={editingHall.amenities.includes(amenity.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setEditingHall(prev => prev ? {
+                                  ...prev,
+                                  amenities: [...prev.amenities, amenity.id]
+                                } : null)
+                              } else {
+                                setEditingHall(prev => prev ? {
+                                  ...prev,
+                                  amenities: prev.amenities.filter(id => id !== amenity.id)
+                                } : null)
+                              }
+                            }}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-gray-700">{amenity.label}</span>
+                        </label>
+                      ))}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                      <select
+                        value={editingHall.status}
+                        onChange={(e) => setEditingHall(prev => prev ? { ...prev, status: e.target.value as any } : null)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="available">Available</option>
+                        <option value="maintenance">Under Maintenance</option>
+                        <option value="unavailable">Unavailable</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
+                  <button
+                    onClick={() => {
+                      setShowEditHall(false)
+                      setEditingHall(null)
+                    }}
+                    className="px-6 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleUpdateHall}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                  >
+                    <Check className="h-4 w-4" />
+                    Update Hall
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* View Bookings Modal */}
+        {showBookings && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">Banquet Bookings ({filteredBookings.length})</h2>
+                  <button
+                    onClick={() => setShowBookings(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+
+                {/* Search and Filter Controls */}
+                <div className="mb-6 space-y-4">
+                  {/* Search Bar */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                    <input
+                      type="text"
+                      placeholder="Search by event name, client name, phone, email, hall name, or booking ID..."
+                      value={bookingSearchTerm}
+                      onChange={(e) => setBookingSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  {/* Filter Controls */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    {/* Status Filter */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                      <select
+                        value={bookingStatusFilter}
+                        onChange={(e) => setBookingStatusFilter(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="all">All Status</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="pending">Pending</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="completed">Completed</option>
+                      </select>
+                    </div>
+
+                    {/* Date Filter */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Filter by Date</label>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setShowDatePicker(true)}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors"
+                        >
+                          <Calendar className="h-4 w-4" />
+                          {selectedFilterDate 
+                            ? selectedFilterDate.toLocaleDateString() 
+                            : 'Select Date'
+                          }
+                        </button>
+                        {selectedFilterDate && (
+                          <button
+                            onClick={() => {
+                              setSelectedFilterDate(null)
+                              setBookingDateFilter('all')
+                            }}
+                            className="px-3 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Clear date filter"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Hall Filter */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Hall</label>
+                      <select
+                        value={bookingHallFilter}
+                        onChange={(e) => setBookingHallFilter(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="all">All Halls</option>
+                        {halls.map(hall => (
+                          <option key={hall.id} value={hall.id}>{hall.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Clear Filters */}
+                    <div className="flex items-end">
+                      <button
+                        onClick={() => {
+                          setBookingSearchTerm('')
+                          setBookingStatusFilter('all')
+                          setBookingDateFilter('all')
+                          setBookingHallFilter('all')
+                          setSelectedFilterDate(null)
+                        }}
+                        className="w-full px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        Clear Filters
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {filteredBookings.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      {bookings.length === 0 ? 'No bookings found' : 'No bookings match your filters'}
+                    </h3>
+                    <p className="text-gray-600">
+                      {bookings.length === 0 
+                        ? 'No banquet bookings have been made yet.' 
+                        : 'Try adjusting your search criteria or clear filters.'
+                      }
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Event Details
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Client
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Hall & Dates
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Payment
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {filteredBookings.map((booking) => (
+                          <tr key={booking.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">{booking.eventName}</div>
+                                <div className="text-sm text-gray-500">{booking.eventType}</div>
+                                <div className="text-sm text-gray-500">{booking.expectedGuests} guests</div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">{booking.clientName}</div>
+                                <div className="text-sm text-gray-500">{booking.clientPhone}</div>
+                                <div className="text-sm text-gray-500">{booking.clientEmail}</div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">{booking.hallName}</div>
+                                <div className="text-sm text-gray-500">
+                                  {new Date(booking.startDate).toLocaleDateString()} - {new Date(booking.endDate).toLocaleDateString()}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  {booking.startTime} - {booking.endTime}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">₹{booking.totalAmount.toLocaleString()}</div>
+                                <div className="text-sm text-gray-500">Advance: ₹{booking.advanceAmount.toLocaleString()}</div>
+                                <div className="text-sm text-gray-500">Balance: ₹{booking.balanceAmount.toLocaleString()}</div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                booking.status === 'confirmed' 
+                                  ? 'bg-green-100 text-green-800'
+                                  : booking.status === 'pending'
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : booking.status === 'cancelled'
+                                  ? 'bg-red-100 text-red-800'
+                                  : 'bg-blue-100 text-blue-800'
+                              }`}>
+                                {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() => handleEditBooking(booking)}
+                                  className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors"
+                                  title="Edit booking"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteBooking(booking.id)}
+                                  disabled={deletingBooking === booking.id}
+                                  className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                  title="Delete booking"
+                                >
+                                  {deletingBooking === booking.id ? (
+                                    <div className="h-4 w-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                                  ) : (
+                                    <Trash2 className="h-4 w-4" />
+                                  )}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Booking Modal */}
+        {showEditBooking && editingBooking && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">Edit Booking - {editingBooking.eventName}</h2>
+                  <button
+                    onClick={() => {
+                      setShowEditBooking(false)
+                      setEditingBooking(null)
+                    }}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Event Details */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Event Details</h3>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Event Name *</label>
+                      <input
+                        type="text"
+                        value={bookingForm.eventName}
+                        onChange={(e) => setBookingForm(prev => ({ ...prev, eventName: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter event name"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Event Type *</label>
+                      <select
+                        value={bookingForm.eventType}
+                        onChange={(e) => setBookingForm(prev => ({ ...prev, eventType: e.target.value as any }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="wedding">Wedding</option>
+                        <option value="corporate">Corporate Event</option>
+                        <option value="party">Party/Celebration</option>
+                        <option value="conference">Conference/Seminar</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                        <input
+                          type="time"
+                          value={bookingForm.startTime}
+                          onChange={(e) => setBookingForm(prev => ({ ...prev, startTime: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                        <input
+                          type="time"
+                          value={bookingForm.endTime}
+                          onChange={(e) => setBookingForm(prev => ({ ...prev, endTime: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Expected Guests *</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max={halls.find(h => h.id === editingBooking.hallId)?.capacity || 1000}
+                        value={bookingForm.expectedGuests}
+                        onChange={(e) => setBookingForm(prev => ({ ...prev, expectedGuests: parseInt(e.target.value) || 0 }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter expected guests"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Client Details */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Client Details</h3>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Client Name *</label>
+                      <input
+                        type="text"
+                        value={bookingForm.clientName}
+                        onChange={(e) => setBookingForm(prev => ({ ...prev, clientName: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter client name"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
+                      <input
+                        type="tel"
+                        value={bookingForm.clientPhone}
+                        onChange={(e) => setBookingForm(prev => ({ ...prev, clientPhone: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter phone number"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                      <input
+                        type="email"
+                        value={bookingForm.clientEmail}
+                        onChange={(e) => setBookingForm(prev => ({ ...prev, clientEmail: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter email address"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                      <textarea
+                        value={bookingForm.clientAddress}
+                        onChange={(e) => setBookingForm(prev => ({ ...prev, clientAddress: e.target.value }))}
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter client address"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Services Required */}
+                <div className="mt-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Services</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {[
+                      { key: 'cateringRequired', label: 'Catering' },
+                      { key: 'decorationRequired', label: 'Decoration' },
+                      { key: 'soundSystemRequired', label: 'Sound System' },
+                      { key: 'photographyRequired', label: 'Photography' }
+                    ].map(service => (
+                      <label key={service.key} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={bookingForm[service.key as keyof typeof bookingForm] as boolean}
+                          onChange={(e) => setBookingForm(prev => ({ ...prev, [service.key]: e.target.checked }))}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-gray-700">{service.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Payment Details */}
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Total Amount</label>
+                    <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-lg font-semibold text-gray-900">
+                      ₹{editingBooking.totalAmount.toLocaleString()}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Advance Amount</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max={editingBooking.totalAmount}
+                      value={bookingForm.advanceAmount}
+                      onChange={(e) => setBookingForm(prev => ({ ...prev, advanceAmount: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
+                    <select
+                      value={bookingForm.paymentMethod}
+                      onChange={(e) => setBookingForm(prev => ({ ...prev, paymentMethod: e.target.value as any }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="cash">Cash</option>
+                      <option value="upi">UPI</option>
+                      <option value="card">Credit/Debit Card</option>
+                      <option value="bank_transfer">Bank Transfer</option>
+                      <option value="pending">Pending</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Special Requirements */}
+                <div className="mt-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Special Requirements</label>
+                  <textarea
+                    value={bookingForm.specialRequirements}
+                    onChange={(e) => setBookingForm(prev => ({ ...prev, specialRequirements: e.target.value }))}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Any special requirements or notes..."
+                  />
+                </div>
+
+                {/* Notes */}
+                <div className="mt-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                  <textarea
+                    value={bookingForm.notes}
+                    onChange={(e) => setBookingForm(prev => ({ ...prev, notes: e.target.value }))}
+                    rows={2}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Additional notes..."
+                  />
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
+                  <button
+                    onClick={() => {
+                      setShowEditBooking(false)
+                      setEditingBooking(null)
+                    }}
+                    className="px-6 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleUpdateBooking}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                  >
+                    <Check className="h-4 w-4" />
+                    Update Booking
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Date Picker Modal for Filtering */}
+        {showDatePicker && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-md w-full">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-bold text-gray-900">Select Date to Filter Bookings</h2>
+                  <button
+                    onClick={() => setShowDatePicker(false)}
                     className="text-gray-400 hover:text-gray-600"
                   >
                     <X className="h-6 w-6" />
@@ -807,32 +1764,205 @@ const Banquets = () => {
                   
                   {Array.from({ length: getDaysInMonth(currentMonth) }, (_, i) => {
                     const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), i + 1)
-                    const canSelect = canSelectDate(date, bookingHall.id)
-                    const isSelected = selectedDates && 
-                      formatDate(date) >= selectedDates.start && 
-                      formatDate(date) <= selectedDates.end
-                    const isBooked = isDateBooked(date, bookingHall.id)
+                    const isSelected = selectedFilterDate && 
+                      date.toDateString() === selectedFilterDate.toDateString()
+                    const hasBookings = bookings.some(booking => {
+                      const bookingDate = new Date(booking.startDate)
+                      return bookingDate.toDateString() === date.toDateString()
+                    })
                     
                     return (
                       <button
                         key={i + 1}
-                        onClick={() => handleDateSelect(date)}
-                        disabled={!canSelect}
+                        onClick={() => {
+                          setSelectedFilterDate(date)
+                          setShowDatePicker(false)
+                        }}
                         className={`p-2 text-center text-sm rounded-lg transition-colors ${
                           isSelected
                             ? 'bg-blue-600 text-white'
-                            : isBooked
-                            ? 'bg-red-100 text-red-500 cursor-not-allowed'
-                            : canSelect
-                            ? 'hover:bg-blue-100 text-gray-900'
-                            : 'bg-gray-50 text-gray-400 cursor-not-allowed'
+                            : hasBookings
+                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                            : 'hover:bg-blue-100 text-gray-900'
                         }`}
                       >
                         {i + 1}
+                        {hasBookings && !isSelected && (
+                          <div className="w-1 h-1 bg-green-600 rounded-full mx-auto mt-1"></div>
+                        )}
                       </button>
                     )
                   })}
                 </div>
+
+                {/* Selected Date Display */}
+                {selectedFilterDate && (
+                  <div className="bg-blue-50 p-4 rounded-lg mb-4">
+                    <h4 className="font-medium text-blue-900 mb-2">Selected Date:</h4>
+                    <p className="text-blue-700">
+                      {selectedFilterDate.toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </p>
+                    <p className="text-sm text-blue-600 mt-1">
+                      {bookings.filter(booking => {
+                        const bookingDate = new Date(booking.startDate)
+                        return bookingDate.toDateString() === selectedFilterDate.toDateString()
+                      }).length} booking(s) found
+                    </p>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => setShowDatePicker(false)}
+                    className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedFilterDate(null)
+                      setShowDatePicker(false)
+                    }}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                  >
+                    Clear Date
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Calendar Modal */}
+        {showCalendar && bookingHall && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">Select Dates for {bookingHall.name}</h2>
+                  <button
+                    onClick={() => {
+                      setShowCalendar(false)
+                      setBookingHall(null)
+                      setSelectedDates(null)
+                      setCalendarView('calendar')
+                    }}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+
+                {/* Calendar Header */}
+                <div className="flex items-center justify-between mb-4">
+                  <button
+                    onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={handleCalendarHeaderClick}
+                    className="px-4 py-2 hover:bg-gray-100 rounded-lg transition-colors text-lg font-semibold"
+                  >
+                    {calendarView === 'calendar' && currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                    {calendarView === 'month' && getMonthName(currentMonth.getMonth())}
+                    {calendarView === 'year' && currentMonth.getFullYear()}
+                  </button>
+                  <button
+                    onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                </div>
+
+                {/* Month Picker View */}
+                {calendarView === 'month' && (
+                  <div className="grid grid-cols-3 gap-3 mb-4">
+                    {Array.from({ length: 12 }, (_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handleMonthSelect(i)}
+                        className={`p-3 text-center text-sm font-medium rounded-lg transition-colors ${
+                          i === currentMonth.getMonth()
+                            ? 'bg-blue-600 text-white'
+                            : 'hover:bg-gray-100 text-gray-900'
+                        }`}
+                      >
+                        {getMonthName(i)}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Year Picker View */}
+                {calendarView === 'year' && (
+                  <div className="grid grid-cols-3 gap-3 mb-4">
+                    {getYearRange().map(year => (
+                      <button
+                        key={year}
+                        onClick={() => handleYearSelect(year)}
+                        className={`p-3 text-center text-sm font-medium rounded-lg transition-colors ${
+                          year === currentMonth.getFullYear()
+                            ? 'bg-blue-600 text-white'
+                            : 'hover:bg-gray-100 text-gray-900'
+                        }`}
+                      >
+                        {year}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Calendar Grid */}
+                {calendarView === 'calendar' && (
+                  <div className="grid grid-cols-7 gap-1 mb-4">
+                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                      <div key={day} className="p-2 text-center text-sm font-medium text-gray-500">
+                        {day}
+                      </div>
+                    ))}
+                    
+                    {Array.from({ length: getFirstDayOfMonth(currentMonth) }, (_, i) => (
+                      <div key={`empty-${i}`} className="p-2"></div>
+                    ))}
+                    
+                    {Array.from({ length: getDaysInMonth(currentMonth) }, (_, i) => {
+                      const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), i + 1)
+                      const canSelect = canSelectDate(date, bookingHall.id)
+                      const isSelected = selectedDates && 
+                        formatDate(date) >= selectedDates.start && 
+                        formatDate(date) <= selectedDates.end
+                      const isBooked = isDateBooked(date, bookingHall.id)
+                      
+                      return (
+                        <button
+                          key={i + 1}
+                          onClick={() => handleDateSelect(date)}
+                          disabled={!canSelect}
+                          className={`p-2 text-center text-sm rounded-lg transition-colors ${
+                            isSelected
+                              ? 'bg-blue-600 text-white'
+                              : isBooked
+                              ? 'bg-red-100 text-red-500 cursor-not-allowed'
+                              : canSelect
+                              ? 'hover:bg-blue-100 text-gray-900'
+                              : 'bg-gray-50 text-gray-400 cursor-not-allowed'
+                          }`}
+                        >
+                          {i + 1}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
 
                 {/* Selected Dates Display */}
                 {selectedDates && (
