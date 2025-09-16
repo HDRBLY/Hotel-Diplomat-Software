@@ -1039,8 +1039,14 @@ const Banquets = () => {
 
         {/* Hall Details Modal - Placeholder */}
         {selectedHall && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            onClick={() => setSelectedHall(null)}
+          >
+            <div 
+              className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-2xl font-bold text-gray-900">{selectedHall.name}</h2>
@@ -1082,8 +1088,17 @@ const Banquets = () => {
 
         {/* Edit Hall Modal */}
         {showEditHall && editingHall && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            onClick={() => {
+              setShowEditHall(false)
+              setEditingHall(null)
+            }}
+          >
+            <div 
+              className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-bold text-gray-900">Edit Hall - {editingHall.name}</h2>
@@ -1249,8 +1264,14 @@ const Banquets = () => {
 
         {/* View Bookings Modal */}
         {showBookings && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            onClick={() => setShowBookings(false)}
+          >
+            <div 
+              className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-bold text-gray-900">Banquet Bookings ({filteredBookings.length})</h2>
@@ -1478,8 +1499,17 @@ const Banquets = () => {
 
         {/* Edit Booking Modal */}
         {showEditBooking && editingBooking && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            onClick={() => {
+              setShowEditBooking(false)
+              setEditingBooking(null)
+            }}
+          >
+            <div 
+              className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-bold text-gray-900">Edit Booking - {editingBooking.eventName}</h2>
@@ -1718,8 +1748,14 @@ const Banquets = () => {
 
         {/* Date Picker Modal for Filtering */}
         {showDatePicker && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-md w-full">
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            onClick={() => setShowDatePicker(false)}
+          >
+            <div 
+              className="bg-white rounded-lg max-w-md w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-bold text-gray-900">Select Date to Filter Bookings</h2>
@@ -1841,8 +1877,19 @@ const Banquets = () => {
 
         {/* Calendar Modal */}
         {showCalendar && bookingHall && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            onClick={() => {
+              setShowCalendar(false)
+              setBookingHall(null)
+              setSelectedDates(null)
+              setCalendarView('calendar')
+            }}
+          >
+            <div 
+              className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-bold text-gray-900">Select Dates for {bookingHall.name}</h2>
@@ -2010,8 +2057,18 @@ const Banquets = () => {
 
         {/* Booking Form Modal */}
         {showBookingForm && bookingHall && selectedDates && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            onClick={() => {
+              setShowBookingForm(false)
+              setBookingHall(null)
+              setSelectedDates(null)
+            }}
+          >
+            <div 
+              className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-bold text-gray-900">Book {bookingHall.name}</h2>
