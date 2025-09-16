@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
+import { io, Socket } from 'socket.io-client'
 import { useAuth } from '../components/AuthContext'
 import Notification, { useNotification } from '../components/Notification'
+import { banquetsAPI } from '../services/api'
 import { 
   Building2, 
   Plus, 
@@ -20,6 +22,8 @@ import {
   Check,
   ArrowRight
 } from 'lucide-react'
+
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
 
 interface BanquetHall {
   id: string
@@ -196,31 +200,58 @@ const Banquets = () => {
     }
   ]
 
-  // Fetch halls from backend (for now using default data)
+  // Fetch halls and bookings from backend and setup realtime
   useEffect(() => {
-    const fetchHalls = async () => {
+    const fetchData = async () => {
       setIsLoading(true)
       setError(null)
       try {
-        // TODO: Replace with actual API call
-        // const response = await fetch(`${BACKEND_URL}/api/banquets`)
-        // const data = await response.json()
-        // setHalls(data.data || [])
-        
-        // For now, use default data
-        setHalls(defaultHalls)
+        const hallsRes = await banquetsAPI.getHalls()
+        if (hallsRes.success) {
+          setHalls((hallsRes.data || []) as BanquetHall[])
+        } else {
+          setHalls(defaultHalls)
+        }
+
+        const bookingsRes = await banquetsAPI.getBookings()
+        if (bookingsRes.success) {
+          setBookings((bookingsRes.data || []) as BanquetBooking[])
+        } else {
+          setBookings([])
+        }
       } catch (error) {
         console.error('Error fetching banquet halls:', error)
         const errorMessage = error instanceof Error ? error.message : 'Failed to fetch banquet halls'
         setError(errorMessage)
-        setHalls(defaultHalls) // Fallback to default data
-        showNotification('error', `Failed to fetch banquet halls: ${errorMessage}`)
+        if (halls.length === 0) setHalls(defaultHalls)
+        showNotification('error', `Failed to fetch banquets: ${errorMessage}`)
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchHalls()
+    fetchData()
+
+    const s = io(BACKEND_URL)
+    s.on('banquet_booking_created', (booking: BanquetBooking) => {
+      setBookings(prev => [booking, ...prev])
+    })
+    s.on('banquet_booking_deleted', ({ id }: { id: string }) => {
+      setBookings(prev => prev.filter(b => b.id !== id))
+    })
+    s.on('banquet_hall_updated', () => {
+      banquetsAPI.getHalls().then(res => {
+        if (res.success) setHalls((res.data || []) as BanquetHall[])
+      }).catch(() => {})
+    })
+    s.on('data_cleared', () => {
+      fetchData()
+    })
+
+    return () => {
+      s.disconnect()
+      s.removeAllListeners()
+    }
   }, [])
 
   // Filter halls based on search and filters
@@ -304,7 +335,7 @@ const Banquets = () => {
     setBookingForm(prev => ({
       ...prev,
       expectedGuests: bookingHall.capacity,
-      advanceAmount: Math.round(bookingHall.price * 0.3) // 30% advance
+      advanceAmount: Math.round((bookingHall.price * days) * 0.3) // 30% of total
     }))
   }
 
@@ -317,49 +348,45 @@ const Banquets = () => {
       return
     }
     
-    const newBooking: BanquetBooking = {
-      id: Date.now().toString(),
-      hallId: bookingHall.id,
-      hallName: bookingHall.name,
-      eventName: bookingForm.eventName,
-      clientName: bookingForm.clientName,
-      clientEmail: bookingForm.clientEmail,
-      clientPhone: bookingForm.clientPhone,
-      clientAddress: bookingForm.clientAddress,
-      eventType: bookingForm.eventType,
-      startDate: selectedDates.start,
-      endDate: selectedDates.end,
-      startTime: bookingForm.startTime,
-      endTime: bookingForm.endTime,
-      guestCount: bookingForm.expectedGuests,
-      expectedGuests: bookingForm.expectedGuests,
-      totalAmount: bookingHall.price,
-      advanceAmount: bookingForm.advanceAmount,
-      balanceAmount: bookingHall.price - bookingForm.advanceAmount,
-      paymentMethod: bookingForm.paymentMethod,
-      cateringRequired: bookingForm.cateringRequired,
-      decorationRequired: bookingForm.decorationRequired,
-      soundSystemRequired: bookingForm.soundSystemRequired,
-      photographyRequired: bookingForm.photographyRequired,
-      specialRequirements: bookingForm.specialRequirements,
-      status: 'confirmed',
-      bookingDate: new Date().toISOString(),
-      createdBy: user.name,
-      notes: bookingForm.notes
-    }
-    
+    // Compute total for selected range
+    const startDate = new Date(selectedDates.start)
+    const endDate = new Date(selectedDates.end)
+    const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
+    const totalAmount = bookingHall.price * days
+
     try {
-      // TODO: Replace with actual API call
-      // const response = await fetch(`${BACKEND_URL}/api/banquet-bookings`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(newBooking)
-      // })
-      
-      // For now, add to local state
-      setBookings(prev => [newBooking, ...prev])
-      
-      // Reset form
+      const res = await banquetsAPI.createBooking({
+        hallId: bookingHall.id,
+        eventName: bookingForm.eventName,
+        clientName: bookingForm.clientName,
+        clientEmail: bookingForm.clientEmail,
+        clientPhone: bookingForm.clientPhone,
+        clientAddress: bookingForm.clientAddress,
+        eventType: bookingForm.eventType,
+        startDate: selectedDates.start,
+        endDate: selectedDates.end,
+        startTime: bookingForm.startTime,
+        endTime: bookingForm.endTime,
+        expectedGuests: bookingForm.expectedGuests,
+        totalAmount: totalAmount,
+        advanceAmount: bookingForm.advanceAmount,
+        paymentMethod: bookingForm.paymentMethod,
+        cateringRequired: bookingForm.cateringRequired,
+        decorationRequired: bookingForm.decorationRequired,
+        soundSystemRequired: bookingForm.soundSystemRequired,
+        photographyRequired: bookingForm.photographyRequired,
+        specialRequirements: bookingForm.specialRequirements,
+        notes: bookingForm.notes,
+        createdBy: user.name
+      })
+
+      if (!res.success || !res.data) {
+        showNotification('error', res.message || 'Failed to create booking')
+        return
+      }
+
+      setBookings(prev => [res.data as BanquetBooking, ...prev])
+
       setBookingForm({
         eventName: '',
         clientName: '',
@@ -379,15 +406,19 @@ const Banquets = () => {
         specialRequirements: '',
         notes: ''
       })
-      
+
       setShowBookingForm(false)
       setSelectedDates(null)
       setBookingHall(null)
       showNotification('success', 'Banquet booking confirmed successfully!')
-      
-    } catch (error) {
-      console.error('Error creating booking:', error)
-      showNotification('error', 'Failed to create booking. Please try again.')
+    } catch (error: any) {
+      const msg = error?.message || ''
+      if (msg.includes('overlap')) {
+        showNotification('error', 'Selected dates overlap with an existing booking')
+      } else {
+        console.error('Error creating booking:', error)
+        showNotification('error', 'Failed to create booking. Please try again.')
+      }
     }
   }
 
@@ -1102,6 +1133,76 @@ const Banquets = () => {
                     <Check className="h-4 w-4" />
                     Confirm Booking
                   </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Bookings List Modal */}
+        {showBookings && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">Banquet Bookings</h2>
+                  <button
+                    onClick={() => setShowBookings(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hall</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dates</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Guests</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {bookings.map(b => (
+                        <tr key={b.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{b.hallName}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <div className="font-medium">{b.clientName}</div>
+                            <div className="text-gray-500 text-xs">{b.clientPhone}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {b.startDate} → {b.endDate}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{b.expectedGuests}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">₹{b.totalAmount.toLocaleString()}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await banquetsAPI.deleteBooking(b.id)
+                                  setBookings(prev => prev.filter(x => x.id !== b.id))
+                                  showNotification('success', 'Booking deleted')
+                                } catch {
+                                  showNotification('error', 'Failed to delete booking')
+                                }
+                              }}
+                              className="text-red-600 hover:text-red-800"
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {bookings.length === 0 && (
+                        <tr>
+                          <td className="px-6 py-6 text-center text-sm text-gray-500" colSpan={6}>No bookings found</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
