@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import Notification, { useNotification } from '../components/Notification'
 import { useAuth } from '../components/AuthContext'
+import { formatTodayISO, formatToDDMMYYYY, parseFlexibleDate } from '../utils/date'
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
 
 // Define GuestCategory type for type safety
@@ -655,12 +656,8 @@ const Guests = () => {
     if (!guest) return
     
     setCheckoutGuest(guest)
-    // Format today's date in dd-mm-yyyy format
-    const today = new Date()
-    const day = today.getDate().toString().padStart(2, '0')
-    const month = (today.getMonth() + 1).toString().padStart(2, '0')
-    const year = today.getFullYear().toString()
-    const formattedToday = `${day}-${month}-${year}`
+    // Default today's date in dd-mm-yyyy using shared utils
+    const formattedToday = formatToDDMMYYYY(formatTodayISO())
     
     setCheckoutDetails({
       actualCheckOutDate: formattedToday,
@@ -765,17 +762,9 @@ const Guests = () => {
       const formattedCheckInTime = checkInTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
 
       // Calculate number of days properly
-      // Convert dates to proper format for calculation
-      const checkInDateStr = guestForBill.checkInDate // Format: yyyy-mm-dd
-      const checkOutDateStr = checkoutDetails.actualCheckOutDate // Format: dd-mm-yyyy
-      
-      // Parse check-in date (yyyy-mm-dd)
-      const checkInParts = checkInDateStr.split('-')
-      const checkInDate = new Date(parseInt(checkInParts[0]), parseInt(checkInParts[1]) - 1, parseInt(checkInParts[2]))
-      
-      // Parse check-out date (dd-mm-yyyy)
-      const checkOutParts = checkOutDateStr.split('-')
-      const checkOutDate = new Date(parseInt(checkOutParts[2]), parseInt(checkOutParts[1]) - 1, parseInt(checkOutParts[0]))
+      // Flexible parsing for both yyyy-mm-dd and dd-mm-yyyy
+      const checkInDate = parseFlexibleDate(guestForBill.checkInDate)
+      const checkOutDate = parseFlexibleDate(checkoutDetails.actualCheckOutDate)
       
       // Calculate days difference - if same day, count as 1 day
       let daysDiff = 1
@@ -1005,7 +994,7 @@ const Guests = () => {
               <div class="stay-details">
                 <div class="section-title">Stay Details:</div>
                               <div class="info-row editable" contenteditable="false">Date of Arrival: ${formattedArrivalDate}</div>
-              <div class="info-row editable" contenteditable="false">Date of Departure: ${checkoutDetails.actualCheckOutDate}</div>
+              <div class="info-row editable" contenteditable="false">Date of Departure: ${formatToDDMMYYYY(checkoutDetails.actualCheckOutDate)}</div>
               <div class="info-row editable" contenteditable="false">Bill No: ${billNumber}</div>
               <div class="info-row editable" contenteditable="false">ROOM NO: ${guestForBill.roomNumber}</div>
               <div class="info-row editable" contenteditable="false">PAX: ${1 + (guestForBill.secondaryGuest ? 1 : 0) + (guestForBill.extraBeds ? guestForBill.extraBeds.length : 0)}</div>

@@ -1041,10 +1041,13 @@ app.get('/api/reports/dashboard', (req, res) => {
     try {
       // Handle both timestamp and string IDs
       let activityDate;
-      if (typeof activity.id === 'number' || !isNaN(parseInt(activity.id))) {
+      // For guest checkout, prefer the explicit checkoutDate (supports backdated checkout)
+      if (activity.type === 'guest_checked_out' && activity.checkoutDate) {
+        activityDate = normalizeDate(activity.checkoutDate);
+      } else if (typeof activity.id === 'number' || !isNaN(parseInt(activity.id))) {
         activityDate = new Date(parseInt(activity.id)).toISOString().split('T')[0];
       } else {
-        // Skip activities without valid timestamps
+        // Skip activities without valid dates
         return;
       }
       
@@ -1175,7 +1178,16 @@ app.put('/api/rooms/:id', (req, res) => {
     return res.status(404).json({ success: false, message: 'Room not found' });
   }
 
-  rooms[roomIndex] = { ...rooms[roomIndex], ...updateData, updatedAt: new Date().toISOString() };
+  // Normalize incoming fields to backend canonical format to keep reports consistent
+  const normalizedUpdate = { ...updateData };
+  if (typeof normalizedUpdate.status === 'string') {
+    normalizedUpdate.status = normalizedUpdate.status.toUpperCase(); // e.g., 'available' -> 'AVAILABLE'
+  }
+  if (typeof normalizedUpdate.category === 'string') {
+    normalizedUpdate.category = normalizedUpdate.category.toUpperCase();
+  }
+
+  rooms[roomIndex] = { ...rooms[roomIndex], ...normalizedUpdate, updatedAt: new Date().toISOString() };
   writeData('rooms.json', rooms);
 
   // Broadcast room update
@@ -1506,7 +1518,9 @@ app.put('/api/guests/:id', (req, res) => {
       roomNumber: guests[guestIndex].roomNumber || 'N/A',
       time: 'Just now',
       status: 'completed',
-      additionalPayment: additionalPayment > 0 ? additionalPayment : 0
+      additionalPayment: additionalPayment > 0 ? additionalPayment : 0,
+      // Store explicit checkoutDate chosen in UI (supports backdated checkout)
+      checkoutDate: updateData.checkOutDate || guests[guestIndex].checkOutDate || new Date().toISOString().split('T')[0]
     });
     writeData('activities.json', activities);
     writeData('guests.json', guests);
@@ -1679,7 +1693,15 @@ app.get('/api/reports/revenue', (req, res) => {
     const dayCheckouts = activities.filter(activity => {
       if (activity.type !== 'guest_checked_out') return false;
       try {
-        const activityDate = new Date(parseInt(activity.id)).toISOString().split('T')[0];
+        // Prefer explicit checkoutDate if present, else fallback to activity timestamp
+        const activityDate = activity.checkoutDate
+          ? (() => {
+              const parts = activity.checkoutDate.split('-');
+              if (parts.length === 3 && parts[0].length === 4) return activity.checkoutDate; // yyyy-mm-dd
+              if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`; // dd-mm-yyyy -> yyyy-mm-dd
+              return new Date(parseInt(activity.id)).toISOString().split('T')[0];
+            })()
+          : new Date(parseInt(activity.id)).toISOString().split('T')[0];
         return activityDate === dateStr;
       } catch (error) {
         return false;
@@ -1890,7 +1912,15 @@ app.get('/api/reports/rooms', (req, res) => {
       try {
         if (act.type !== 'guest_checked_out') return sum;
         if (!act.roomNumber || act.roomNumber !== room.number) return sum;
-        const actDate = new Date(parseInt(act.id)).toISOString().split('T')[0];
+        // Prefer explicit checkoutDate if present
+        const actDate = act.checkoutDate
+          ? (() => {
+              const parts = act.checkoutDate.split('-');
+              if (parts.length === 3 && parts[0].length === 4) return act.checkoutDate;
+              if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+              return new Date(parseInt(act.id)).toISOString().split('T')[0];
+            })()
+          : new Date(parseInt(act.id)).toISOString().split('T')[0];
         if (isWithinRange(actDate)) {
           return sum + (act.additionalPayment || 0);
         }
@@ -1978,7 +2008,16 @@ app.get('/api/reports/overview', (req, res) => {
   activities.forEach(activity => {
     try {
       if (activity.type === 'guest_checked_out' && activity.additionalPayment) {
-        const activityDate = new Date(parseInt(activity.id)).toISOString().split('T')[0];
+        // Prefer explicit checkoutDate if present
+        let activityDate;
+        if (activity.checkoutDate) {
+          const parts = activity.checkoutDate.split('-');
+          activityDate = (parts.length === 3 && parts[0].length === 4)
+            ? activity.checkoutDate
+            : `${parts[2]}-${parts[1]}-${parts[0]}`;
+        } else {
+          activityDate = new Date(parseInt(activity.id)).toISOString().split('T')[0];
+        }
         if (activityDate >= start && activityDate <= end) {
           totalRevenue += activity.additionalPayment;
         }
