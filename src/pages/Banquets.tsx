@@ -65,14 +65,16 @@ interface BanquetBooking {
   expectedGuests: number
   totalAmount: number
   advanceAmount: number
+  advancePaymentDate?: string
   balanceAmount: number
   paymentMethod: 'cash' | 'upi' | 'card' | 'bank_transfer' | 'pending'
   cateringRequired: boolean
   decorationRequired: boolean
   soundSystemRequired: boolean
   photographyRequired: boolean
+  projectorRequired: boolean
   specialRequirements: string
-  status: 'confirmed' | 'pending' | 'cancelled' | 'completed'
+  status: 'confirmed' | 'pending' | 'cancelled' | 'completed' | 'tentative'
   bookingDate: string
   createdBy: string
   notes: string
@@ -132,11 +134,13 @@ const Banquets = () => {
     endTime: string
     expectedGuests: number
     advanceAmount: number
+    advancePaymentDate: string
     paymentMethod: 'cash' | 'upi' | 'card' | 'bank_transfer' | 'pending'
     cateringRequired: boolean
     decorationRequired: boolean
     soundSystemRequired: boolean
     photographyRequired: boolean
+    projectorRequired: boolean
     specialRequirements: string
     notes: string
   }>({
@@ -150,11 +154,13 @@ const Banquets = () => {
     endTime: '',
     expectedGuests: 0,
     advanceAmount: 0,
+    advancePaymentDate: '',
     paymentMethod: 'cash',
     cateringRequired: false,
     decorationRequired: false,
     soundSystemRequired: false,
     photographyRequired: false,
+    projectorRequired: false,
     specialRequirements: '',
     notes: ''
   })
@@ -241,8 +247,19 @@ const Banquets = () => {
       setIsLoading(true)
       setError(null)
       try {
-        // For now, use default halls data (banquet halls API not implemented yet)
-        setHalls(defaultHalls)
+        // Fetch banquet halls
+        const hallsResponse = await fetch(`${BACKEND_URL}/api/halls`)
+        if (hallsResponse.ok) {
+          const hallsData = await hallsResponse.json()
+          if (hallsData.success) {
+            setHalls(hallsData.data || [])
+          } else {
+            setHalls(defaultHalls) // Fallback to default data
+          }
+        } else {
+          console.error('Failed to fetch halls')
+          setHalls(defaultHalls) // Fallback to default data
+        }
         
         // Fetch banquet bookings
         const bookingsResponse = await fetch(`${BACKEND_URL}/api/banquet-bookings`)
@@ -285,6 +302,21 @@ const Banquets = () => {
 
     newSocket.on('banquet_booking_deleted', (data) => {
       setBookings(prev => prev.filter(booking => booking.id !== data.id))
+    })
+
+    // Hall-related socket events
+    newSocket.on('hall_created', (newHall) => {
+      setHalls(prev => [newHall, ...prev])
+    })
+
+    newSocket.on('hall_updated', (updatedHall) => {
+      setHalls(prev => prev.map(hall => 
+        hall.id === updatedHall.id ? updatedHall : hall
+      ))
+    })
+
+    newSocket.on('hall_deleted', (data) => {
+      setHalls(prev => prev.filter(hall => hall.id !== data.id))
     })
 
     newSocket.on('activity_updated', (activity) => {
@@ -494,14 +526,16 @@ const Banquets = () => {
       expectedGuests: bookingForm.expectedGuests,
       totalAmount: bookingHall.price,
       advanceAmount: bookingForm.advanceAmount,
+      advancePaymentDate: bookingForm.advancePaymentDate,
       balanceAmount: bookingHall.price - bookingForm.advanceAmount,
       paymentMethod: bookingForm.paymentMethod,
       cateringRequired: bookingForm.cateringRequired,
       decorationRequired: bookingForm.decorationRequired,
       soundSystemRequired: bookingForm.soundSystemRequired,
       photographyRequired: bookingForm.photographyRequired,
+      projectorRequired: bookingForm.projectorRequired,
       specialRequirements: bookingForm.specialRequirements,
-      status: 'confirmed',
+      status: bookingForm.advanceAmount > 0 ? 'confirmed' : 'tentative',
       bookingDate: new Date().toISOString(),
       createdBy: user.name,
       notes: bookingForm.notes
@@ -520,7 +554,8 @@ const Banquets = () => {
       
       const data = await response.json()
       if (data.success) {
-        setBookings(prev => [data.data, ...prev])
+        // Don't update local state here - let socket event handle it to avoid duplicates
+        showNotification('success', 'Booking created successfully!')
       } else {
         throw new Error(data.message || 'Failed to create booking')
       }
@@ -537,11 +572,13 @@ const Banquets = () => {
         endTime: '',
         expectedGuests: 0,
         advanceAmount: 0,
+        advancePaymentDate: '',
         paymentMethod: 'cash',
         cateringRequired: false,
         decorationRequired: false,
         soundSystemRequired: false,
         photographyRequired: false,
+        projectorRequired: false,
         specialRequirements: '',
         notes: ''
       })
@@ -549,7 +586,6 @@ const Banquets = () => {
       setShowBookingForm(false)
       setSelectedDates(null)
       setBookingHall(null)
-      showNotification('success', 'Banquet booking confirmed successfully!')
       
     } catch (error) {
       console.error('Error creating booking:', error)
@@ -571,11 +607,13 @@ const Banquets = () => {
       endTime: booking.endTime,
       expectedGuests: booking.expectedGuests,
       advanceAmount: booking.advanceAmount,
+      advancePaymentDate: booking.advancePaymentDate || '',
       paymentMethod: booking.paymentMethod,
       cateringRequired: booking.cateringRequired,
       decorationRequired: booking.decorationRequired,
       soundSystemRequired: booking.soundSystemRequired,
       photographyRequired: booking.photographyRequired,
+      projectorRequired: booking.projectorRequired || false,
       specialRequirements: booking.specialRequirements,
       notes: booking.notes
     })
@@ -591,6 +629,7 @@ const Banquets = () => {
       ...bookingForm,
       totalAmount: editingBooking.totalAmount, // Keep original total
       balanceAmount: editingBooking.totalAmount - bookingForm.advanceAmount,
+      status: bookingForm.advanceAmount > 0 ? 'confirmed' : 'tentative',
       updatedAt: new Date().toISOString()
     }
 
@@ -624,11 +663,13 @@ const Banquets = () => {
           endTime: '',
           expectedGuests: 0,
           advanceAmount: 0,
+          advancePaymentDate: '',
           paymentMethod: 'cash',
           cateringRequired: false,
           decorationRequired: false,
           soundSystemRequired: false,
           photographyRequired: false,
+          projectorRequired: false,
           specialRequirements: '',
           notes: ''
         })
@@ -683,14 +724,31 @@ const Banquets = () => {
     if (!editingHall) return
 
     try {
-      // For now, update local state (in real app, this would be an API call)
-      setHalls(prev => prev.map(hall => 
-        hall.id === editingHall.id ? editingHall : hall
-      ))
-      
-      showNotification('success', 'Hall updated successfully!')
-      setShowEditHall(false)
-      setEditingHall(null)
+      const response = await fetch(`${BACKEND_URL}/api/halls/${editingHall.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editingHall),
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          // Update local state with the response data
+          setHalls(prev => prev.map(hall => 
+            hall.id === editingHall.id ? result.data : hall
+          ))
+          showNotification('success', 'Hall updated successfully!')
+          setShowEditHall(false)
+          setEditingHall(null)
+        } else {
+          showNotification('error', result.message || 'Failed to update hall')
+        }
+      } else {
+        const errorData = await response.json()
+        showNotification('error', errorData.message || 'Failed to update hall')
+      }
     } catch (error) {
       console.error('Error updating hall:', error)
       showNotification('error', 'Failed to update hall. Please try again.')
@@ -704,16 +762,23 @@ const Banquets = () => {
     }
 
     try {
-      // Check if hall has any bookings
-      const hallBookings = bookings.filter(booking => booking.hallId === hallId)
-      if (hallBookings.length > 0) {
-        showNotification('error', `Cannot delete hall. It has ${hallBookings.length} active booking(s).`)
-        return
-      }
+      const response = await fetch(`${BACKEND_URL}/api/halls/${hallId}`, {
+        method: 'DELETE',
+      })
 
-      // For now, update local state (in real app, this would be an API call)
-      setHalls(prev => prev.filter(hall => hall.id !== hallId))
-      showNotification('success', 'Hall deleted successfully!')
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          // Update local state
+          setHalls(prev => prev.filter(hall => hall.id !== hallId))
+          showNotification('success', 'Hall deleted successfully!')
+        } else {
+          showNotification('error', result.message || 'Failed to delete hall')
+        }
+      } else {
+        const errorData = await response.json()
+        showNotification('error', errorData.message || 'Failed to delete hall')
+      }
     } catch (error) {
       console.error('Error deleting hall:', error)
       showNotification('error', 'Failed to delete hall. Please try again.')
@@ -1283,6 +1348,30 @@ const Banquets = () => {
                   </button>
                 </div>
 
+                {/* Status Summary */}
+                <div className="mb-6 grid grid-cols-2 md:grid-cols-5 gap-4">
+                  <div className="bg-white border border-gray-200 rounded-lg p-4">
+                    <div className="text-2xl font-bold text-gray-900">{bookings.length}</div>
+                    <div className="text-sm text-gray-600">Total</div>
+                  </div>
+                  <div className="bg-white border border-gray-200 rounded-lg p-4">
+                    <div className="text-2xl font-bold text-green-600">{bookings.filter(b => b.status === 'confirmed').length}</div>
+                    <div className="text-sm text-gray-600">Confirmed</div>
+                  </div>
+                  <div className="bg-white border border-gray-200 rounded-lg p-4">
+                    <div className="text-2xl font-bold text-orange-600">{bookings.filter(b => b.status === 'tentative').length}</div>
+                    <div className="text-sm text-gray-600">Tentative</div>
+                  </div>
+                  <div className="bg-white border border-gray-200 rounded-lg p-4">
+                    <div className="text-2xl font-bold text-yellow-600">{bookings.filter(b => b.status === 'pending').length}</div>
+                    <div className="text-sm text-gray-600">Pending</div>
+                  </div>
+                  <div className="bg-white border border-gray-200 rounded-lg p-4">
+                    <div className="text-2xl font-bold text-red-600">{bookings.filter(b => b.status === 'cancelled').length}</div>
+                    <div className="text-sm text-gray-600">Cancelled</div>
+                  </div>
+                </div>
+
                 {/* Search and Filter Controls */}
                 <div className="mb-6 space-y-4">
                   {/* Search Bar */}
@@ -1309,6 +1398,7 @@ const Banquets = () => {
                       >
                         <option value="all">All Status</option>
                         <option value="confirmed">Confirmed</option>
+                        <option value="tentative">Tentative</option>
                         <option value="pending">Pending</option>
                         <option value="cancelled">Cancelled</option>
                         <option value="completed">Completed</option>
@@ -1447,6 +1537,10 @@ const Banquets = () => {
                               <div>
                                 <div className="text-sm font-medium text-gray-900">₹{booking.totalAmount.toLocaleString()}</div>
                                 <div className="text-sm text-gray-500">Advance: ₹{booking.advanceAmount.toLocaleString()}</div>
+                                <div className="text-xs text-gray-400">Method: {booking.paymentMethod.toUpperCase()}</div>
+                                {booking.advancePaymentDate && (
+                                  <div className="text-xs text-gray-400">Due: {new Date(booking.advancePaymentDate).toLocaleDateString()}</div>
+                                )}
                                 <div className="text-sm text-gray-500">Balance: ₹{booking.balanceAmount.toLocaleString()}</div>
                               </div>
                             </td>
@@ -1454,6 +1548,8 @@ const Banquets = () => {
                               <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                                 booking.status === 'confirmed' 
                                   ? 'bg-green-100 text-green-800'
+                                  : booking.status === 'tentative'
+                                  ? 'bg-orange-100 text-orange-800'
                                   : booking.status === 'pending'
                                   ? 'bg-yellow-100 text-yellow-800'
                                   : booking.status === 'cancelled'
@@ -1643,12 +1739,13 @@ const Banquets = () => {
                 {/* Services Required */}
                 <div className="mt-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Services</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                     {[
                       { key: 'cateringRequired', label: 'Catering' },
                       { key: 'decorationRequired', label: 'Decoration' },
                       { key: 'soundSystemRequired', label: 'Sound System' },
-                      { key: 'photographyRequired', label: 'Photography' }
+                      { key: 'photographyRequired', label: 'Photography' },
+                      { key: 'projectorRequired', label: 'Projector Setup' }
                     ].map(service => (
                       <label key={service.key} className="flex items-center space-x-2">
                         <input
@@ -1679,6 +1776,18 @@ const Banquets = () => {
                       max={editingBooking.totalAmount}
                       value={bookingForm.advanceAmount}
                       onChange={(e) => setBookingForm(prev => ({ ...prev, advanceAmount: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      {bookingForm.advanceAmount > 0 ? '✅ Booking will be confirmed' : '⚠️ Booking will be tentative (no advance paid)'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Advance Payment Date</label>
+                    <input
+                      type="date"
+                      value={bookingForm.advancePaymentDate}
+                      onChange={(e) => setBookingForm(prev => ({ ...prev, advancePaymentDate: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
@@ -2203,12 +2312,13 @@ const Banquets = () => {
                 {/* Services Required */}
                 <div className="mt-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Services</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                     {[
                       { key: 'cateringRequired', label: 'Catering' },
                       { key: 'decorationRequired', label: 'Decoration' },
                       { key: 'soundSystemRequired', label: 'Sound System' },
-                      { key: 'photographyRequired', label: 'Photography' }
+                      { key: 'photographyRequired', label: 'Photography' },
+                      { key: 'projectorRequired', label: 'Projector Setup' }
                     ].map(service => (
                       <label key={service.key} className="flex items-center space-x-2">
                         <input
@@ -2239,6 +2349,18 @@ const Banquets = () => {
                       max={bookingHall.price}
                       value={bookingForm.advanceAmount}
                       onChange={(e) => setBookingForm(prev => ({ ...prev, advanceAmount: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      {bookingForm.advanceAmount > 0 ? '✅ Booking will be confirmed' : '⚠️ Booking will be tentative (no advance paid)'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Advance Payment Date</label>
+                    <input
+                      type="date"
+                      value={bookingForm.advancePaymentDate}
+                      onChange={(e) => setBookingForm(prev => ({ ...prev, advancePaymentDate: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>

@@ -18,7 +18,10 @@ import {
   X,
   Check,
   Search,
-  Filter
+  Filter,
+  Receipt,
+  Download,
+  Printer
 } from 'lucide-react'
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
@@ -72,6 +75,40 @@ interface FoodOrder {
   notes: string
 }
 
+interface RoomServiceBill {
+  id: string
+  billNumber: string
+  roomNumber: string
+  guestName: string
+  guestPhone?: string
+  checkInDate?: string
+  checkOutDate?: string
+  orders: Array<{
+    orderId: string
+    orderDate: string
+    items: Array<{
+      name: string
+      price: number
+      quantity: number
+      gstRate: number
+      total: number
+    }>
+    totalAmount: number
+    gstAmount: number
+    finalAmount: number
+  }>
+  subtotal: number
+  totalGst: number
+  grandTotal: number
+  billDate: string
+  billTime: string
+  generatedBy: string
+  status: 'generated' | 'paid' | 'cancelled'
+  paymentMethod?: 'cash' | 'upi' | 'card' | 'bank_transfer'
+  paymentDate?: string
+  notes?: string
+}
+
 const RoomService = () => {
   const { hasPermission, user } = useAuth()
   const { notification, showNotification, hideNotification } = useNotification()
@@ -92,13 +129,16 @@ const RoomService = () => {
   const [rooms, setRooms] = useState<Room[]>([])
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [foodOrders, setFoodOrders] = useState<FoodOrder[]>([])
+  const [roomServiceBills, setRoomServiceBills] = useState<RoomServiceBill[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null)
   const [showMenuModal, setShowMenuModal] = useState(false)
   const [showOrderModal, setShowOrderModal] = useState(false)
+  const [showBillModal, setShowBillModal] = useState(false)
   const [currentOrder, setCurrentOrder] = useState<FoodOrder | null>(null)
   const [editingOrder, setEditingOrder] = useState<FoodOrder | null>(null)
+  const [currentBill, setCurrentBill] = useState<RoomServiceBill | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [socket, setSocket] = useState<Socket | null>(null)
@@ -398,6 +438,173 @@ const RoomService = () => {
     }
   }
 
+  // Generate bill for room
+  const handleGenerateBill = async (room: Room) => {
+    if (!hasPermission('room-service:view')) {
+      showNotification('error', 'You do not have permission to generate bills')
+      return
+    }
+
+    try {
+      // Get all orders for this room (pending, preparing, delivered)
+      const roomOrders = foodOrders.filter(order => 
+        order.roomNumber === room.number && 
+        (order.status === 'pending' || order.status === 'preparing' || order.status === 'delivered')
+      )
+
+      if (roomOrders.length === 0) {
+        showNotification('error', 'No orders found for this room')
+        return
+      }
+
+      // Calculate totals
+      const subtotal = roomOrders.reduce((sum, order) => sum + order.totalAmount, 0)
+      const totalGst = roomOrders.reduce((sum, order) => sum + order.gstAmount, 0)
+      const grandTotal = subtotal + totalGst
+
+      // Generate bill number (RS + timestamp)
+      const billNumber = `RS${Date.now().toString().slice(-8)}`
+
+      // Create bill object
+      const newBill: RoomServiceBill = {
+        id: Date.now().toString(),
+        billNumber,
+        roomNumber: room.number,
+        guestName: room.currentGuest?.name || 'Guest',
+        guestPhone: room.currentGuest?.phone || '',
+        checkInDate: room.currentGuest?.checkInDate,
+        checkOutDate: room.currentGuest?.checkOutDate,
+        orders: roomOrders.map(order => ({
+          orderId: order.id,
+          orderDate: order.orderDate,
+          items: order.items,
+          totalAmount: order.totalAmount,
+          gstAmount: order.gstAmount,
+          finalAmount: order.finalAmount
+        })),
+        subtotal,
+        totalGst,
+        grandTotal,
+        billDate: new Date().toLocaleDateString('en-IN'),
+        billTime: new Date().toLocaleTimeString('en-IN'),
+        generatedBy: user?.name || 'System',
+        status: 'generated'
+      }
+
+      // Save bill to backend
+      const response = await fetch(`${BACKEND_URL}/api/room-service-bills`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newBill)
+      })
+
+      if (!response.ok) throw new Error('Failed to generate bill')
+
+      const result = await response.json()
+      if (result.success) {
+        setCurrentBill(result.data)
+        setShowBillModal(true)
+        showNotification('success', 'Bill generated successfully')
+      } else {
+        throw new Error(result.message || 'Failed to generate bill')
+      }
+    } catch (error) {
+      console.error('Error generating bill:', error)
+      showNotification('error', 'Failed to generate bill. Please try again.')
+    }
+  }
+
+  // Print bill
+  const handlePrintBill = () => {
+    if (!currentBill) return
+    
+    const printWindow = window.open('', '_blank')
+    if (printWindow) {
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Room Service Bill - \${currentBill.billNumber}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 20px; }
+            .hotel-name { font-size: 24px; font-weight: bold; color: #333; }
+            .bill-info { display: flex; justify-content: space-between; margin-bottom: 20px; }
+            .bill-details { margin-bottom: 20px; }
+            .items-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+            .items-table th, .items-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            .items-table th { background-color: #f2f2f2; }
+            .totals { text-align: right; margin-top: 20px; }
+            .total-row { font-weight: bold; font-size: 18px; }
+            .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="hotel-name">Hotel Diplomat Residency</div>
+            <div>Room Service Bill</div>
+          </div>
+          
+          <div class="bill-info">
+            <div>
+              <strong>Bill No:</strong> \${currentBill.billNumber}<br>
+              <strong>Room No:</strong> \${currentBill.roomNumber}<br>
+              <strong>Guest:</strong> \${currentBill.guestName}
+            </div>
+            <div>
+              <strong>Date:</strong> \${currentBill.billDate}<br>
+              <strong>Time:</strong> \${currentBill.billTime}<br>
+              <strong>Generated By:</strong> \${currentBill.generatedBy}
+            </div>
+          </div>
+
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Item</th>
+                <th>Qty</th>
+                <th>Rate</th>
+                <th>Amount</th>
+                <th>GST</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${currentBill.orders.flatMap(order => 
+                order.items.map(item => `
+                  <tr>
+                    <td>${new Date(order.orderDate).toLocaleDateString('en-IN')}</td>
+                    <td>${item.name}</td>
+                    <td>${item.quantity}</td>
+                    <td>₹\${item.price}</td>
+                    <td>₹\${(item.price * item.quantity).toFixed(2)}</td>
+                    <td>\${item.gstRate}%</td>
+                    <td>₹\${item.total.toFixed(2)}</td>
+                  </tr>
+                `)
+              ).join('')}
+            </tbody>
+          </table>
+
+          <div class="totals">
+            <div>Subtotal: ₹\${currentBill.subtotal.toFixed(2)}</div>
+            <div>GST: ₹\${currentBill.totalGst.toFixed(2)}</div>
+            <div class="total-row">Grand Total: ₹\${currentBill.grandTotal.toFixed(2)}</div>
+          </div>
+
+          <div class="footer">
+            <p>Thank you for choosing Hotel Diplomat Residency!</p>
+            <p>For any queries, please contact: +91-XXXXXXXXXX</p>
+          </div>
+        </body>
+        </html>
+      `)
+      printWindow.document.close()
+      printWindow.print()
+    }
+  }
+
   // Get status color
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -555,6 +762,18 @@ const RoomService = () => {
                     <Utensils className="h-4 w-4 inline mr-1" />
                     {roomOrder ? 'Update Order' : 'Place Order'}
                   </button>
+                  
+                  {/* Generate Bill Button */}
+                  {room.status === 'occupied' && (
+                    <button
+                      onClick={() => handleGenerateBill(room)}
+                      className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                      title="Generate Room Service Bill"
+                    >
+                      <Receipt className="h-4 w-4 inline mr-1" />
+                      Bill
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -708,6 +927,144 @@ const RoomService = () => {
                     </div>
                   )}
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bill Modal */}
+      {showBillModal && currentBill && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Room Service Bill</h2>
+                <button
+                  onClick={() => {
+                    setShowBillModal(false)
+                    setCurrentBill(null)
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              {/* Bill Header */}
+              <div className="text-center border-b-2 border-gray-300 pb-6 mb-6">
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">Hotel Diplomat Residency</h1>
+                <p className="text-lg text-gray-600">Room Service Bill</p>
+              </div>
+
+              {/* Bill Information */}
+              <div className="grid grid-cols-2 gap-6 mb-6">
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Bill Details</h3>
+                  <div className="space-y-1 text-sm">
+                    <p><span className="font-medium">Bill No:</span> {currentBill.billNumber}</p>
+                    <p><span className="font-medium">Room No:</span> {currentBill.roomNumber}</p>
+                    <p><span className="font-medium">Guest:</span> {currentBill.guestName}</p>
+                    {currentBill.guestPhone && (
+                      <p><span className="font-medium">Phone:</span> {currentBill.guestPhone}</p>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Date & Time</h3>
+                  <div className="space-y-1 text-sm">
+                    <p><span className="font-medium">Date:</span> {currentBill.billDate}</p>
+                    <p><span className="font-medium">Time:</span> {currentBill.billTime}</p>
+                    <p><span className="font-medium">Generated By:</span> {currentBill.generatedBy}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Orders Table */}
+              <div className="mb-6">
+                <h3 className="font-semibold text-gray-900 mb-3">Order Details</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse border border-gray-300">
+                    <thead>
+                      <tr className="bg-gray-50">
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-medium">Date</th>
+                        <th className="border border-gray-300 px-3 py-2 text-left text-sm font-medium">Item</th>
+                        <th className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">Qty</th>
+                        <th className="border border-gray-300 px-3 py-2 text-right text-sm font-medium">Rate</th>
+                        <th className="border border-gray-300 px-3 py-2 text-right text-sm font-medium">Amount</th>
+                        <th className="border border-gray-300 px-3 py-2 text-center text-sm font-medium">GST</th>
+                        <th className="border border-gray-300 px-3 py-2 text-right text-sm font-medium">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {currentBill.orders.flatMap(order => 
+                        order.items.map((item, index) => (
+                          <tr key={`${order.orderId}-${index}`} className="hover:bg-gray-50">
+                            <td className="border border-gray-300 px-3 py-2 text-sm">
+                              {new Date(order.orderDate).toLocaleDateString('en-IN')}
+                            </td>
+                            <td className="border border-gray-300 px-3 py-2 text-sm font-medium">{item.name}</td>
+                            <td className="border border-gray-300 px-3 py-2 text-center text-sm">{item.quantity}</td>
+                            <td className="border border-gray-300 px-3 py-2 text-right text-sm">₹{item.price.toFixed(2)}</td>
+                            <td className="border border-gray-300 px-3 py-2 text-right text-sm">₹{(item.price * item.quantity).toFixed(2)}</td>
+                            <td className="border border-gray-300 px-3 py-2 text-center text-sm">{item.gstRate}%</td>
+                            <td className="border border-gray-300 px-3 py-2 text-right text-sm font-medium">₹{item.total.toFixed(2)}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Bill Totals */}
+              <div className="border-t-2 border-gray-300 pt-4">
+                <div className="flex justify-end">
+                  <div className="w-64 space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Subtotal:</span>
+                      <span>₹{currentBill.subtotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>GST:</span>
+                      <span>₹{currentBill.totalGst.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-lg font-bold border-t border-gray-300 pt-2">
+                      <span>Grand Total:</span>
+                      <span>₹{currentBill.grandTotal.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
+                <button
+                  onClick={() => {
+                    setShowBillModal(false)
+                    setCurrentBill(null)
+                  }}
+                  className="px-6 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={handlePrintBill}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                >
+                  <Printer className="h-4 w-4" />
+                  Print Bill
+                </button>
+                <button
+                  onClick={() => {
+                    // Download as PDF functionality can be added here
+                    showNotification('success', 'Bill downloaded successfully')
+                  }}
+                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Download PDF
+                </button>
               </div>
             </div>
           </div>

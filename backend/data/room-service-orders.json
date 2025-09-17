@@ -21,5 +21,44 @@
     "orderDate": "2025-09-16T21:45:19.685Z",
     "createdAt": "2025-09-16T21:45:19.685Z",
     "updatedAt": "2025-09-16T21:45:19.685Z"
+  },
+  {
+    "id": "1758094552240",
+    "roomNumber": "104",
+    "guestName": "VInod",
+    "items": [
+      {
+        "menuItemId": "dinner-001",
+        "name": "Vegetarian Dinner",
+        "price": 350,
+        "quantity": 2,
+        "gstRate": 5,
+        "total": 700
+      },
+      {
+        "menuItemId": "dinner-002",
+        "name": "Non-Vegetarian Dinner",
+        "price": 500,
+        "quantity": 1,
+        "gstRate": 5,
+        "total": 500
+      },
+      {
+        "menuItemId": "lunch-003",
+        "name": "Chinese Lunch",
+        "price": 400,
+        "quantity": 1,
+        "gstRate": 5,
+        "total": 400
+      }
+    ],
+    "totalAmount": 1600,
+    "gstAmount": 80,
+    "finalAmount": 1680,
+    "notes": "",
+    "status": "pending",
+    "orderDate": "2025-09-17T07:35:52.240Z",
+    "createdAt": "2025-09-17T07:35:52.240Z",
+    "updatedAt": "2025-09-17T07:35:52.240Z"
   }
 ]

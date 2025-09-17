@@ -1,0 +1,92 @@
+[
+  {
+    "id": "1",
+    "name": "JALSA",
+    "capacity": 500,
+    "status": "available",
+    "type": "wedding",
+    "floor": 1,
+    "price": 50000,
+    "amenities": [
+      "ac",
+      "sound",
+      "stage",
+      "dance",
+      "catering",
+      "parking",
+      "decoration",
+      "lighting"
+    ],
+    "description": "Our largest and most elegant banquet hall, perfect for grand weddings and corporate events. Features a spacious dance floor and professional lighting.",
+    "image": "/images/banquets/royal-grand-hall.jpg",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2025-09-17T08:33:02.804Z"
+  },
+  {
+    "id": "2",
+    "name": "MERIDIAN",
+    "capacity": 300,
+    "status": "available",
+    "type": "corporate",
+    "floor": 2,
+    "price": 35000,
+    "amenities": [
+      "ac",
+      "sound",
+      "projector",
+      "stage",
+      "catering",
+      "parking",
+      "security",
+      "photography"
+    ],
+    "description": "A sophisticated venue ideal for corporate meetings, conferences, and elegant parties. Equipped with modern AV facilities.",
+    "image": "/images/banquets/crystal-ballroom.jpg",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2025-09-17T08:32:30.851Z"
+  },
+  {
+    "id": "3",
+    "name": "REGAL PLAZA",
+    "capacity": 200,
+    "status": "available",
+    "type": "party",
+    "floor": 0,
+    "price": 25000,
+    "amenities": [
+      "sound",
+      "dance",
+      "catering",
+      "parking",
+      "decoration",
+      "lighting",
+      "photography",
+      "valet"
+    ],
+    "description": "An outdoor venue with beautiful garden views, perfect for intimate celebrations and outdoor parties.",
+    "image": "/images/banquets/garden-pavilion.jpg",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2025-09-17T08:33:13.227Z"
+  },
+  {
+    "id": "4",
+    "name": "LISBANA",
+    "capacity": 100,
+    "status": "available",
+    "type": "conference",
+    "floor": 3,
+    "price": 15000,
+    "amenities": [
+      "ac",
+      "sound",
+      "projector",
+      "catering",
+      "parking",
+      "security"
+    ],
+    "description": "A modern conference room with state-of-the-art facilities, ideal for business meetings and small corporate events.",
+    "image": "/images/banquets/executive-conference.jpg",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2025-09-17T09:04:14.834Z"
+  }
+]

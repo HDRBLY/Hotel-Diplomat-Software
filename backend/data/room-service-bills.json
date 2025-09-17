@@ -1,0 +1,76 @@
+[
+  {
+    "id": "1758099648169",
+    "billNumber": "RS99648169",
+    "roomNumber": "102",
+    "guestName": "aman",
+    "guestPhone": "8965874589",
+    "checkInDate": "2025-09-16",
+    "checkOutDate": "2025-09-17",
+    "orders": [
+      {
+        "orderId": "1758059119685",
+        "orderDate": "2025-09-16T21:45:19.685Z",
+        "items": [
+          {
+            "menuItemId": "breakfast-002",
+            "name": "Indian Breakfast",
+            "price": 200,
+            "quantity": 1,
+            "gstRate": 5,
+            "total": 200
+          }
+        ],
+        "totalAmount": 200,
+        "gstAmount": 10,
+        "finalAmount": 210
+      }
+    ],
+    "subtotal": 200,
+    "totalGst": 10,
+    "grandTotal": 210,
+    "billDate": "17/9/2025",
+    "billTime": "2:30:48 pm",
+    "generatedBy": "System Administrator",
+    "status": "generated",
+    "createdAt": "2025-09-17T09:00:48.180Z",
+    "updatedAt": "2025-09-17T09:00:48.180Z"
+  },
+  {
+    "id": "1758100346045",
+    "billNumber": "RS00346045",
+    "roomNumber": "102",
+    "guestName": "aman",
+    "guestPhone": "8965874589",
+    "checkInDate": "2025-09-16",
+    "checkOutDate": "2025-09-17",
+    "orders": [
+      {
+        "orderId": "1758059119685",
+        "orderDate": "2025-09-16T21:45:19.685Z",
+        "items": [
+          {
+            "menuItemId": "breakfast-002",
+            "name": "Indian Breakfast",
+            "price": 200,
+            "quantity": 1,
+            "gstRate": 5,
+            "total": 200
+          }
+        ],
+        "totalAmount": 200,
+        "gstAmount": 10,
+        "finalAmount": 210
+      }
+    ],
+    "subtotal": 200,
+    "totalGst": 10,
+    "grandTotal": 210,
+    "billDate": "17/9/2025",
+    "billTime": "2:42:26 pm",
+    "generatedBy": "System Administrator",
+    "status": "generated",
+    "createdAt": "2025-09-17T09:12:26.116Z",
+    "updatedAt": "2025-09-17T09:12:26.116Z"
+  }
+]

@@ -30,7 +30,7 @@ if (!fs.existsSync(dataDir)) {
 }
 
 // Initialize data files if they don't exist
-const dataFiles = ['users.json', 'rooms.json', 'guests.json', 'reservations.json', 'banquet-bookings.json', 'room-service-orders.json', 'activities.json'];
+const dataFiles = ['users.json', 'rooms.json', 'guests.json', 'reservations.json', 'banquet-bookings.json', 'room-service-orders.json', 'activities.json', 'halls.json', 'room-service-bills.json'];
 dataFiles.forEach(file => {
   const filePath = path.join(dataDir, file);
   if (!fs.existsSync(filePath)) {
@@ -1607,7 +1607,6 @@ app.post('/api/banquet-bookings', (req, res) => {
   const newBooking = {
     id: Date.now().toString(),
     ...bookingData,
-    status: 'confirmed',
     bookingDate: new Date().toISOString(),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
@@ -1676,6 +1675,129 @@ app.delete('/api/banquet-bookings/:id', (req, res) => {
   broadcastUpdate('banquet_booking_deleted', { id });
 
   res.json({ success: true, message: 'Booking deleted successfully' });
+});
+
+// Banquet Halls API
+app.get('/api/halls', (req, res) => {
+  const halls = readData('halls.json');
+  res.json({ success: true, data: halls });
+});
+
+app.post('/api/halls', (req, res) => {
+  const hallData = req.body;
+  const halls = readData('halls.json');
+  
+  const newHall = {
+    id: Date.now().toString(),
+    ...hallData,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+
+  halls.push(newHall);
+  writeData('halls.json', halls);
+
+  // Add to activities
+  const activities = readData('activities.json');
+  activities.unshift({
+    id: Date.now().toString(),
+    type: 'hall_created',
+    guestName: 'System',
+    roomNumber: newHall.name,
+    time: 'Just now',
+    status: 'completed'
+  });
+  writeData('activities.json', activities);
+
+  // Broadcast hall update
+  broadcastUpdate('hall_created', newHall);
+  broadcastUpdate('activity_updated', activities[0]);
+
+  res.json({ success: true, data: newHall });
+});
+
+app.put('/api/halls/:id', (req, res) => {
+  const { id } = req.params;
+  const updateData = req.body;
+  const halls = readData('halls.json');
+  
+  const hallIndex = halls.findIndex(hall => hall.id === id);
+  if (hallIndex === -1) {
+    return res.status(404).json({ success: false, message: 'Hall not found' });
+  }
+
+  // Store old status for comparison
+  const oldStatus = halls[hallIndex].status;
+  
+  halls[hallIndex] = {
+    ...halls[hallIndex],
+    ...updateData,
+    updatedAt: new Date().toISOString()
+  };
+  writeData('halls.json', halls);
+
+  // Add to activities if status changed
+  if (updateData.status && updateData.status !== oldStatus) {
+    const activities = readData('activities.json');
+    activities.unshift({
+      id: Date.now().toString(),
+      type: 'hall_status_changed',
+      guestName: 'System',
+      roomNumber: halls[hallIndex].name,
+      time: 'Just now',
+      status: 'completed',
+      oldStatus: oldStatus,
+      newStatus: updateData.status
+    });
+    writeData('activities.json', activities);
+    broadcastUpdate('activity_updated', activities[0]);
+  }
+
+  // Broadcast hall update
+  broadcastUpdate('hall_updated', halls[hallIndex]);
+
+  res.json({ success: true, data: halls[hallIndex] });
+});
+
+app.delete('/api/halls/:id', (req, res) => {
+  const { id } = req.params;
+  const halls = readData('halls.json');
+  
+  const hallIndex = halls.findIndex(hall => hall.id === id);
+  if (hallIndex === -1) {
+    return res.status(404).json({ success: false, message: 'Hall not found' });
+  }
+
+  // Check if hall has any bookings
+  const bookings = readData('banquet-bookings.json');
+  const hallBookings = bookings.filter(booking => booking.hallId === id);
+  if (hallBookings.length > 0) {
+    return res.status(400).json({ 
+      success: false, 
+      message: `Cannot delete hall. It has ${hallBookings.length} active booking(s).` 
+    });
+  }
+
+  const deletedHall = halls.splice(hallIndex, 1)[0];
+  writeData('halls.json', halls);
+
+  // Add to activities
+  const activities = readData('activities.json');
+  activities.unshift({
+    id: Date.now().toString(),
+    type: 'hall_deleted',
+    guestName: 'System',
+    roomNumber: deletedHall.name,
+    time: 'Just now',
+    status: 'completed'
+  });
+  writeData('activities.json', activities);
+
+  // Broadcast hall deletion
+  broadcastUpdate('hall_deleted', { id });
+  broadcastUpdate('activity_updated', activities[0]);
+
+  res.json({ success: true, message: 'Hall deleted successfully' });
 });
 
 // Activities API
@@ -2427,6 +2549,88 @@ app.delete('/api/room-service-orders/:id', (req, res) => {
   broadcastUpdate('room_service_order_deleted', { id });
 
   res.json({ success: true, message: 'Order deleted successfully' });
+});
+
+// Room Service Bills API
+app.get('/api/room-service-bills', (req, res) => {
+  const bills = readData('room-service-bills.json');
+  res.json({ success: true, data: bills });
+});
+
+app.post('/api/room-service-bills', (req, res) => {
+  const billData = req.body;
+  const bills = readData('room-service-bills.json');
+  
+  const newBill = {
+    id: Date.now().toString(),
+    ...billData,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+
+  bills.push(newBill);
+  writeData('room-service-bills.json', bills);
+
+  // Add to activities
+  const activities = readData('activities.json');
+  activities.unshift({
+    id: Date.now().toString(),
+    type: 'room_service_bill',
+    guestName: billData.guestName || 'Unknown',
+    roomNumber: billData.roomNumber || 'N/A',
+    time: 'Just now',
+    status: 'generated',
+    billNumber: billData.billNumber || 'N/A',
+    billAmount: billData.grandTotal || 0
+  });
+  writeData('activities.json', activities);
+
+  // Broadcast bill update
+  broadcastUpdate('room_service_bill_created', newBill);
+  broadcastUpdate('activity_updated', activities[0]);
+
+  res.json({ success: true, data: newBill });
+});
+
+app.put('/api/room-service-bills/:id', (req, res) => {
+  const { id } = req.params;
+  const updateData = req.body;
+  const bills = readData('room-service-bills.json');
+  
+  const billIndex = bills.findIndex(bill => bill.id === id);
+  if (billIndex === -1) {
+    return res.status(404).json({ success: false, message: 'Bill not found' });
+  }
+
+  bills[billIndex] = {
+    ...bills[billIndex],
+    ...updateData,
+    updatedAt: new Date().toISOString()
+  };
+  writeData('room-service-bills.json', bills);
+
+  // Broadcast bill update
+  broadcastUpdate('room_service_bill_updated', bills[billIndex]);
+
+  res.json({ success: true, data: bills[billIndex] });
+});
+
+app.delete('/api/room-service-bills/:id', (req, res) => {
+  const { id } = req.params;
+  const bills = readData('room-service-bills.json');
+  
+  const billIndex = bills.findIndex(bill => bill.id === id);
+  if (billIndex === -1) {
+    return res.status(404).json({ success: false, message: 'Bill not found' });
+  }
+
+  const deletedBill = bills.splice(billIndex, 1)[0];
+  writeData('room-service-bills.json', bills);
+
+  // Broadcast bill deletion
+  broadcastUpdate('room_service_bill_deleted', { id });
+
+  res.json({ success: true, message: 'Bill deleted successfully' });
 });
 
 server.listen(PORT, () => {
