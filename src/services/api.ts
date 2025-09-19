@@ -501,12 +501,10 @@ export class WebSocketService {
     this.ws = new WebSocket(`${wsUrl}?token=${token}`)
 
     this.ws.onopen = () => {
-      console.log('WebSocket connected')
       this.reconnectAttempts = 0
     }
 
     this.ws.onclose = () => {
-      console.log('WebSocket disconnected')
       this.attemptReconnect()
     }
 

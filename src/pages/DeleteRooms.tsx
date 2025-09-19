@@ -110,12 +110,7 @@ const DeleteRooms = () => {
       setFilteredRooms(updatedRooms)
 
       // Log deletion (in real app, this would be sent to server)
-      console.log('Room deleted:', {
-        room: selectedRoom,
-        reason: deleteReason,
-        deletedBy: user?.name,
-        deletedAt: new Date().toISOString()
-      })
+      // Room deleted successfully
 
       showNotification('success', `Room ${selectedRoom.number} has been deleted successfully`)
       setShowDeleteModal(false)

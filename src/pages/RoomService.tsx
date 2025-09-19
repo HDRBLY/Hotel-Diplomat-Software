@@ -29,7 +29,7 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
 interface Room {
   id: string
   number: string
-  type: string
+  type: 'standard' | 'deluxe' | 'suite' | 'presidential'
   status: 'available' | 'occupied' | 'maintenance' | 'reserved' | 'cleaning'
   floor: number
   price: number
@@ -217,7 +217,6 @@ const RoomService = () => {
         }
 
       } catch (error) {
-        console.error('Error fetching data:', error)
         const errorMessage = error instanceof Error ? error.message : 'Failed to fetch data'
         setError(errorMessage)
         showNotification('error', `Failed to fetch data: ${errorMessage}`)
@@ -233,7 +232,7 @@ const RoomService = () => {
     setSocket(newSocket)
 
     newSocket.on('connect', () => {
-      console.log('Connected to backend for real-time room service updates')
+      // Connected to backend for real-time room service updates
     })
 
     newSocket.on('room_updated', () => {

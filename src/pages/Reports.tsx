@@ -764,7 +764,7 @@ const Reports = () => {
     setSocket(newSocket)
 
     newSocket.on('connect', () => {
-      console.log('Connected to backend for real-time reports updates')
+      // Connected to backend for real-time reports updates
     })
 
     newSocket.on('guest_created', () => {

@@ -300,7 +300,6 @@ const Guests = () => {
         if (!roomsRes.success) throw new Error('Failed to fetch rooms data')
         setRooms(roomsRes.data || [])
       } catch (error) {
-        console.error('Error fetching data:', error)
         const errorMessage = error instanceof Error ? error.message : 'Failed to fetch data'
         setError(errorMessage)
         setGuests([])
@@ -317,7 +316,7 @@ const Guests = () => {
     setSocket(newSocket)
 
     newSocket.on('connect', () => {
-      console.log('Connected to backend for real-time guest updates')
+      // Connected to backend for real-time guest updates
     })
 
     newSocket.on('guest_updated', (updatedGuest) => {
@@ -336,7 +335,6 @@ const Guests = () => {
     })
 
     newSocket.on('room_shifted', (shiftData) => {
-      console.log('Received room_shifted event in Guests:', shiftData)
       // Refresh guests list when a room shift happens
       fetchData()
     })

@@ -127,14 +127,12 @@ const Rooms = () => {
     setIsRefreshing(true)
     setError(null)
     try {
-      console.log('Manual refresh triggered...')
       const response = await fetch(`${BACKEND_URL}/api/rooms`)
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
       const data = await response.json()
       if (data.success) {
-        console.log('Manual refresh successful:', data.data)
         setRooms(data.data)
         showNotification('success', 'Rooms data refreshed successfully!')
       } else {
@@ -167,19 +165,15 @@ const Rooms = () => {
       setIsLoading(true)
       setError(null)
       try {
-        console.log('Fetching rooms from API...')
         const response = await fetch(`${BACKEND_URL}/api/rooms`)
-        console.log('API Response status:', response.status)
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
         
         const data = await response.json()
-        console.log('API Response data:', data)
         
         if (data.success) {
-          console.log('Setting rooms data:', data.data)
           setRooms(data.data)
         } else {
           console.error('API returned success: false')
@@ -203,11 +197,11 @@ const Rooms = () => {
     setSocket(newSocket)
 
     newSocket.on('connect', () => {
-      console.log('Connected to backend for real-time room updates')
+      // Connected to backend for real-time room updates
     })
 
     newSocket.on('disconnect', () => {
-      console.log('Disconnected from backend')
+      // Disconnected from backend
     })
 
     newSocket.on('error', (error) => {
@@ -215,14 +209,12 @@ const Rooms = () => {
     })
 
     newSocket.on('room_updated', (updatedRoom) => {
-      console.log('Received room_updated event:', updatedRoom)
       setRooms(prev => prev.map(room => 
         room.id === updatedRoom.id ? updatedRoom : room
       ))
     })
 
     newSocket.on('guest_created', () => {
-      console.log('Received guest_created event, refreshing rooms...')
       // Refresh rooms when a new guest is added
       fetchRooms()
     })
@@ -233,7 +225,6 @@ const Rooms = () => {
     })
 
     newSocket.on('room_shifted', (shiftData) => {
-      console.log('Received room_shifted event:', shiftData)
       // Refresh rooms data when a room shift happens
       fetchRooms()
     })

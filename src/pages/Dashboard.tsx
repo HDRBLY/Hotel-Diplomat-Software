@@ -68,18 +68,15 @@ const Dashboard = () => {
     const fetchDashboardData = async () => {
       setIsLoading(true)
       setError(null)
-      console.log('Fetching dashboard data...')
       try {
         // Fetch dashboard stats
         const statsResponse = await fetch(`${BACKEND_URL}/api/reports/dashboard`)
-        console.log('Dashboard API response status:', statsResponse.status)
         if (!statsResponse.ok) {
           throw new Error(`Failed to fetch dashboard stats: ${statsResponse.status}`)
         }
         const statsData = await statsResponse.json()
         
         if (statsData.success) {
-          console.log('Dashboard API response:', statsData.data)
           setStats(statsData.data)
         } else {
           throw new Error('Failed to fetch dashboard stats')
@@ -153,7 +150,7 @@ const Dashboard = () => {
     setSocket(newSocket)
 
     newSocket.on('connect', () => {
-      console.log('Connected to backend for real-time updates')
+      // Connected to backend for real-time updates
     })
 
     newSocket.on('activity_updated', (activity) => {
@@ -176,7 +173,6 @@ const Dashboard = () => {
     })
 
     newSocket.on('room_shifted', (shiftData) => {
-      console.log('Received room_shifted event in Dashboard:', shiftData)
       // Refresh dashboard stats when a room shift happens
       fetchDashboardData()
     })

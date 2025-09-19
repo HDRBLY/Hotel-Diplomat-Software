@@ -287,7 +287,7 @@ const Banquets = () => {
     setSocket(newSocket)
 
     newSocket.on('connect', () => {
-      console.log('Connected to backend for real-time banquet updates')
+      // Connected to backend for real-time banquet updates
     })
 
     newSocket.on('banquet_booking_created', (newBooking) => {
@@ -321,7 +321,7 @@ const Banquets = () => {
 
     newSocket.on('activity_updated', (activity) => {
       // Handle activity updates if needed
-      console.log('Activity updated:', activity)
+      // Activity updated
     })
 
     return () => {
