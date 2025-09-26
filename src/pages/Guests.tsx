@@ -1181,10 +1181,13 @@ const Guests = () => {
             .footer { margin-top: 12px; text-align: center; font-size: 10px; }
             .print-btn { position: fixed; top: 20px; right: 20px; padding: 10px 20px; color: white; border: none; border-radius: 5px; cursor: pointer; background: #007bff; }
             .print-btn:hover { background: #0056b3; }
+            .edit-btn { position: fixed; top: 20px; right: 120px; padding: 10px 20px; color: white; border: none; border-radius: 5px; cursor: pointer; background: #28a745; }
+            .edit-btn:hover { background: #218838; }
             .editable { border: 1px dashed #ccc; padding: 2px; min-height: 1em; }
           </style>
         </head>
         <body>
+          <button class="edit-btn no-print" onclick="toggleEdit()">Edit Bill</button>
           <button class="print-btn no-print" onclick="window.print()">Print Preview</button>
           
           <div class="invoice-container">
@@ -1337,6 +1340,26 @@ const Guests = () => {
             <div>THANK YOU FOR YOUR VISIT, PLEASE VISIT AGAIN !!!!</div>
           </div>
           </div>
+          <script>
+            let isEditMode = false;
+            function toggleEdit() {
+              const editables = document.querySelectorAll('.editable');
+              const editBtn = document.querySelector('.edit-btn');
+              isEditMode = !isEditMode;
+              editables.forEach(el => { el.contentEditable = isEditMode; el.style.backgroundColor = isEditMode ? '#f8f9fa' : ''; });
+              if (isEditMode) { editBtn.textContent = 'Save & Exit Edit'; editBtn.style.background = '#dc3545'; editBtn.onclick = saveAndExitEdit; }
+              else { editBtn.textContent = 'Edit Bill'; editBtn.style.background = '#28a745'; editBtn.onclick = toggleEdit; }
+            }
+            function saveAndExitEdit() {
+              const editables = document.querySelectorAll('.editable');
+              const editBtn = document.querySelector('.edit-btn');
+              editables.forEach(el => { el.contentEditable = false; el.style.backgroundColor = ''; });
+              editBtn.textContent = 'Edit Bill';
+              editBtn.style.background = '#28a745';
+              editBtn.onclick = toggleEdit;
+              isEditMode = false;
+            }
+          </script>
         </body>
         </html>
       `
