@@ -1356,6 +1356,7 @@ app.post('/api/guests', (req, res) => {
     category: guestData.category || 'couple',
     plan: guestData.plan || 'EP',
     complimentary: guestData.complimentary || false,
+    paymentMethod: guestData.paymentMethod || 'CASH',
     secondaryGuest: guestData.secondaryGuest || undefined,
     extraBeds: guestData.extraBeds || undefined,
     createdAt: new Date().toISOString()
@@ -2438,7 +2439,11 @@ app.get('/api/reports/charts/guest-sources', (req, res) => {
 });
 
 // Clear all data endpoint
-app.post('/api/reports/clear-data', (req, res) => {
+app.post('/api/reports/clear-data', authenticateToken, (req, res) => {
+  // Only admin can clear all data
+  if (!req.user || (req.user.role || '').toLowerCase() !== 'admin') {
+    return res.status(403).json({ success: false, message: 'Forbidden: admin access required' });
+  }
   try {
     // Clear all data files
     writeData('guests.json', []);

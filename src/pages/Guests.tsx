@@ -38,6 +38,7 @@ interface Guest {
   category: GuestCategory
   plan: 'EP' | 'CP' | 'MAP' | 'AP'
   complimentary?: boolean
+  paymentMethod?: string
   secondaryGuest?: {
     name: string
     phone?: string
@@ -122,6 +123,7 @@ const Guests = () => {
     charge: number
   }>>([])
   const { notification, showNotification, hideNotification } = useNotification()
+  const [showComplimentaryCheckbox, setShowComplimentaryCheckbox] = useState(false)
   const [newGuest, setNewGuest] = useState<{
     name: string
     email: string
@@ -137,6 +139,7 @@ const Guests = () => {
     category: GuestCategory
     plan: 'EP' | 'CP' | 'MAP' | 'AP'
     complimentary?: boolean
+    paymentMethod?: string
     secondaryGuest?: {
       name: string
       phone?: string
@@ -166,6 +169,7 @@ const Guests = () => {
       category: 'couple',
       plan: 'EP',
       complimentary: false,
+      paymentMethod: 'CASH',
       secondaryGuest: undefined
     }
   )
@@ -692,10 +696,12 @@ const Guests = () => {
 
     try {
       const response = await guestsAPI.updateGuest(checkoutGuest.id, {
-          status: 'checked-out',
-            totalAmount: checkoutDetails.finalAmount,
-            paidAmount: checkoutDetails.finalAmount,
-          checkOutDate: convertDateToBackendFormat(checkoutDetails.actualCheckOutDate)
+        status: 'checked-out',
+        totalAmount: checkoutDetails.finalAmount,
+        paidAmount: checkoutDetails.finalAmount,
+        checkOutDate: convertDateToBackendFormat(checkoutDetails.actualCheckOutDate),
+        paymentMethod: checkoutDetails.paymentMethod,
+        complimentary: checkoutGuest.complimentary || false
       })
 
       if (response.success) {
@@ -898,6 +904,7 @@ const Guests = () => {
               <div class="info-row editable" contenteditable="false">Plan: ${guestForBill.plan || 'EP'}</div>
               <div class="info-row editable" contenteditable="false">Check In Time: ${formattedCheckInTime}</div>
               <div class="info-row editable" contenteditable="false">Check Out Time: ${billTime}</div>
+              <div class="info-row editable" contenteditable="false">Payment Method: ${((checkoutDetails.paymentMethod || guestForBill.paymentMethod || 'CASH')).toUpperCase()}</div>
               </div>
             </div>
 
@@ -1215,6 +1222,7 @@ const Guests = () => {
               <div class="info-row editable" contenteditable="false">Plan: ${guestForBill.plan || 'EP'}</div>
               <div class="info-row editable" contenteditable="false">Check In Time: ${formattedCheckInTime}</div>
               <div class="info-row editable" contenteditable="false">Check Out Time: ${billTime}</div>
+              <div class="info-row editable" contenteditable="false">Payment Method: ${((checkoutDetails.paymentMethod || guestForBill.paymentMethod || 'CASH')).toUpperCase()}</div>
             </div>
           </div>
 
@@ -1455,6 +1463,7 @@ const Guests = () => {
       plan: newGuest.plan,
         status: 'checked-in',
       complimentary: !!newGuest.complimentary,
+      paymentMethod: newGuest.paymentMethod || 'CASH',
       secondaryGuest: showSecondaryGuest && newGuest.secondaryGuest ? {
         name: newGuest.secondaryGuest.name,
         phone: newGuest.secondaryGuest.phone || '',
@@ -2204,6 +2213,31 @@ const Guests = () => {
                     <option value="AP">AP (American Plan - Room + All Meals)</option>
                   </select>
                   <p className="text-xs text-gray-500 mt-1">Select the meal plan for the guest</p>
+                </div>
+
+                <div>
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={!!newGuest.complimentary}
+                      onChange={(e) => {
+                        setNewGuest({
+                          ...newGuest,
+                          complimentary: e.target.checked,
+                          totalAmount: e.target.checked ? 0 : newGuest.totalAmount // Set amount to 0 if complimentary
+                        })
+                        setShowComplimentaryCheckbox(e.target.checked)
+                      }}
+                      className="mr-2 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                      title="Mark as complimentary stay"
+                    />
+                    <span className="text-sm font-medium text-gray-700">
+                      Complimentary Stay (Room Rent Waived)
+                    </span>
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Check this if the stay is complimentary. Room rent will be zero but other charges may apply.
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
