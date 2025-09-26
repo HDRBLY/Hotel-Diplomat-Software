@@ -929,7 +929,7 @@ const Guests = () => {
                 <td class="editable" contenteditable="false">${breakdown.daysDiff}</td>
                 <td class="editable" contenteditable="false">₹${displayValues.displayPricePerDay}</td>
                 <td class="editable" contenteditable="false">₹${displayValues.displayRoomRentTaxableValue.toFixed(2)}</td>
-                <td>12%</td>
+                <td>5%</td>
                 <td class="editable" contenteditable="false">₹${displayValues.displayRoomRentCgst.toFixed(2)}</td>
                 <td class="editable" contenteditable="false">₹${displayValues.displayRoomRentSgst.toFixed(2)}</td>
                 <td class="editable" contenteditable="false">₹${displayValues.displayRoomRent}</td>
@@ -938,7 +938,7 @@ const Guests = () => {
               <tr>
                 <td colspan="4" class="editable" contenteditable="false">Extra Bed Charges</td>
                 <td class="editable" contenteditable="false">₹${breakdown.extraBedTaxableValue.toFixed(2)}</td>
-                <td>12%</td>
+                <td>5%</td>
                 <td class="editable" contenteditable="false">₹${breakdown.extraBedCgst.toFixed(2)}</td>
                 <td class="editable" contenteditable="false">₹${breakdown.extraBedSgst.toFixed(2)}</td>
                 <td class="editable" contenteditable="false">₹${breakdown.extraBedCharges}</td>
@@ -968,7 +968,7 @@ const Guests = () => {
               <tr>
                 <td colspan="4" class="editable" contenteditable="false">Late Checkout Charges</td>
                 <td class="editable" contenteditable="false">₹${breakdown.halfDayTaxableValue.toFixed(2)}</td>
-                <td>12%</td>
+                <td>5%</td>
                 <td class="editable" contenteditable="false">₹${breakdown.halfDayCgst.toFixed(2)}</td>
                 <td class="editable" contenteditable="false">₹${breakdown.halfDaySgst.toFixed(2)}</td>
                 <td class="editable" contenteditable="false">₹${breakdown.halfDayCharges}</td>
@@ -1250,7 +1250,7 @@ const Guests = () => {
                 <td class="editable" contenteditable="false">${breakdown.daysDiff}</td>
                 <td class="editable" contenteditable="false">₹${displayValues.displayPricePerDay}</td>
                 <td class="editable" contenteditable="false">₹${displayValues.displayRoomRentTaxableValue.toFixed(2)}</td>
-                <td>12%</td>
+                <td>5%</td>
                 <td class="editable" contenteditable="false">₹${displayValues.displayRoomRentCgst.toFixed(2)}</td>
                 <td class="editable" contenteditable="false">₹${displayValues.displayRoomRentSgst.toFixed(2)}</td>
                 <td class="editable" contenteditable="false">₹${displayValues.displayRoomRent}</td>
@@ -1259,7 +1259,7 @@ const Guests = () => {
               <tr>
                 <td colspan="4" class="editable" contenteditable="false">Extra Bed Charges</td>
                 <td class="editable" contenteditable="false">₹${breakdown.extraBedTaxableValue.toFixed(2)}</td>
-                <td>12%</td>
+                <td>5%</td>
                 <td class="editable" contenteditable="false">₹${breakdown.extraBedCgst.toFixed(2)}</td>
                 <td class="editable" contenteditable="false">₹${breakdown.extraBedSgst.toFixed(2)}</td>
                 <td class="editable" contenteditable="false">₹${breakdown.extraBedCharges}</td>
@@ -1289,7 +1289,7 @@ const Guests = () => {
               <tr>
                 <td colspan="4" class="editable" contenteditable="false">Late Checkout Charges</td>
                 <td class="editable" contenteditable="false">₹${breakdown.halfDayTaxableValue.toFixed(2)}</td>
-                <td>12%</td>
+                <td>5%</td>
                 <td class="editable" contenteditable="false">₹${breakdown.halfDayCgst.toFixed(2)}</td>
                 <td class="editable" contenteditable="false">₹${breakdown.halfDaySgst.toFixed(2)}</td>
                 <td class="editable" contenteditable="false">₹${breakdown.halfDayCharges}</td>

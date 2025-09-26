@@ -1915,18 +1915,21 @@ app.get('/api/reports/revenue', (req, res) => {
       }
     });
     const checkoutRevenue = dayCheckouts.reduce((sum, activity) => sum + (activity.additionalPayment || 0), 0);
-    
+
     const totalDayRevenue = checkinRevenue + checkoutRevenue;
     const bookings = dayCheckins.length;
     const averageRate = bookings > 0 ? Math.round(checkinRevenue / bookings) : 0;
-    
+
+    const gstAt5Percent = Math.round((checkinRevenue + checkoutRevenue) * 0.05);
+
     revenueData.push({
       date: dateStr,
       revenue: totalDayRevenue,
       bookings: bookings,
       averageRate: averageRate,
       checkinRevenue: checkinRevenue,
-      checkoutRevenue: checkoutRevenue
+      checkoutRevenue: checkoutRevenue,
+      gstAt5Percent
     });
   }
   

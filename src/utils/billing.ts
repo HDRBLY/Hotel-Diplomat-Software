@@ -154,15 +154,15 @@ export const calculateBill = (inputs: BillingInputs): BillingBreakdown => {
   const laundryCharges = Number(checkoutDetails.laundryCharges) || 0;
   const halfDayCharges = Number(checkoutDetails.halfDayCharges) || 0;
 
-  // Calculate tax breakdown for room rent (12% GST: 6% CGST + 6% SGST)
-  const roomRentTaxableValue = roomRent / 1.12;
-  const roomRentCgst = roomRentTaxableValue * 0.06;
-  const roomRentSgst = roomRentTaxableValue * 0.06;
+  // Calculate tax breakdown for room rent (5% GST: 2.5% CGST + 2.5% SGST)
+  const roomRentTaxableValue = roomRent / 1.05;
+  const roomRentCgst = roomRentTaxableValue * 0.025;
+  const roomRentSgst = roomRentTaxableValue * 0.025;
 
-  // Calculate tax breakdown for extra bed charges (12% GST: 6% CGST + 6% SGST)
-  const extraBedTaxableValue = extraBedCharges / 1.12;
-  const extraBedCgst = extraBedTaxableValue * 0.06;
-  const extraBedSgst = extraBedTaxableValue * 0.06;
+  // Calculate tax breakdown for extra bed charges (5% GST: 2.5% CGST + 2.5% SGST)
+  const extraBedTaxableValue = extraBedCharges / 1.05;
+  const extraBedCgst = extraBedTaxableValue * 0.025;
+  const extraBedSgst = extraBedTaxableValue * 0.025;
 
   // Calculate tax breakdown for fooding charges (5% GST: 2.5% CGST + 2.5% SGST)
   const foodingTaxableValue = additionalCharges > 0 ? additionalCharges / 1.05 : 0;
@@ -174,10 +174,10 @@ export const calculateBill = (inputs: BillingInputs): BillingBreakdown => {
   const laundryCgst = laundryTaxableValue * 0.025;
   const laundrySgst = laundryTaxableValue * 0.025;
 
-  // Half-day charges are treated as room rent (12% GST)
-  const halfDayTaxableValue = halfDayCharges > 0 ? halfDayCharges / 1.12 : 0;
-  const halfDayCgst = halfDayTaxableValue * 0.06;
-  const halfDaySgst = halfDayTaxableValue * 0.06;
+  // Half-day charges are treated as room rent (5% GST)
+  const halfDayTaxableValue = halfDayCharges > 0 ? halfDayCharges / 1.05 : 0;
+  const halfDayCgst = halfDayTaxableValue * 0.025;
+  const halfDaySgst = halfDayTaxableValue * 0.025;
 
   // Calculate totals
   const totalTaxableValue = roomRentTaxableValue + extraBedTaxableValue + foodingTaxableValue + laundryTaxableValue + halfDayTaxableValue;

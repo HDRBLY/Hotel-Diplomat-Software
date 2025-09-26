@@ -61,7 +61,8 @@ const Reports = () => {
   const [occupancyData, setOccupancyData] = useState<any[]>([])
   const [guestData, setGuestData] = useState<any[]>([])
   const [roomData, setRoomData] = useState<any[]>([])
-  const [monthlyRevenueData, setMonthlyRevenueData] = useState<any[]>([])
+  const [weeklyRevenueData, setWeeklyRevenueData] = useState<Array<{ name: string; revenue: number; gstAt5Percent?: number }>>([])
+  const [monthlyRevenueData, setMonthlyRevenueData] = useState<Array<{ month: string; revenue: number; bookings: number; gstAt5Percent?: number }>>([])
   const [roomTypeData, setRoomTypeData] = useState<any[]>([])
   const [guestSourceData, setGuestSourceData] = useState<any[]>([])
   const [isClearing, setIsClearing] = useState(false)
@@ -301,7 +302,7 @@ const Reports = () => {
                 <td class="editable" contenteditable="false">1</td>
                 <td class="editable" contenteditable="false">₹${breakdown.pricePerDay}</td>
                 <td class="editable" contenteditable="false">₹${breakdown.roomRentTaxableValue.toFixed(2)}</td>
-                <td>12%</td>
+                            <td>5%</td>
                 <td class="editable" contenteditable="false">₹${breakdown.roomRentCgst.toFixed(2)}</td>
                 <td class="editable" contenteditable="false">₹${breakdown.roomRentSgst.toFixed(2)}</td>
                 <td class="editable" contenteditable="false">₹${breakdown.roomRent}</td>
@@ -315,7 +316,7 @@ const Reports = () => {
                   <td class="editable" contenteditable="false">1</td>
                   <td class="editable" contenteditable="false">₹${breakdown.extraBedCharges}</td>
                   <td class="editable" contenteditable="false">₹${breakdown.extraBedTaxableValue.toFixed(2)}</td>
-                  <td>12%</td>
+                  <td>5%</td>
                   <td class="editable" contenteditable="false">₹${breakdown.extraBedCgst.toFixed(2)}</td>
                   <td class="editable" contenteditable="false">₹${breakdown.extraBedSgst.toFixed(2)}</td>
                   <td class="editable" contenteditable="false">₹${breakdown.extraBedCharges}</td>
@@ -360,7 +361,7 @@ const Reports = () => {
                   <td class="editable" contenteditable="false">1</td>
                   <td class="editable" contenteditable="false">₹${breakdown.halfDayCharges}</td>
                   <td class="editable" contenteditable="false">₹${breakdown.halfDayTaxableValue.toFixed(2)}</td>
-                  <td>12%</td>
+                  <td>5%</td>
                   <td class="editable" contenteditable="false">₹${breakdown.halfDayCgst.toFixed(2)}</td>
                   <td class="editable" contenteditable="false">₹${breakdown.halfDaySgst.toFixed(2)}</td>
                   <td class="editable" contenteditable="false">₹${breakdown.halfDayCharges}</td>
@@ -800,7 +801,16 @@ const Reports = () => {
         const revenueResponse = await fetch(`${BACKEND_URL}/api/reports/revenue?${params}`)
         const revenueResult = await revenueResponse.json()
         if (revenueResult.success) {
-          setRevenueData(revenueResult.data)
+          const mapped = (revenueResult.data as Array<{ date: string; revenue: number; bookings?: number; averageRate?: number }>).map(item => {
+            return {
+              date: item.date,
+              revenue: item.revenue,
+              bookings: item.bookings,
+              averageRate: item.averageRate,
+              gstAt5Percent: Math.round(item.revenue * 0.05)
+            }
+          })
+          setRevenueData(mapped)
         }
 
         // Fetch occupancy data with date range
@@ -915,7 +925,16 @@ const Reports = () => {
             const revenueResponse = await fetch(`${BACKEND_URL}/api/reports/revenue`)
             const revenueResult = await revenueResponse.json()
             if (revenueResult.success) {
-              setRevenueData(revenueResult.data)
+              const mapped = (revenueResult.data as Array<{ date: string; revenue: number; bookings?: number; averageRate?: number }>).map(item => {
+                return {
+                  date: item.date,
+                  revenue: item.revenue,
+                  bookings: item.bookings,
+                  averageRate: item.averageRate,
+                  gstAt5Percent: Math.round(item.revenue * 0.05)
+                }
+              })
+              setRevenueData(mapped)
             }
 
             // Fetch occupancy data
@@ -1366,6 +1385,9 @@ const Reports = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Average Rate
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      GST 5%
+                </th>
                   </>
                 )}
                 {detailedReport === 'occupancy' && (
@@ -1409,7 +1431,7 @@ const Reports = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {detailedReport === 'revenue' && monthlyRevenueData.map((data, index) => (
+              {detailedReport === 'revenue' && revenueData.map((data, index) => (
                 <tr key={index} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {data.month}
@@ -1421,7 +1443,10 @@ const Reports = () => {
                     {data.bookings}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ₹{data.bookings > 0 ? Math.round(data.revenue / data.bookings) : 0}
+                    ₹{data.averageRate}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    ₹{data.gstAt5Percent}
                   </td>
                 </tr>
               ))}
