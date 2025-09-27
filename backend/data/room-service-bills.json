@@ -109,5 +109,111 @@
     "status": "generated",
     "createdAt": "2025-09-17T11:56:09.854Z",
     "updatedAt": "2025-09-17T11:56:09.854Z"
+  },
+  {
+    "id": "1758959230682",
+    "billNumber": "RS59230682",
+    "roomNumber": "102",
+    "guestName": "aman",
+    "guestPhone": "8965874589",
+    "checkInDate": "2025-09-16",
+    "checkOutDate": "2025-09-17",
+    "orders": [
+      {
+        "orderId": "1758059119685",
+        "orderDate": "2025-09-16T21:45:19.685Z",
+        "items": [
+          {
+            "menuItemId": "breakfast-002",
+            "name": "Indian Breakfast",
+            "price": 200,
+            "quantity": 1,
+            "gstRate": 5,
+            "total": 200
+          },
+          {
+            "menuItemId": "tea",
+            "name": "Tea",
+            "price": 25,
+            "quantity": 2,
+            "gstRate": 5,
+            "total": 50
+          },
+          {
+            "menuItemId": "coffee",
+            "name": "Coffee",
+            "price": 35,
+            "quantity": 1,
+            "gstRate": 5,
+            "total": 35
+          }
+        ],
+        "totalAmount": 285,
+        "gstAmount": 14.25,
+        "finalAmount": 299.25
+      }
+    ],
+    "subtotal": 285,
+    "totalGst": 14.25,
+    "grandTotal": 299.25,
+    "billDate": "27/9/2025",
+    "billTime": "1:17:10 pm",
+    "generatedBy": "System Administrator",
+    "status": "generated",
+    "createdAt": "2025-09-27T07:47:10.692Z",
+    "updatedAt": "2025-09-27T07:47:10.692Z"
+  },
+  {
+    "id": "1758959256827",
+    "billNumber": "RS59256827",
+    "roomNumber": "102",
+    "guestName": "aman",
+    "guestPhone": "8965874589",
+    "checkInDate": "2025-09-16",
+    "checkOutDate": "2025-09-17",
+    "orders": [
+      {
+        "orderId": "1758059119685",
+        "orderDate": "2025-09-16T21:45:19.685Z",
+        "items": [
+          {
+            "menuItemId": "breakfast-002",
+            "name": "Indian Breakfast",
+            "price": 200,
+            "quantity": 1,
+            "gstRate": 5,
+            "total": 200
+          },
+          {
+            "menuItemId": "tea",
+            "name": "Tea",
+            "price": 25,
+            "quantity": 2,
+            "gstRate": 5,
+            "total": 50
+          },
+          {
+            "menuItemId": "coffee",
+            "name": "Coffee",
+            "price": 35,
+            "quantity": 1,
+            "gstRate": 5,
+            "total": 35
+          }
+        ],
+        "totalAmount": 285,
+        "gstAmount": 14.25,
+        "finalAmount": 299.25
+      }
+    ],
+    "subtotal": 285,
+    "totalGst": 14.25,
+    "grandTotal": 299.25,
+    "billDate": "27/9/2025",
+    "billTime": "1:17:36 pm",
+    "generatedBy": "System Administrator",
+    "status": "generated",
+    "createdAt": "2025-09-27T07:47:36.835Z",
+    "updatedAt": "2025-09-27T07:47:36.835Z"
   }
 ]

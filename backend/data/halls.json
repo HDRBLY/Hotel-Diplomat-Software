@@ -2,7 +2,7 @@
   {
     "id": "1",
     "name": "JALSA",
-    "capacity": 500,
+    "capacity": 300,
     "status": "available",
     "type": "wedding",
     "floor": 1,
@@ -20,7 +20,7 @@
     "description": "Our largest and most elegant banquet hall, perfect for grand weddings and corporate events. Features a spacious dance floor and professional lighting.",
     "image": "/images/banquets/royal-grand-hall.jpg",
     "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2025-09-17T08:33:02.804Z"
+    "updatedAt": "2025-09-27T07:52:44.268Z"
   },
   {
     "id": "2",
